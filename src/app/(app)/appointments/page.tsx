@@ -81,7 +81,8 @@ export default function AppointmentsPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   const [deletingAppointmentId, setDeletingAppointmentId] = React.useState<string | null>(null);
   const [currentDate, setCurrentDate] = React.useState(new Date());
-  const [currentView, setCurrentView] = React.useState<ViewType>(Views.MONTH); // Use ViewType here
+  const [currentView, setCurrentView] = React.useState<ViewType>(Views.WEEK); // Default to Week view for slot selection
+  const [selectedSlotStart, setSelectedSlotStart] = React.useState<Date | null>(null); // State for selected slot
 
   // Fetch appointments (memoized)
   const fetchAppointments = React.useCallback(async () => {
@@ -176,7 +177,26 @@ export default function AppointmentsPage() {
     fetchAppointments(); // Refresh the calendar
   };
 
-  // Handler for selecting an event on the calendar
+  // Handler for selecting an empty slot on the calendar
+  const handleSelectSlot = React.useCallback((slotInfo: { start: Date; end: Date; slots: Date[] | string[]; action: 'select' | 'click' | 'doubleClick' }) => {
+    // Only allow slot selection in Day or Week view
+    if (currentView === Views.DAY || currentView === Views.WEEK) {
+       // Check if it's a single click/drag selection, not clicking an existing event
+       if (slotInfo.action === 'select' || slotInfo.action === 'click') {
+            setSelectedSlotStart(slotInfo.start);
+            setEditingAppointment(null); // Ensure we are adding, not editing
+            setIsAddDialogOpen(true);
+       }
+    } else {
+        toast({
+            title: "Select a Slot",
+            description: "Please switch to Week or Day view to select a time slot.",
+            variant: "default"
+        })
+    }
+  }, [currentView, toast]); // Add currentView and toast to dependencies
+
+  // Handler for selecting an existing event on the calendar
   const handleSelectEvent = (event: CalendarEvent) => {
     // event.resource contains the original AppointmentData
     setEditingAppointment(event.resource as AppointmentData);
@@ -243,7 +263,11 @@ export default function AppointmentsPage() {
                 Fill in the details to schedule a new appointment.
               </DialogDescription>
             </DialogHeader>
-            <AppointmentForm onSuccess={handleFormSuccess} />
+            {/* Pass selected slot time to the form */}
+            <AppointmentForm
+              initialDateTime={selectedSlotStart ?? undefined}
+              onSuccess={handleFormSuccess}
+            />
           </DialogContent>
         </Dialog>
       </div>
@@ -265,6 +289,8 @@ export default function AppointmentsPage() {
                 view={currentView} // Control the current view
                 onNavigate={handleNavigate} // Handle date navigation
                 onView={handleViewChange} // Handle view changes
+                selectable={true} // Enable slot selection
+                onSelectSlot={handleSelectSlot} // Handle slot selection
             />
         )}
       </div>
@@ -281,8 +307,11 @@ export default function AppointmentsPage() {
                 Update the appointment details.
               </DialogDescription>
             </DialogHeader>
-            {/* Pass initialData and add a delete button trigger */}
-            <AppointmentForm initialData={editingAppointment} onSuccess={handleFormSuccess} />
+            {/* Pass initialData for editing */}
+            <AppointmentForm
+                initialData={editingAppointment}
+                onSuccess={handleFormSuccess}
+            />
              <Button
                 variant="outline"
                 className="mt-4 text-destructive hover:text-destructive"

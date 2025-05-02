@@ -1,7 +1,8 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { ArrowUpDown, MoreHorizontal, Eye } from "lucide-react"; // Added Eye icon
+import Link from 'next/link'; // Added Link import
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox"; // Need to add checkbox component
@@ -24,6 +25,16 @@ export type Customer = {
   email: string | null;
   phone: string | null;
   created_at: string; // Assuming string format for simplicity here
+  // Added fields from migration
+  dob: string | null;
+  address_line1: string | null;
+  address_line2: string | null;
+  city: string | null;
+  state: string | null;
+  postal_code: string | null;
+  country: string | null;
+  insurance_provider: string | null;
+  insurance_policy_number: string | null;
 };
 
 // Define props for the columns function
@@ -148,8 +159,11 @@ export const getColumns = ({ onEdit, onDelete }: CustomerColumnsProps): ColumnDe
               Copy customer ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            {/* TODO: Implement View Customer action */}
-            <DropdownMenuItem onClick={() => console.log("View", customer.id)}>View customer</DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href={`/customers/${customer.id}`} className="flex items-center">
+                <Eye className="mr-2 h-4 w-4" /> View Details
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onEdit(customer)}>Edit customer</DropdownMenuItem>
             <DropdownMenuItem
               className="text-red-600 focus:text-red-700 focus:bg-red-100"

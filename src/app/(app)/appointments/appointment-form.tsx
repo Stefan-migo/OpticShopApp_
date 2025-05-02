@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm } from "react-hook-form"; // Removed UseFormReturn import
 import * as z from "zod";
 import { formatISO, parseISO } from 'date-fns'; // For handling datetime-local
 
@@ -59,14 +59,15 @@ type AppointmentFormValues = z.infer<typeof formSchema>;
 import { type AppointmentData } from "./page"; // Adjust path if needed
 
 interface AppointmentFormProps {
-  initialData?: AppointmentData | null; // Use specific type
+  initialData?: AppointmentData | null; // For editing
+  initialDateTime?: Date; // For setting time from calendar slot selection
   onSuccess?: () => void; // Callback after successful submission
 }
 
 // Define simple type for fetched customer dropdown data
 type CustomerOption = { id: string; name: string };
 
-export function AppointmentForm({ initialData, onSuccess }: AppointmentFormProps) {
+export function AppointmentForm({ initialData, initialDateTime, onSuccess }: AppointmentFormProps) {
   const { toast } = useToast();
   const supabase = createClient();
   const isEditing = !!initialData;
@@ -101,17 +102,19 @@ export function AppointmentForm({ initialData, onSuccess }: AppointmentFormProps
     fetchCustomers();
   }, [supabase, toast]);
 
-  // Define form
+  // Define form (removed explicit type annotation)
   const form = useForm<AppointmentFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       customer_id: initialData?.customer_id || "",
-      // Format date for datetime-local input: YYYY-MM-DDTHH:mm
-      appointment_time: initialData?.appointment_time
-        ? formatISO(new Date(initialData.appointment_time), { representation: 'complete' }).substring(0, 16)
-        : "",
-      duration_minutes: Number(initialData?.duration_minutes || 30),
-      type: (initialData?.type || 'eye_exam') as AppointmentFormValues['type'], // Explicit cast for type
+      // Prioritize initialDateTime from slot selection, then initialData for editing, then empty
+      appointment_time: initialDateTime
+        ? formatISO(initialDateTime, { representation: 'complete' }).substring(0, 16)
+        : initialData?.appointment_time
+          ? formatISO(new Date(initialData.appointment_time), { representation: 'complete' }).substring(0, 16)
+          : "",
+      duration_minutes: Number(initialData?.duration_minutes || 30), // Ensure default is a number
+      type: (initialData?.type || 'eye_exam') as AppointmentFormValues['type'], // Re-added explicit cast
       provider_name: initialData?.provider_name || "",
       notes: initialData?.notes || "",
     },
