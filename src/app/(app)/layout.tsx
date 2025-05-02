@@ -56,17 +56,45 @@ export default async function AppLayout({
     return redirect("/login");
   }
 
+  // Fetch user profile and role
+  let userRole = 'N/A'; // Default role display
+  const { data: profileData, error: profileError } = await supabase
+    .from('profiles')
+    .select(`
+      id,
+      role_id,
+      roles ( name )
+     `)
+    .eq('id', user.id)
+    .maybeSingle(); // Use maybeSingle() to handle potentially missing profile
+
+  if (profileError) {
+    console.error("Error fetching user profile/role:", profileError.message);
+  } else if (profileData?.roles && typeof profileData.roles === 'object' && !Array.isArray(profileData.roles)) {
+    // Explicitly check if roles is a single object before accessing name
+    userRole = (profileData.roles as { name: string | null }).name || 'Unknown Role';
+  } else {
+     console.warn("User profile or role not found/invalid for ID:", user.id);
+     userRole = 'No Role Assigned';
+  }
+
+
   // Placeholder for navigation items - adjust icons and paths as needed
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: Home },
     { href: "/customers", label: "Customers", icon: Eye },
     { href: "/inventory", label: "Inventory", icon: Package },
     { href: "/prescriptions", label: "Prescriptions", icon: Contact },
-    { href: "/appointments", label: "Appointments", icon: Calendar }, // Placeholder route
-    { href: "/sales", label: "Sales/POS", icon: ShoppingCart }, // Added route
-    { href: "/reports", label: "Reports", icon: LineChart }, // Placeholder route
+    { href: "/appointments", label: "Appointments", icon: Calendar },
+    { href: "/sales", label: "Sales/POS", icon: ShoppingCart },
+    { href: "/reports", label: "Reports", icon: LineChart },
     // { href: "/settings", label: "Settings", icon: Settings }, // Placeholder route
   ];
+
+  // Conditionally add Admin link
+  if (userRole === 'admin') {
+    navItems.push({ href: "/admin/users", label: "User Management", icon: Users }); // Use Users icon for admin
+  }
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
@@ -162,6 +190,17 @@ export default async function AppLayout({
                     {/* Optional: Badges */}
                   </Link>
                 ))}
+                 {/* Conditional Admin Link for Mobile */}
+                 {userRole === 'admin' && (
+                     <Link
+                        key="admin-users-mobile"
+                        href="/admin/users"
+                        className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
+                    >
+                        <Users className="h-5 w-5" />
+                        User Management
+                    </Link>
+                 )}
               </nav>
               {/* Optional: Mobile Sidebar Footer */}
             </SheetContent>
@@ -182,8 +221,8 @@ export default async function AppLayout({
             </form> */}
           </div>
 
-          {/* User Nav Component */}
-          <UserNav />
+          {/* User Nav Component - Pass userRole */}
+          <UserNav userRole={userRole} />
 
         </header>
 

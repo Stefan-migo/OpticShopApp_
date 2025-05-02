@@ -1,6 +1,7 @@
 "use client"; // Likely needs to be client component for interactivity
 
 import * as React from "react";
+import Link from "next/link"; // Import Link
 import { Button } from "@/components/ui/button";
 import { PlusCircle, ShoppingCart, Check, ChevronsUpDown, X } from "lucide-react";
 import { Combobox } from "@/components/ui/combobox";
@@ -143,11 +144,33 @@ export default function SalesPage() {
       const { error: paymentError } = await supabase.from("payments").insert(paymentData);
       if (paymentError) throw paymentError; // TODO: Rollback order/items?
 
-      // Update Inventory (Simplified - needs improvement for quantity handling)
-      const inventoryUpdates = currentOrderItems.map(item =>
-        supabase.from('inventory_items').update({ status: 'sold' }).eq('id', item.inventory_item_id)
+      // --- Update Inventory using RPC Function ---
+      const inventoryUpdatePromises = currentOrderItems.map(item =>
+        supabase.rpc('decrement_inventory', {
+          item_id: item.inventory_item_id,
+          quantity_sold: item.quantity
+        })
       );
-      Promise.all(inventoryUpdates).catch(err => console.error("Error updating inventory (background):", err));
+
+      // Wait for all inventory updates to attempt completion
+      const updateResults = await Promise.allSettled(inventoryUpdatePromises);
+
+      // Check for any failed inventory updates
+      const failedUpdates = updateResults.filter(result => result.status === 'rejected');
+      if (failedUpdates.length > 0) {
+          // Log errors and potentially notify user, but proceed with sale confirmation for now
+          failedUpdates.forEach((failure, index) => {
+               console.error(`Failed to update inventory for item ID: ${currentOrderItems[index]?.inventory_item_id}`, (failure as PromiseRejectedResult).reason);
+          });
+          toast({
+              title: "Warning: Inventory Update Issue",
+              description: "Some inventory items might not have been updated correctly. Please verify stock levels.",
+              variant: "destructive", // Use destructive to highlight potential issue
+              duration: 10000, // Keep message longer
+          });
+          // In a real-world scenario, you might implement more complex rollback logic here
+          // or prevent the sale if inventory update fails critically.
+      }
       // --- Transaction End (Conceptual) ---
 
       toast({ title: "Sale recorded successfully!", description: `Order #${newOrder.order_number}` });
@@ -172,7 +195,9 @@ export default function SalesPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Point of Sale</h1>
-        <Button variant="outline">View Past Sales</Button>
+        <Button asChild variant="outline">
+            <Link href="/sales/history">View Past Sales</Link>
+        </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">

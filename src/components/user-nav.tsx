@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react"; // Add React import back
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Need to add avatar component
 import { Button } from "@/components/ui/button";
 import {
@@ -19,10 +20,26 @@ import { useToast } from "./ui/use-toast";
 
 // TODO: Add avatar component using shadcn-ui add
 
-export function UserNav() {
+interface UserNavProps {
+  userRole?: string; // Make role optional for flexibility
+}
+
+export function UserNav({ userRole = "User" }: UserNavProps) {
   const router = useRouter();
   const supabase = createClient();
   const { toast } = useToast();
+  const [userEmail, setUserEmail] = React.useState<string | null>(null);
+  const [userName, setUserName] = React.useState<string | null>("User"); // Keep placeholder for name for now
+
+  // Fetch user email on mount
+  React.useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserEmail(user?.email ?? null);
+      // Could potentially fetch profile here too for name, but keep it simple for now
+    };
+    fetchUser();
+  }, [supabase]);
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -41,9 +58,9 @@ export function UserNav() {
     }
   };
 
-  // Placeholder for user data - fetch real user data if needed for display
-  const userEmail = "user@example.com"; // Replace with actual user data later
-  const userName = "User Name"; // Replace with actual user data later
+  // No need for these placeholders anymore, we use state variables
+  // const userEmail = "user@example.com";
+  // const userName = "User Name";
 
   return (
     <DropdownMenu>
@@ -62,9 +79,15 @@ export function UserNav() {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{userName}</p>
+            {/* Use state variable for name */}
+            <p className="text-sm font-medium leading-none">{userName || 'User'}</p>
+            {/* Use state variable for email */}
             <p className="text-xs leading-none text-muted-foreground">
-              {userEmail}
+              {userEmail || 'Loading...'}
+            </p>
+            {/* Display the role */}
+            <p className="text-xs leading-none text-muted-foreground pt-1">
+              Role: <span className="font-medium capitalize">{userRole}</span>
             </p>
           </div>
         </DropdownMenuLabel>
