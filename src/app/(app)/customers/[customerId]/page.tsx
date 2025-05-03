@@ -1,3 +1,4 @@
+import React from 'react';
 import { createServerComponentClient } from "@/lib/supabase/server-component-client";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +13,7 @@ import {
 } from "@/components/ui/table"; // Added Table components
 import { Badge } from "@/components/ui/badge"; // Added Badge for status
 import { CustomerNotes } from "./customer-notes"; // Import the new component
+import BackButton from "./back-button"; // Import the BackButton component
 
 type CustomerDetailPageProps = {
   params: { customerId: string };
@@ -34,6 +36,7 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
 
   return (
     <div className="container mx-auto py-10">
+      <BackButton /> {/* Add the BackButton component */}
       <h1 className="text-3xl font-bold mb-6">Customer Details</h1>
 
       <Card className="mb-6">
@@ -62,6 +65,14 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
                  <p>Policy #: {customer.insurance_policy_number || 'N/A'}</p>
             </div>
           </div>
+          {customer.notes && (
+            <div>
+              <strong>Notes:</strong>
+              <div className="pl-4">
+                <p>{customer.notes}</p>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -119,7 +130,7 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
 }
 
 // Helper component to fetch and display past sales
-async function PastSales({ customerId }: { customerId: string }) {
+async function PastSales({ customerId }: { customerId: string }): Promise<JSX.Element> {
   const supabase = createServerComponentClient();
   const { data: sales, error } = await supabase
     .from("sales_orders")
@@ -161,13 +172,12 @@ async function PastSales({ customerId }: { customerId: string }) {
 }
 
 // Helper component to fetch and display appointments
-async function AppointmentsHistory({ customerId }: { customerId: string }) {
+async function AppointmentsHistory({ customerId }: { customerId: string }): Promise<JSX.Element> {
   const supabase = createServerComponentClient();
   const { data: appointments, error } = await supabase
     .from("appointments")
-    .select("id, appointment_date, appointment_time, appointment_type, status") // Select relevant fields
+    .select("id, appointment_time, type, status") // Select relevant fields
     .eq("customer_id", customerId)
-    .order("appointment_date", { ascending: false })
     .order("appointment_time", { ascending: false }); // Show most recent first
 
   if (error) {
@@ -192,9 +202,9 @@ async function AppointmentsHistory({ customerId }: { customerId: string }) {
       <TableBody>
         {appointments.map((appt) => (
           <TableRow key={appt.id}>
-            <TableCell>{new Date(appt.appointment_date).toLocaleDateString()}</TableCell>
-            <TableCell>{appt.appointment_time}</TableCell>
-            <TableCell>{appt.appointment_type || 'N/A'}</TableCell>
+            <TableCell>{new Date(appt.appointment_time).toLocaleDateString()}</TableCell>
+            <TableCell>{new Date(appt.appointment_time).toLocaleTimeString()}</TableCell>
+            <TableCell>{appt.type || 'N/A'}</TableCell>
             <TableCell><Badge variant={appt.status === 'scheduled' ? 'default' : 'secondary'}>{appt.status}</Badge></TableCell>
           </TableRow>
         ))}
@@ -204,12 +214,12 @@ async function AppointmentsHistory({ customerId }: { customerId: string }) {
 }
 
 // Helper component to fetch and display prescriptions
-async function PrescriptionsHistory({ customerId }: { customerId: string }) {
+async function PrescriptionsHistory({ customerId }: { customerId: string }): Promise<JSX.Element> {
   const supabase = createServerComponentClient();
   // Select key fields for the summary table
   const { data: prescriptions, error } = await supabase
     .from("prescriptions")
-    .select("id, created_at, expiration_date, od_sphere, os_sphere")
+    .select("id, created_at, expiry_date, od_params, os_params")
     .eq("customer_id", customerId)
     .order("created_at", { ascending: false }); // Show most recent first
 
@@ -237,9 +247,9 @@ async function PrescriptionsHistory({ customerId }: { customerId: string }) {
         {prescriptions.map((rx) => (
           <TableRow key={rx.id}>
             <TableCell>{new Date(rx.created_at).toLocaleDateString()}</TableCell>
-            <TableCell>{rx.expiration_date ? new Date(rx.expiration_date).toLocaleDateString() : 'N/A'}</TableCell>
-            <TableCell>{rx.od_sphere ?? 'N/A'}</TableCell>
-            <TableCell>{rx.os_sphere ?? 'N/A'}</TableCell>
+            <TableCell>{rx.expiry_date ? new Date(rx.expiry_date).toLocaleDateString() : 'N/A'}</TableCell>
+            <TableCell>{rx.od_params?.sphere ?? 'N/A'}</TableCell>
+            <TableCell>{rx.os_params?.sphere ?? 'N/A'}</TableCell>
             {/* TODO: Add action button to view full prescription details */}
           </TableRow>
         ))}
