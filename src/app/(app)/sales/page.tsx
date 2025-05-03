@@ -47,9 +47,12 @@ export default function SalesPage() {
   const [currentOrderItems, setCurrentOrderItems] = React.useState<SaleLineItem[]>([]);
   const [subtotal, setSubtotal] = React.useState(0);
   const [discountAmount, setDiscountAmount] = React.useState(0);
-  const [taxAmount, setTaxAmount] = React.useState(0);
+  const [taxAmount, setTaxAmount] = React.useState(0); // This will now be calculated automatically
   const [finalTotal, setFinalTotal] = React.useState(0);
   const [isSavingSale, setIsSavingSale] = React.useState(false);
+  const [defaultTaxRate, setDefaultTaxRate] = React.useState<number | null>(null);
+  const [defaultTaxRateId, setDefaultTaxRateId] = React.useState<string | null>(null);
+
 
   // Function to fetch stock items (memoized)
    const fetchStock = React.useCallback(async () => {
@@ -91,6 +94,43 @@ export default function SalesPage() {
     fetchStock();
   }, [fetchStock]); // Dependency: memoized fetchStock function
 
+  // Fetch default tax rate
+  React.useEffect(() => {
+    const fetchDefaultTaxRate = async () => {
+      const { data, error } = await supabase
+        .from("tax_rates")
+        .select("id, rate")
+        .eq("is_default", true)
+        .single();
+
+      if (error) {
+        console.error("Error fetching default tax rate:", error);
+        setDefaultTaxRate(null);
+        setDefaultTaxRateId(null);
+        toast({
+          title: "Warning",
+          description: "Could not fetch default tax rate. Tax will not be calculated automatically.",
+          variant: "destructive",
+        });
+      } else if (data) {
+        setDefaultTaxRate(data.rate);
+        setDefaultTaxRateId(data.id);
+      } else {
+         // No default tax rate found
+         setDefaultTaxRate(null);
+         setDefaultTaxRateId(null);
+         toast({
+            title: "Info",
+            description: "No default tax rate is set. Tax will not be calculated automatically.",
+            variant: "default",
+         });
+      }
+    };
+
+    fetchDefaultTaxRate();
+  }, [supabase, toast]); // Dependencies: supabase client and toast
+
+
   // Function to add the selected stock item to the current order
   const handleAddItem = () => {
     if (!selectedStockItemId) return;
@@ -108,11 +148,15 @@ export default function SalesPage() {
     setSubtotal(newSubtotal);
   }, [currentOrderItems]);
 
-  // Calculate final total whenever subtotal, discount, or tax changes
+  // Calculate tax amount and final total whenever subtotal, discount, or defaultTaxRate changes
   React.useEffect(() => {
-    const total = subtotal - discountAmount + taxAmount;
+    const calculatedTaxAmount = defaultTaxRate !== null ? subtotal * (defaultTaxRate / 100) : 0;
+    setTaxAmount(calculatedTaxAmount); // Update taxAmount state
+
+    const total = subtotal - discountAmount + calculatedTaxAmount; // Use calculated tax amount
     setFinalTotal(total >= 0 ? total : 0);
-  }, [subtotal, discountAmount, taxAmount]);
+  }, [subtotal, discountAmount, defaultTaxRate]); // Add defaultTaxRate to dependencies
+
 
   // Function to remove an item from the current order by its index
   const handleRemoveItem = (indexToRemove: number) => {
@@ -132,7 +176,16 @@ export default function SalesPage() {
       if (!user) throw new Error("User not found.");
 
       // --- Transaction Start (Conceptual) ---
-      const orderData = { customer_id: selectedCustomerId, user_id: user.id, total_amount: subtotal, discount_amount: discountAmount, tax_amount: taxAmount, final_amount: finalTotal, status: 'completed' as const };
+      const orderData = {
+        customer_id: selectedCustomerId,
+        user_id: user.id,
+        total_amount: subtotal,
+        discount_amount: discountAmount,
+        tax_amount: taxAmount, // Use the calculated taxAmount
+        tax_rate_id: defaultTaxRateId, // Include the tax_rate_id
+        final_amount: finalTotal,
+        status: 'completed' as const
+      };
       const { data: newOrder, error: orderError } = await supabase.from("sales_orders").insert(orderData).select().single();
       if (orderError || !newOrder) throw orderError || new Error("Failed to create sales order.");
 
@@ -180,7 +233,7 @@ export default function SalesPage() {
       setSelectedCustomerId(null);
       setSelectedStockItemId(null);
       setDiscountAmount(0);
-      setTaxAmount(0);
+      setTaxAmount(0); // Reset calculated tax amount
       fetchStock(); // Refresh stock list
 
     } catch (error: any) {
@@ -249,12 +302,12 @@ export default function SalesPage() {
                 <span>{subtotal.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>
             </div>
              <div className="flex justify-between items-center">
-                <label htmlFor="discount" className="text-sm">Discount:</label>
-                <Input id="discount" type="number" step="0.01" min="0" value={discountAmount} onChange={(e) => setDiscountAmount(parseFloat(e.target.value) || 0)} className="h-8 w-24 text-right" placeholder="0.00" disabled={isSavingSale} />
+                 <span className="text-sm">Tax{defaultTaxRate !== null ? ` (${defaultTaxRate}%)` : ''}:</span>
+                 <span>{taxAmount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>
             </div>
              <div className="flex justify-between items-center">
-                 <label htmlFor="tax" className="text-sm">Tax:</label>
-                 <Input id="tax" type="number" step="0.01" min="0" value={taxAmount} onChange={(e) => setTaxAmount(parseFloat(e.target.value) || 0)} className="h-8 w-24 text-right" placeholder="0.00" disabled={isSavingSale} />
+                <label htmlFor="discount" className="text-sm">Discount:</label>
+                <Input id="discount" type="number" step="0.01" min="0" value={discountAmount} onChange={(e) => setDiscountAmount(parseFloat(e.target.value) || 0)} className="h-8 w-24 text-right" placeholder="0.00" disabled={isSavingSale} />
             </div>
              <div className="border-t pt-2 mt-2 flex justify-between font-semibold text-lg">
                 <span>Total:</span>
