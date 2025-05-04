@@ -219,7 +219,7 @@ async function PrescriptionsHistory({ customerId }: { customerId: string }): Pro
   // Select key fields for the summary table
   const { data: prescriptions, error } = await supabase
     .from("prescriptions")
-    .select("id, created_at, expiry_date, od_params, os_params")
+    .select("id, created_at, expiry_date, od_params->>'sphere' as od_sphere, od_params->>'cylinder' as od_cylinder, od_params->>'add' as od_add, os_params->>'sphere' as os_sphere, os_params->>'cylinder' as os_cylinder, os_params->>'add' as os_add")
     .eq("customer_id", customerId)
     .order("created_at", { ascending: false }); // Show most recent first
 
@@ -239,8 +239,12 @@ async function PrescriptionsHistory({ customerId }: { customerId: string }): Pro
           <TableHead>Issued Date</TableHead>
           <TableHead>Expiry Date</TableHead>
           <TableHead>OD Sphere</TableHead>
+          <TableHead>OD Cylinder</TableHead>
+          <TableHead>OD Add</TableHead>
           <TableHead>OS Sphere</TableHead>
-          {/* Add more columns as needed, e.g., View Details button */}
+          <TableHead>OS Cylinder</TableHead>
+          <TableHead>OS Add</TableHead>
+          {/* TODO: Add action button to view full prescription details */}
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -248,8 +252,12 @@ async function PrescriptionsHistory({ customerId }: { customerId: string }): Pro
           <TableRow key={rx.id}>
             <TableCell>{new Date(rx.created_at).toLocaleDateString()}</TableCell>
             <TableCell>{rx.expiry_date ? new Date(rx.expiry_date).toLocaleDateString() : 'N/A'}</TableCell>
-            <TableCell>{rx.od_params?.sphere ?? 'N/A'}</TableCell>
-            <TableCell>{rx.os_params?.sphere ?? 'N/A'}</TableCell>
+            <TableCell>{rx.od_sphere ?? 'N/A'}</TableCell>
+            <TableCell>{rx.od_cylinder ?? 'N/A'}</TableCell>
+            <TableCell>{rx.od_add ?? 'N/A'}</TableCell>
+            <TableCell>{rx.os_sphere ?? 'N/A'}</TableCell>
+            <TableCell>{rx.os_cylinder ?? 'N/A'}</TableCell>
+            <TableCell>{rx.os_add ?? 'N/A'}</TableCell>
             {/* TODO: Add action button to view full prescription details */}
           </TableRow>
         ))}
