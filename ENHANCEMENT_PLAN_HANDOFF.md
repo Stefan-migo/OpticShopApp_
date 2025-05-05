@@ -138,3 +138,10 @@ Develop a modern, web-based SaaS application using Next.js, TypeScript, Tailwind
 5.  **Address Remaining TODOs:** User emails in admin, purchase orders, advanced tax rules, etc.
 
 This provides a comprehensive roadmap for enhancing the application based on our discussion.
+
+## 7. Version Control
+
+This project's source code is hosted on GitHub at:
+[https://github.com/Stefan-migo/OpticShopApp_](https://github.com/Stefan-migo/OpticShopApp_)
+
+The primary development branch is `main`.
