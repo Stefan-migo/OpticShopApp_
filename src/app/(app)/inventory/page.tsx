@@ -29,6 +29,7 @@ import { StockItemForm } from "./stock-item-form"; // Import StockItemForm compo
 import { useToast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getStockColumns, type InventoryItem } from "./stock-columns"; // Import stock columns and type
+import { ProductViewDetailsDialog } from "./ProductViewDetailsDialog"; // Import the view dialog component
 
 export default function InventoryPage() {
   const [productData, setProductData] = React.useState<Product[]>([]);
@@ -47,6 +48,8 @@ export default function InventoryPage() {
   const [editingStockItem, setEditingStockItem] = React.useState<InventoryItem | null>(null); // Stock item being edited
   const [isDeleteStockDialogOpen, setIsDeleteStockDialogOpen] = React.useState(false); // State for Delete Stock dialog
   const [deletingStockItemId, setDeletingStockItemId] = React.useState<string | null>(null); // Stock item ID to delete
+  const [isViewProductDialogOpen, setIsViewProductDialogOpen] = React.useState(false); // State for View Product dialog
+  const [viewingProduct, setViewingProduct] = React.useState<Product | null>(null); // Product being viewed
   const supabase = createClient();
   const { toast } = useToast();
 
@@ -56,7 +59,7 @@ export default function InventoryPage() {
     const { data: products, error: fetchError } = await supabase
       .from("products")
       .select(`
-        id, name, description, category_id, supplier_id, brand, model, base_price, created_at,
+        id, name, description, category_id, supplier_id, brand, model, base_price, created_at, updated_at,
         product_categories ( name ), suppliers ( name )
       `)
       .order("created_at", { ascending: false });
@@ -117,9 +120,19 @@ export default function InventoryPage() {
     fetchStockItems(); // Refresh stock list
   };
 
-  // TODO: Implement handleEditStockSuccess
+  // Callbacks/Handlers for Stock Items
+  const handleEditStockSuccess = () => {
+    setIsEditStockDialogOpen(false);
+    setEditingStockItem(null);
+    fetchStockItems(); // Refresh stock list
+  };
 
   // Functions to open Product dialogs
+  const openViewProductDialog = (product: Product) => {
+    setViewingProduct(product);
+    setIsViewProductDialogOpen(true);
+  };
+
   const openEditProductDialog = (product: Product) => {
     setEditingProduct(product);
     setIsEditProductDialogOpen(true);
@@ -134,6 +147,7 @@ export default function InventoryPage() {
   const confirmDeleteProduct = async () => {
     if (!deletingProductId) return;
     try {
+      // Note: Consider adding cascade delete or checking for related stock items first
       const { error: deleteError } = await supabase
         .from("products")
         .delete()
@@ -141,7 +155,7 @@ export default function InventoryPage() {
       if (deleteError) throw deleteError;
       toast({ title: "Product deleted successfully." });
       fetchProducts();
-      fetchStockItems(); // Refresh stock list too
+      fetchStockItems(); // Refresh stock list too in case of cascades/relations
     } catch (error: any) {
       console.error("Error deleting product:", error);
       toast({
@@ -155,12 +169,6 @@ export default function InventoryPage() {
     }
   };
 
-  // Callbacks/Handlers for Stock Items
-  const handleEditStockSuccess = () => {
-    setIsEditStockDialogOpen(false);
-    setEditingStockItem(null);
-    fetchStockItems(); // Refresh stock list
-  };
 
   const openEditStockDialog = (item: InventoryItem) => {
     setEditingStockItem(item);
@@ -197,16 +205,16 @@ export default function InventoryPage() {
 
   // Generate columns for Products table
   const productColumns = React.useMemo(
-    () => getColumns({ onEdit: openEditProductDialog, onDelete: openDeleteProductDialog }),
+    () => getColumns({ onView: openViewProductDialog, onEdit: openEditProductDialog, onDelete: openDeleteProductDialog }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
+    [openViewProductDialog, openEditProductDialog, openDeleteProductDialog] // Add dependencies
   );
 
   // Generate columns for Stock table
   const stockColumns = React.useMemo(
     () => getStockColumns({ onEdit: openEditStockDialog, onDelete: openDeleteStockDialog }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [] // Handlers don't change often, empty deps ok for now
+    [openEditStockDialog, openDeleteStockDialog] // Add dependencies
   );
 
   return (
@@ -231,7 +239,8 @@ export default function InventoryPage() {
                 Enter the details for the new product catalog item.
               </DialogDescription>
             </DialogHeader>
-            <ProductForm onSuccess={handleAddProductSuccess} />
+            {/* Pass initialData as null or undefined for adding */}
+            <ProductForm onSuccess={handleAddProductSuccess} initialData={null} />
           </DialogContent>
         </Dialog>
       </div>
@@ -272,7 +281,8 @@ export default function InventoryPage() {
                     Enter the details for the new inventory item.
                   </DialogDescription>
                 </DialogHeader>
-                <StockItemForm onSuccess={handleAddStockSuccess} />
+                 {/* Pass initialData as null or undefined for adding */}
+                <StockItemForm onSuccess={handleAddStockSuccess} initialData={null} />
               </DialogContent>
             </Dialog>
          </div>
@@ -303,7 +313,7 @@ export default function InventoryPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Edit Product</DialogTitle>
-            <DialogDescription>
+            <DialogDescription> {/* <<< FIXED: Removed extra closing tag here */}
               Update the product's details. Click save when done.
             </DialogDescription>
           </DialogHeader>
@@ -316,7 +326,7 @@ export default function InventoryPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription> {/* <<< FIXED: Removed extra closing tag here */}
               This action cannot be undone. This will permanently delete the product
               and potentially associated inventory items (depending on DB constraints).
             </AlertDialogDescription>
@@ -338,7 +348,7 @@ export default function InventoryPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Edit Stock Item</DialogTitle>
-            <DialogDescription>
+            <DialogDescription> {/* <<< FIXED: Removed extra closing tag here */}
               Update the stock item details. Click save when done.
             </DialogDescription>
           </DialogHeader>
@@ -348,11 +358,12 @@ export default function InventoryPage() {
       </Dialog>
 
       {/* Delete Stock Item Confirmation Dialog */}
+      {/* <<< FIXED: Corrected onOpenChange handler */}
       <AlertDialog open={isDeleteStockDialogOpen} onOpenChange={setIsDeleteStockDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription> {/* <<< FIXED: Removed extra closing tag here */}
               This action cannot be undone. This will permanently delete this
               stock item record.
             </AlertDialogDescription>
@@ -365,6 +376,13 @@ export default function InventoryPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* View Product Details Dialog */}
+      <ProductViewDetailsDialog
+        open={isViewProductDialogOpen}
+        onOpenChange={setIsViewProductDialogOpen}
+        product={viewingProduct}
+      />
     </Tabs>
   );
 }

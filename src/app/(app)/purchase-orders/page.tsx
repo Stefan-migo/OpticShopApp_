@@ -7,8 +7,13 @@ import { getColumns } from "./columns";
 import { DataTable } from "@/components/ui/data-table"; // Assuming a generic DataTable component exists
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { useRouter } from "next/navigation"; // Import useRouter
+import { useToast } from "@/components/ui/use-toast"; // Import useToast
 
 export default function PurchaseOrdersPage() {
+  const router = useRouter(); // Initialize useRouter
+  const { toast } = useToast(); // Initialize useToast
+
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,10 +38,15 @@ export default function PurchaseOrdersPage() {
     fetchPurchaseOrders();
   }, []);
 
+
   // Define handlers for actions (edit, delete) - will be passed to columns
   const handleEdit = (purchaseOrder: PurchaseOrder) => {
-    // TODO: Implement navigation to edit page or open edit dialog
-    console.log("Edit purchase order:", purchaseOrder);
+    // Implement navigation to edit page
+    router.push(`/purchase-orders/${purchaseOrder.id}/edit`);
+  };
+
+  const handleView = (purchaseOrderId: string) => {
+    router.push(`/purchase-orders/${purchaseOrderId}/view`);
   };
 
   const handleDelete = async (purchaseOrderId: string) => {
@@ -46,19 +56,28 @@ export default function PurchaseOrdersPage() {
           method: 'DELETE',
         });
         if (!response.ok) {
-          throw new Error(`Error deleting purchase order: ${response.statusText}`);
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to delete purchase order');
         }
         // Remove deleted item from state
         setPurchaseOrders(purchaseOrders.filter(po => po.id !== purchaseOrderId));
-        // TODO: Show a success toast
+        // Show a success toast
+        toast({
+          title: "Purchase order deleted successfully.",
+        });
       } catch (err: any) {
         console.error("Failed to delete purchase order:", err);
-        // TODO: Show an error toast
+        // Show an error toast
+        toast({
+          title: "Error deleting purchase order",
+          description: err.message || "An unexpected error occurred.",
+          variant: "destructive",
+        });
       }
     }
   };
 
-  const columns = getColumns({ onEdit: handleEdit, onDelete: handleDelete });
+  const columns = getColumns({ onView: handleView, onEdit: handleEdit, onDelete: handleDelete });
 
   if (loading) {
     return <div>Loading purchase orders...</div>;

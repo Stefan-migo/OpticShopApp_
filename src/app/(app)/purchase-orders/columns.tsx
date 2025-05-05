@@ -47,12 +47,13 @@ export type PurchaseOrder = {
 
 // Define props for the columns function
 interface PurchaseOrderColumnsProps {
+  onView: (purchaseOrderId: string) => void; // Add onView handler
   onEdit: (purchaseOrder: PurchaseOrder) => void;
   onDelete: (purchaseOrderId: string) => void;
 }
 
 // Export a function that generates the columns array
-export const getColumns = ({ onEdit, onDelete }: PurchaseOrderColumnsProps): ColumnDef<PurchaseOrder>[] => [
+export const getColumns = ({ onView, onEdit, onDelete }: PurchaseOrderColumnsProps): ColumnDef<PurchaseOrder>[] => [
   {
     accessorKey: "order_date",
     header: ({ column }) => (
@@ -156,7 +157,7 @@ export const getColumns = ({ onEdit, onDelete }: PurchaseOrderColumnsProps): Col
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             {/* Add specific purchase order actions here */}
             <DropdownMenuItem onClick={() => onEdit(purchaseOrder)}>Edit Purchase Order</DropdownMenuItem>
-            <DropdownMenuItem>View Details</DropdownMenuItem> {/* TODO: Implement view details page/dialog */}
+            <DropdownMenuItem onClick={() => onView(purchaseOrder.id)}>View Details</DropdownMenuItem> {/* Implement view details navigation */}
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-red-600 focus:text-red-700 focus:bg-red-100"

@@ -3,13 +3,13 @@ import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request: Request) {
   const supabase = createClient();
-  const { supplier_id, order_date, expected_delivery_date, items } = await request.json();
+  const { supplier_id, order_date, expected_delivery_date, status, items } = await request.json(); // Include status
 
   try {
     // Insert the new purchase order
     const { data: purchaseOrder, error: poError } = await supabase
       .from('purchase_orders')
-      .insert([{ supplier_id, order_date, expected_delivery_date }])
+      .insert([{ supplier_id, order_date, expected_delivery_date, status }]) // Include status in insert
       .select()
       .single();
 
@@ -28,19 +28,26 @@ export async function POST(request: Request) {
       product_id: item.product_id,
       quantity_ordered: item.quantity_ordered,
       unit_price: item.unit_price,
-      line_total: item.quantity_ordered * item.unit_price,
+      line_total: item.quantity_ordered * item.unit_price, // Calculate line_total
     }));
 
-    // Insert purchase order items
-    const { error: itemsError } = await supabase
-      .from('purchase_order_items')
-      .insert(purchaseOrderItems);
+    // Insert purchase order items only if there are items
+    if (purchaseOrderItems.length > 0) {
+      const { error: itemsError } = await supabase
+        .from('purchase_order_items')
+        .insert(purchaseOrderItems);
 
-    if (itemsError) {
-      console.error('Error creating purchase order items:', itemsError);
-      // Consider rolling back the purchase order creation here if items insertion fails
-      return NextResponse.json({ error: itemsError.message }, { status: 500 });
+      if (itemsError) {
+        console.error('Error creating purchase order items:', itemsError);
+        // Consider rolling back the purchase order creation here if items insertion fails
+        // For now, we return an error response
+        return NextResponse.json({ error: itemsError.message || 'Failed to create purchase order items.' }, { status: 500 });
+      }
+    } else {
+        // If no items, log a warning or handle as needed.
+        console.warn(`No items provided for purchase order ${purchaseOrder.id}.`);
     }
+
 
     // Calculate and update total_amount for the purchase order
     const totalAmount = purchaseOrderItems.reduce((sum: number, item: any) => sum + item.line_total, 0);
@@ -52,6 +59,7 @@ export async function POST(request: Request) {
     if (totalUpdateError) {
       console.error('Error updating purchase order total amount:', totalUpdateError);
       // This might not be a critical error depending on requirements, but worth logging
+      // We can still return a success response for the main order creation
     }
 
 

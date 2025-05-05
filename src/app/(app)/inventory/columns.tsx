@@ -28,6 +28,7 @@ export type Product = {
   base_price: number;
   reorder_level: number | null; // Add reorder_level
   created_at: string;
+  updated_at: string; // Add updated_at
   // Add related data placeholders if joining
   product_categories?: { name: string } | null;
   suppliers?: { name: string } | null;
@@ -35,12 +36,13 @@ export type Product = {
 
 // Define props for the columns function
 interface ProductColumnsProps {
+  onView: (product: Product) => void; // Add onView handler
   onEdit: (product: Product) => void;
   onDelete: (productId: string) => void;
 }
 
 // Export a function that generates the columns array
-export const getColumns = ({ onEdit, onDelete }: ProductColumnsProps): ColumnDef<Product>[] => [
+export const getColumns = ({ onView, onEdit, onDelete }: ProductColumnsProps): ColumnDef<Product>[] => [
   // Optional: Select column
   // { id: "select", ... },
   {
@@ -128,7 +130,7 @@ export const getColumns = ({ onEdit, onDelete }: ProductColumnsProps): ColumnDef
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             {/* Add specific product actions here */}
             <DropdownMenuItem onClick={() => onEdit(product)}>Edit Product</DropdownMenuItem>
-            <DropdownMenuItem>View Details</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onView(product)}>View Details</DropdownMenuItem> {/* Call onView handler */}
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-red-600 focus:text-red-700 focus:bg-red-100"

@@ -35,6 +35,7 @@ import { cn } from "@/lib/utils"; // Utility for class names
 
 // Define the form schema using Zod
 const purchaseOrderItemSchema = z.object({
+  id: z.string().uuid().optional(), // Add optional ID for existing items
   product_id: z.string().uuid({ message: "Please select a valid product." }),
   quantity_ordered: z.coerce.number().int().min(1, { message: "Quantity must be at least 1." }),
   unit_price: z.coerce.number().min(0, { message: "Unit price must be non-negative." }),
@@ -45,7 +46,7 @@ const purchaseOrderFormSchema = z.object({
   supplier_id: z.string().uuid({ message: "Please select a valid supplier." }).nullable(),
   order_date: z.date({ required_error: "Order date is required." }),
   expected_delivery_date: z.date().nullable().optional(),
-  status: z.string().default('draft'), // Default status
+  status: z.string().optional(), // Make status optional to match PurchaseOrder type
   items: z.array(purchaseOrderItemSchema).min(1, { message: "At least one item is required." }),
 });
 

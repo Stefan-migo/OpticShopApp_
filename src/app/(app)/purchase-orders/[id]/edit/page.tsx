@@ -11,10 +11,10 @@ import { PurchaseOrderForm } from "../../purchase-order-form"; // Import the for
 import { type PurchaseOrderFormValues } from "../../purchase-order-form"; // Import form values type
 import { type PurchaseOrder } from "../../columns"; // Import PurchaseOrder type
 
-export default function EditPurchaseOrderPage({ params }: { params: { id: string } }) {
+export default function EditPurchaseOrderPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { toast } = useToast();
-  const { id } = params;
+  const { id } = React.use(params); // Unwrap params with React.use()
 
   const [purchaseOrder, setPurchaseOrder] = useState<PurchaseOrder | null>(null);
   const [loading, setLoading] = useState(true);

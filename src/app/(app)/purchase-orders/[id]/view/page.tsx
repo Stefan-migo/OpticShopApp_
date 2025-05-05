@@ -10,9 +10,9 @@ import { type PurchaseOrder, type PurchaseOrderItem } from "../../columns"; // I
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"; // Assuming Card components exist
 import { Separator } from "@/components/ui/separator"; // Assuming Separator component exists
 
-export default function ViewPurchaseOrderPage({ params }: { params: { id: string } }) {
+export default function ViewPurchaseOrderPage({ params }: { params: Promise<{ id: string }> }) {
   const { toast } = useToast();
-  const { id } = params;
+  const { id } = React.use(params); // Unwrap params with React.use()
 
   const [purchaseOrder, setPurchaseOrder] = useState<PurchaseOrder | null>(null);
   const [loading, setLoading] = useState(true);
