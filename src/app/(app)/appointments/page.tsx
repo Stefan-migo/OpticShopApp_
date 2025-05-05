@@ -10,6 +10,7 @@ import { format, parse, startOfWeek, getDay } from 'date-fns'; // Use named impo
 import { enUS } from 'date-fns/locale/en-US'; // Use named import
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { User } from "@supabase/supabase-js"; // Import User type
 import {
   Dialog,
   DialogContent,
@@ -51,7 +52,8 @@ export type AppointmentData = {
     duration_minutes: number;
     type: string;
     status: string;
-    provider_name: string | null;
+    // provider_name: string | null; // Remove this
+    provider_id: string | null; // Add this (assuming UUID can be represented as string)
     notes: string | null;
     // Correctly type the joined customer data as an object or null
     customers: {
@@ -83,6 +85,51 @@ export default function AppointmentsPage() {
   const [currentDate, setCurrentDate] = React.useState(new Date());
   const [currentView, setCurrentView] = React.useState<ViewType>(Views.WEEK); // Default to Week view for slot selection
   const [selectedSlotStart, setSelectedSlotStart] = React.useState<Date | null>(null); // State for selected slot
+  const [clinicSettings, setClinicSettings] = React.useState<any>(null); // State for clinic settings
+  const [isLoadingSettings, setIsLoadingSettings] = React.useState(true); // Loading state for settings
+  const [user, setUser] = React.useState<User | null>(null); // State for logged-in user
+
+
+  // Fetch logged-in user and clinic settings
+  React.useEffect(() => {
+    const fetchData = async () => {
+      setIsLoadingSettings(true);
+      try {
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
+        setUser(userData.user);
+
+        if (userData.user) {
+          const { data: settingsData, error: settingsError } = await supabase
+            .from('clinic_settings')
+            .select('working_hours, default_slot_duration_minutes')
+            .eq('clinic_id', userData.user.id) // Filter by user's profile ID
+            .maybeSingle(); // Use maybeSingle()
+
+          if (settingsError && settingsError.code !== 'PGRST116') { // PGRST116 means no rows found
+            throw settingsError;
+          }
+
+          if (settingsData) {
+            setClinicSettings(settingsData);
+          } else {
+             // Handle case where no settings are found for the user's clinic
+             console.warn("No clinic settings found for this user.");
+             setClinicSettings(null); // Explicitly set to null or a default structure
+          }
+        } else {
+            setClinicSettings(null); // No user, no settings
+        }
+
+      } catch (error: any) {
+        console.error("Error fetching clinic settings:", error);
+        toast({ title: "Error loading settings", description: "Could not load clinic settings.", variant: "destructive" });
+      } finally {
+        setIsLoadingSettings(false);
+      }
+    };
+    fetchData();
+  }, [supabase, toast]);
 
   // Fetch appointments (memoized)
   const fetchAppointments = React.useCallback(async () => {
@@ -112,10 +159,10 @@ export default function AppointmentsPage() {
            : 'Unknown Customer';
         return {
           id: appt.id,
-          title: `${customerName} (${appt.type})`,
+          title: `${customerName} (${appt.type})`, // Example title
           start: startTime,
           end: endTime,
-          resource: appt,
+          resource: appt, // Store original data
         };
       }) || [];
       setEvents(formattedEvents);
@@ -168,6 +215,41 @@ export default function AppointmentsPage() {
 
     fetchAppointments();
   }, [fetchAppointments]); // Dependency: memoized fetch function
+
+  const { minTime, maxTime } = React.useMemo(() => {
+    let min = new Date(currentDate); // Use currentDate for min/max calculation
+    min.setHours(0, 0, 0, 0); // Default to start of the day
+
+    let max = new Date(currentDate); // Use currentDate for max calculation
+    max.setHours(23, 59, 59, 999); // Default to end of the day
+
+    if (clinicSettings?.working_hours) {
+      const today = format(currentDate, 'EEEE').toLowerCase(); // Get full lowercase day name
+      const dailyHours = clinicSettings.working_hours[today];
+
+      if (dailyHours?.start) {
+        const [startHour, startMinute] = dailyHours.start.split(':').map(Number);
+        min = new Date(currentDate);
+        min.setHours(startHour, startMinute, 0, 0);
+      }
+
+      if (dailyHours?.end) {
+        const [endHour, endMinute] = dailyHours.end.split(':').map(Number);
+        max = new Date(currentDate);
+        max.setHours(endHour, endMinute, 0, 0);
+      }
+    } else {
+         // If no settings or working hours, default to a reasonable range like 6 AM to 7 PM
+         min = new Date(currentDate); // Use currentDate for default min/max
+         min.setHours(6, 0, 0, 0);
+         max = new Date(currentDate); // Use currentDate for default min/max
+         max.setHours(19, 0, 0, 0);
+    }
+
+
+    return { minTime: min, maxTime: max };
+  }, [clinicSettings, currentDate]); // Recalculate when settings or date changes
+
 
   // Handler for successful form submission
   const handleFormSuccess = () => {
@@ -260,6 +342,7 @@ export default function AppointmentsPage() {
             <DialogHeader>
               <DialogTitle>Schedule New Appointment</DialogTitle>
               <DialogDescription>
+ 
                 Fill in the details to schedule a new appointment.
               </DialogDescription>
             </DialogHeader>
@@ -272,7 +355,7 @@ export default function AppointmentsPage() {
         </Dialog>
       </div>
       <div className="border shadow-sm rounded-lg p-4 h-[75vh]"> {/* Give calendar a height */}
-        {isLoading ? (
+        {isLoading || isLoadingSettings ? ( // Include isLoadingSettings in loading check
             <p className="text-muted-foreground">Loading calendar...</p>
         ) : error ? (
              <p className="text-red-600">{error}</p>
@@ -291,6 +374,35 @@ export default function AppointmentsPage() {
                 onView={handleViewChange} // Handle view changes
                 selectable={true} // Enable slot selection
                 onSelectSlot={handleSelectSlot} // Handle slot selection
+                min={minTime} // Set minimum time based on working hours
+                max={maxTime} // Set maximum time based on working hours (optional, added for completeness)
+                step={clinicSettings?.default_slot_duration_minutes || 30} // Set step based on settings
+                timeslots={Math.floor(60 / (clinicSettings?.default_slot_duration_minutes || 30))} // Calculate timeslots per hour
+                // Add eventPropGetter to apply styles based on status
+                eventPropGetter={(event) => {
+                    const appointment = event.resource as AppointmentData;
+                    let className = '';
+                    switch (appointment.status) {
+                        case 'scheduled':
+                            className = 'bg-blue-500 text-white'; // Example color for scheduled
+                            break;
+                        case 'confirmed':
+                            className = 'bg-green-500 text-white'; // Example color for confirmed
+                            break;
+                        case 'completed':
+                            className = 'bg-gray-500 text-white'; // Example color for completed
+                            break;
+                        case 'cancelled':
+                            className = 'bg-red-500 text-white line-through'; // Example color for cancelled
+                            break;
+                        case 'no_show':
+                            className = 'bg-yellow-500 text-black'; // Example color for no-show
+                            break;
+                        default:
+                            className = 'bg-blue-500 text-white'; // Default color
+                    }
+                    return { className };
+                }}
             />
         )}
       </div>
@@ -311,6 +423,7 @@ export default function AppointmentsPage() {
             <AppointmentForm
                 initialData={editingAppointment}
                 onSuccess={handleFormSuccess}
+                clinicSettings={clinicSettings} // Pass clinic settings to the form
             />
              <Button
                 variant="outline"

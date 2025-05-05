@@ -4,19 +4,120 @@ import * as React from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"; // Use Card for display
 import { subDays, format } from 'date-fns'; // For date calculations
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { DataTable } from "@/components/ui/data-table";
+import { ColumnDef } from "@tanstack/react-table";
+
 
 // TODO: Add more reports (inventory, appointments)
 // TODO: Add date range selection
-// TODO: Consider using charts (e.g., Recharts)
+// TODO: Add other chart types (bar, pie)
+// TODO: Refine DataTable columns and formatting
+
+// Define types for fetched report data
+interface SalesOverTimeData {
+  sale_day: string;
+  daily_sales: number;
+}
+
+interface DetailedSalesData {
+  order_id: string;
+  order_number: string;
+  order_date: string;
+  total_amount: number;
+  discount_amount: number;
+  tax_amount: number;
+  final_amount: number;
+  order_status: string;
+  customer_first_name: string | null;
+  customer_last_name: string | null;
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+}
+
+interface SalesByCategoryData {
+  category_name: string;
+  category_sales: number;
+}
+
+interface LowStockItemData {
+  id: string;
+  name: string;
+  reorder_level: number | null;
+  current_stock: number;
+}
+
+// Define columns for the Detailed Sales DataTable
+const detailedSalesColumns: ColumnDef<DetailedSalesData>[] = [
+  {
+    accessorKey: "order_number",
+    header: "Order #",
+  },
+  {
+    accessorKey: "order_date",
+    header: "Date",
+    cell: ({ row }) => format(new Date(row.getValue("order_date")), 'yyyy-MM-dd'),
+  },
+  {
+    accessorKey: "customer_first_name",
+    header: "Customer First Name",
+  },
+   {
+    accessorKey: "customer_last_name",
+    header: "Customer Last Name",
+  },
+  {
+    accessorKey: "product_name",
+    header: "Product",
+  },
+  {
+    accessorKey: "quantity",
+    header: "Qty",
+  },
+  {
+    accessorKey: "unit_price",
+    header: "Unit Price",
+    cell: ({ row }) => row.getValue("unit_price").toLocaleString('en-US', { style: 'currency', currency: 'USD' }),
+  },
+  {
+    accessorKey: "line_total",
+    header: "Line Total",
+     cell: ({ row }) => row.getValue("line_total").toLocaleString('en-US', { style: 'currency', currency: 'USD' }),
+  },
+  {
+    accessorKey: "order_status",
+    header: "Status",
+  },
+   {
+    accessorKey: "total_amount",
+    header: "Order Total",
+     cell: ({ row }) => row.getValue("total_amount").toLocaleString('en-US', { style: 'currency', currency: 'USD' }),
+  },
+];
+
 
 export default function ReportsPage() {
   const supabase = createClient();
   const [salesSummary, setSalesSummary] = React.useState<{ period: string; total: number } | null>(null);
   const [customerCount, setCustomerCount] = React.useState<number | null>(null);
   const [inventorySummary, setInventorySummary] = React.useState<Record<string, number> | null>(null); // State for inventory counts
+  const [salesOverTimeData, setSalesOverTimeData] = React.useState<SalesOverTimeData[]>([]); // State for sales over time data
+  const [salesByCategoryData, setSalesByCategoryData] = React.useState<SalesByCategoryData[]>([]); // State for sales by category data
+  const [lowStockItemsData, setLowStockItemsData] = React.useState<LowStockItemData[]>([]); // State for low stock items data
+  const [detailedSalesData, setDetailedSalesData] = React.useState<DetailedSalesData[]>([]); // State for detailed sales data
+
+
   const [isLoadingSales, setIsLoadingSales] = React.useState(true);
   const [isLoadingCustomers, setIsLoadingCustomers] = React.useState(true);
   const [isLoadingInventory, setIsLoadingInventory] = React.useState(true); // Loading state for inventory
+  const [isLoadingSalesOverTime, setIsLoadingSalesOverTime] = React.useState(true); // Loading state for sales over time
+  const [isLoadingSalesByCategory, setIsLoadingSalesByCategory] = React.useState(true); // Loading state for sales by category
+  const [isLoadingLowStockItems, setIsLoadingLowStockItems] = React.useState(true); // Loading state for low stock items
+  const [isLoadingDetailedSales, setIsLoadingDetailedSales] = React.useState(true); // Loading state for detailed sales
+
+
   const [error, setError] = React.useState<string | null>(null);
 
   // Fetch report data
@@ -25,6 +126,10 @@ export default function ReportsPage() {
       setIsLoadingSales(true);
       setIsLoadingCustomers(true);
       setIsLoadingInventory(true); // Set inventory loading
+      setIsLoadingSalesOverTime(true); // Set sales over time loading
+      setIsLoadingSalesByCategory(true); // Set sales by category loading
+      setIsLoadingLowStockItems(true); // Set low stock items loading
+      setIsLoadingDetailedSales(true); // Set detailed sales loading
       setError(null);
 
       try {
@@ -53,9 +158,12 @@ export default function ReportsPage() {
         // Fetch Inventory Summary (Grouped by Status)
         // This requires fetching all items and grouping client-side, or a DB function.
         // Client-side grouping for simplicity now, but inefficient for large datasets.
+        interface InventoryItemStatus {
+            status: string | null;
+        }
         const { data: inventoryData, error: inventoryError } = await supabase
           .from('inventory_items')
-          .select('status');
+          .select('status') as { data: InventoryItemStatus[] | null, error: any };
 
         if (inventoryError) throw new Error(`Inventory Summary Error: ${inventoryError.message}`);
 
@@ -68,6 +176,42 @@ export default function ReportsPage() {
         setInventorySummary(summary);
         setIsLoadingInventory(false);
 
+        // Fetch Sales Over Time data from API route
+        const salesOverTimeResponse = await fetch('/api/reports/sales-over-time');
+        if (!salesOverTimeResponse.ok) {
+          throw new Error(`Error fetching sales over time data: ${salesOverTimeResponse.statusText}`);
+        }
+        const salesOverTimeJson: SalesOverTimeData[] = await salesOverTimeResponse.json();
+        setSalesOverTimeData(salesOverTimeJson);
+        setIsLoadingSalesOverTime(false);
+
+        // Fetch Sales by Product Category data from API route
+        const salesByCategoryResponse = await fetch('/api/reports/sales-by-category');
+        if (!salesByCategoryResponse.ok) {
+          throw new Error(`Error fetching sales by category data: ${salesByCategoryResponse.statusText}`);
+        }
+        const salesByCategoryJson: SalesByCategoryData[] = await salesByCategoryResponse.json();
+        setSalesByCategoryData(salesByCategoryJson);
+        setIsLoadingSalesByCategory(false);
+
+        // Fetch Low Stock Items data from API route
+        const lowStockItemsResponse = await fetch('/api/reports/low-stock-items');
+        if (!lowStockItemsResponse.ok) {
+          throw new Error(`Error fetching low stock items data: ${lowStockItemsResponse.statusText}`);
+        }
+        const lowStockItemsJson: LowStockItemData[] = await lowStockItemsResponse.json();
+        setLowStockItemsData(lowStockItemsJson);
+        setIsLoadingLowStockItems(false);
+
+        // Fetch Detailed Sales data from API route
+        const detailedSalesResponse = await fetch('/api/reports/detailed-sales');
+        if (!detailedSalesResponse.ok) {
+          throw new Error(`Error fetching detailed sales data: ${detailedSalesResponse.statusText}`);
+        }
+        const detailedSalesJson: DetailedSalesData[] = await detailedSalesResponse.json();
+        setDetailedSalesData(detailedSalesJson);
+        setIsLoadingDetailedSales(false);
+
 
       } catch (fetchError: any) {
          console.error("Error fetching report data:", fetchError);
@@ -76,9 +220,17 @@ export default function ReportsPage() {
          setIsLoadingSales(false);
          setIsLoadingCustomers(false);
          setIsLoadingInventory(false);
+         setIsLoadingSalesOverTime(false); // Set sales over time loading to false on error
+         setIsLoadingSalesByCategory(false); // Set sales by category loading to false on error
+         setIsLoadingLowStockItems(false); // Set low stock items loading to false on error
+         setIsLoadingDetailedSales(false); // Set detailed sales loading to false on error
          setSalesSummary(null);
          setCustomerCount(null);
          setInventorySummary(null);
+         setSalesOverTimeData([]); // Clear sales over time data on error
+         setSalesByCategoryData([]); // Clear sales by category data on error
+         setLowStockItemsData([]); // Clear low stock items data on error
+         setDetailedSalesData([]); // Clear detailed sales data on error
       }
     };
 
@@ -169,6 +321,92 @@ export default function ReportsPage() {
              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Appointments Overview</CardTitle></CardHeader>
              <CardContent><p className="text-xs text-muted-foreground">Coming soon...</p></CardContent>
          </Card>
+      </div>
+
+      {/* Sales Over Time Report */}
+      <div className="mt-6">
+        <h2 className="text-xl font-semibold mb-4">Sales Over Time</h2>
+        {isLoadingSalesOverTime ? (
+          <p>Loading sales over time data...</p>
+        ) : salesOverTimeData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart
+              data={salesOverTimeData}
+              margin={{
+                top: 5,
+                right: 30,
+                left: 20,
+                bottom: 5,
+              }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="sale_day" />
+              <YAxis tickFormatter={(value) => value.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} />
+              <Tooltip formatter={(value: number) => value.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} />
+              <Legend />
+              <Line type="monotone" dataKey="daily_sales" stroke="#8884d8" activeDot={{ r: 8 }} name="Daily Sales" />
+            </LineChart>
+          </ResponsiveContainer>
+        ) : (
+          <p>No sales over time data available.</p>
+        )}
+      </div>
+
+      {/* Sales by Product Category Report */}
+      <div className="mt-6">
+        <h2 className="text-xl font-semibold mb-4">Sales by Product Category</h2>
+        {isLoadingSalesByCategory ? (
+          <p>Loading sales by category data...</p>
+        ) : salesByCategoryData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart
+              data={salesByCategoryData}
+              margin={{
+                top: 5,
+                right: 30,
+                left: 20,
+                bottom: 5,
+              }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="category_name" />
+              <YAxis tickFormatter={(value) => value.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} />
+              <Tooltip formatter={(value: number) => value.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} />
+              <Legend />
+              <Bar dataKey="category_sales" fill="#8884d8" name="Category Sales" />
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <p>No sales by category data available.</p>
+        )}
+      </div>
+
+      {/* Low Stock Items Report */}
+      <div className="mt-6">
+        <h2 className="text-xl font-semibold mb-4">Low Stock Items</h2>
+        {isLoadingLowStockItems ? (
+          <p>Loading low stock items data...</p>
+        ) : lowStockItemsData.length > 0 ? (
+          <ul>
+            {lowStockItemsData.map((item, index) => (
+              <li key={index}>{item.name} (Stock: {item.current_stock}, Reorder Level: {item.reorder_level ?? 'N/A'})</li>
+            ))}
+          </ul>
+        ) : (
+          <p>No low stock items data available.</p>
+        )}
+      </div>
+
+      {/* Detailed Sales Report */}
+      <div className="mt-6">
+        <h2 className="text-xl font-semibold mb-4">Detailed Sales List</h2>
+        {isLoadingDetailedSales ? (
+          <p>Loading detailed sales data...</p>
+        ) : detailedSalesData.length > 0 ? (
+          <DataTable columns={detailedSalesColumns} data={detailedSalesData} />
+        ) : (
+          <p>No detailed sales data available.</p>
+        )}
       </div>
     </div>
   );

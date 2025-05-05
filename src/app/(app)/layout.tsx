@@ -88,6 +88,7 @@ export default async function AppLayout({
     { href: "/appointments", label: "Appointments", icon: Calendar },
     { href: "/sales", label: "Sales/POS", icon: ShoppingCart },
     { href: "/reports", label: "Reports", icon: LineChart },
+    { href: "/medical-actions", label: "Medical Actions", icon: Settings }, // Add Medical Actions link
     // { href: "/settings", label: "Settings", icon: Settings }, // Placeholder route
   ];
 

@@ -18,7 +18,9 @@ import { Badge } from "@/components/ui/badge";
 // Define the shape of our prescription data (joining with customers)
 export type Prescription = {
   id: string;
+  medical_record_id: string | null; // Add medical_record_id
   customer_id: string;
+  prescriber_id: string | null; // Add prescriber_id
   prescriber_name: string | null;
   prescription_date: string; // Date as string
   expiry_date: string | null; // Date as string

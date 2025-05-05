@@ -24,6 +24,7 @@
     "@radix-ui/react-tabs": "^1.1.9",
     "@radix-ui/react-toast": "^1.2.11",
     "@radix-ui/react-tooltip": "^1.2.4",
+    "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.49.4",
     "@tanstack/react-table": "^8.21.3",
@@ -37,6 +38,7 @@
     "react-big-calendar": "^1.18.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.56.1",
+    "recharts": "^2.15.3",
     "tailwind-merge": "^3.2.0",
     "zod": "^3.24.3"
   },
