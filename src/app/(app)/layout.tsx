@@ -84,6 +84,7 @@ export default async function AppLayout({
     { href: "/dashboard", label: "Dashboard", icon: Home },
     { href: "/customers", label: "Customers", icon: Eye },
     { href: "/inventory", label: "Inventory", icon: Package },
+    { href: "/purchase-orders", label: "Orders", icon: ShoppingCart },
     { href: "/prescriptions", label: "Prescriptions", icon: Contact },
     { href: "/appointments", label: "Appointments", icon: Calendar },
     { href: "/sales", label: "Sales/POS", icon: ShoppingCart },

@@ -26,6 +26,7 @@ export type Product = {
   brand: string | null;
   model: string | null;
   base_price: number;
+  reorder_level: number | null; // Add reorder_level
   created_at: string;
   // Add related data placeholders if joining
   product_categories?: { name: string } | null;

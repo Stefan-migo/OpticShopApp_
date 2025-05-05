@@ -37,6 +37,7 @@ const formSchema = z.object({
   brand: z.string().optional(),
   model: z.string().optional(),
   base_price: z.coerce.number().min(0, { message: "Price must be non-negative." }), // Coerce input to number
+  reorder_level: z.coerce.number().int().min(0, { message: "Reorder level must be a non-negative integer." }).nullable().optional(), // Add reorder_level
   // attributes: z.string().optional(), // Consider JSON editor or key-value pairs later
 });
 
@@ -99,6 +100,7 @@ export function ProductForm({ initialData, onSuccess }: ProductFormProps) {
       brand: initialData?.brand || "",
       model: initialData?.model || "",
       base_price: initialData?.base_price || 0,
+      reorder_level: initialData?.reorder_level || null, // Add reorder_level default value
     },
   });
 
@@ -116,6 +118,7 @@ export function ProductForm({ initialData, onSuccess }: ProductFormProps) {
         brand: values.brand || null,
         model: values.model || null,
         base_price: values.base_price,
+        reorder_level: values.reorder_level || null, // Include reorder_level in productData
         // attributes: values.attributes ? JSON.parse(values.attributes) : null, // Handle attributes later
         updated_at: new Date().toISOString(),
       };
@@ -267,8 +270,31 @@ export function ProductForm({ initialData, onSuccess }: ProductFormProps) {
                 <FormMessage />
               </FormItem>
             )}
-          />
+           />
          </div>
+         <FormField
+            control={form.control}
+            name="reorder_level"
+            render={({ field }) => (
+            <FormItem>
+              <FormLabel>Reorder Level</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  step="1"
+                  placeholder="e.g., 10"
+                  {...field}
+                  value={field.value ?? ''} // Handle null/undefined by providing empty string
+                  disabled={isLoading}
+                />
+              </FormControl>
+              <FormDescription>
+                Set the stock level that triggers a low stock alert.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="base_price"
