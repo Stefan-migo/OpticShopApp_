@@ -19,14 +19,16 @@ import { Textarea } from "@/components/ui/textarea"; // Need to add textarea com
 import { useToast } from "@/components/ui/use-toast";
 import { createClient } from "@/lib/supabase/client";
 import { type Customer } from "./columns"; // Import Customer type
+import { Dictionary } from '@/lib/i18n/types'; // Import shared Dictionary interface
+import React from "react"; // Import React for Fragment
 
 // TODO: Add textarea component using shadcn-ui add
 
 // Define the form schema using Zod
-const formSchema = z.object({
-  first_name: z.string().min(1, { message: "First name is required." }).max(50),
-  last_name: z.string().min(1, { message: "Last name is required." }).max(50),
-  email: z.string().email({ message: "Invalid email address." }).optional().or(z.literal('')), // Optional but must be valid email if provided
+const createFormSchema = (dictionary: Dictionary) => z.object({
+  first_name: z.string().min(1, { message: dictionary.customers.form.firstNameRequired || "First name is required." }).max(50), // Use dictionary
+  last_name: z.string().min(1, { message: dictionary.customers.form.lastNameRequired || "Last name is required." }).max(50), // Use dictionary
+  email: z.string().email({ message: dictionary.customers.form.invalidEmail || "Invalid email address." }).optional().or(z.literal('')), // Use dictionary
   phone: z.string().optional(), // Optional phone number
   // Add address fields if needed (using nested object or separate fields)
   // address_street: z.string().optional(),
@@ -35,21 +37,22 @@ const formSchema = z.object({
   notes: z.string().optional(),
 });
 
-type CustomerFormValues = z.infer<typeof formSchema>;
+type CustomerFormValues = z.infer<ReturnType<typeof createFormSchema>>;
 
 interface CustomerFormProps {
   initialData?: Customer | null; // For editing existing customer
   onSuccess?: () => void; // Callback after successful submission
+  dictionary: Dictionary; // Use the imported Dictionary interface
 }
 
-export function CustomerForm({ initialData, onSuccess }: CustomerFormProps) {
+export function CustomerForm({ initialData, onSuccess, dictionary }: CustomerFormProps) {
   const { toast } = useToast();
   const supabase = createClient();
   const isEditing = !!initialData;
 
   // Define form
   const form = useForm<CustomerFormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(createFormSchema(dictionary)), // Pass dictionary to schema function
     defaultValues: {
       first_name: initialData?.first_name || "",
       last_name: initialData?.last_name || "",
@@ -103,7 +106,7 @@ export function CustomerForm({ initialData, onSuccess }: CustomerFormProps) {
       }
 
       toast({
-        title: `Customer ${isEditing ? "updated" : "added"} successfully.`,
+        title: dictionary.customers.form.saveSuccess, // Use dictionary
       });
       onSuccess?.(); // Call the success callback (e.g., close dialog, refresh data)
       form.reset(); // Reset form after successful submission
@@ -111,8 +114,8 @@ export function CustomerForm({ initialData, onSuccess }: CustomerFormProps) {
     } catch (error: any) {
       console.error("Error saving customer:", error);
       toast({
-        title: `Error ${isEditing ? "updating" : "adding"} customer`,
-        description: error.message || "An unexpected error occurred.",
+        title: isEditing ? dictionary.customers.form.saveErrorTitle : dictionary.customers.form.saveErrorTitle, // Use dictionary for error title
+        description: error.message || dictionary.common.unexpectedError, // Use dictionary for unexpected error
         variant: "destructive",
       });
     }
@@ -127,10 +130,10 @@ export function CustomerForm({ initialData, onSuccess }: CustomerFormProps) {
             name="first_name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>First Name *</FormLabel>
-                <FormControl>
-                  <Input placeholder="John" {...field} disabled={isLoading} />
-                </FormControl>
+                <FormLabel>{dictionary.customers.form.firstNameLabel || "First Name"} *</FormLabel> {/* Use dictionary */}
+                <div> {/* Removed FormControl */}
+                  <Input placeholder={dictionary.customers.form.firstNamePlaceholder} {...field} disabled={isLoading} /> {/* Use dictionary */}
+                </div>
                 <FormMessage />
               </FormItem>
             )}
@@ -140,10 +143,10 @@ export function CustomerForm({ initialData, onSuccess }: CustomerFormProps) {
             name="last_name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Last Name *</FormLabel>
-                <FormControl>
-                  <Input placeholder="Doe" {...field} disabled={isLoading} />
-                </FormControl>
+                <FormLabel>{dictionary.customers.form.lastNameLabel || "Last Name"} *</FormLabel> {/* Use dictionary */}
+                <div> {/* Removed FormControl */}
+                  <Input placeholder={dictionary.customers.form.lastNamePlaceholder} {...field} disabled={isLoading} /> {/* Use dictionary */}
+                </div>
                 <FormMessage />
               </FormItem>
             )}
@@ -154,10 +157,10 @@ export function CustomerForm({ initialData, onSuccess }: CustomerFormProps) {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input type="email" placeholder="john.doe@example.com" {...field} disabled={isLoading} />
-              </FormControl>
+              <FormLabel>{dictionary.customers.form.emailLabel || "Email"}</FormLabel> {/* Use dictionary */}
+              <div> {/* Removed FormControl */}
+                <Input type="email" placeholder={dictionary.customers.form.emailPlaceholder} {...field} disabled={isLoading} /> {/* Use dictionary */}
+              </div>
               <FormMessage />
             </FormItem>
           )}
@@ -167,10 +170,10 @@ export function CustomerForm({ initialData, onSuccess }: CustomerFormProps) {
           name="phone"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Phone</FormLabel>
-              <FormControl>
-                <Input placeholder="555-123-4567" {...field} disabled={isLoading} />
-              </FormControl>
+              <FormLabel>{dictionary.customers.form.phoneLabel || "Phone"}</FormLabel> {/* Use dictionary */}
+              <div> {/* Removed FormControl */}
+                  <Input placeholder={dictionary.customers.form.phonePlaceholder} {...field} disabled={isLoading} /> {/* Use dictionary */}
+              </div>
               <FormMessage />
             </FormItem>
           )}
@@ -181,21 +184,24 @@ export function CustomerForm({ initialData, onSuccess }: CustomerFormProps) {
           name="notes"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Notes</FormLabel>
-              <FormControl>
+              <FormLabel>{dictionary.customers.form.notesLabel || "Notes"}</FormLabel> {/* Use dictionary */}
+              <div> {/* Removed FormControl */}
                 <Textarea
-                  placeholder="Any relevant notes about the customer..."
+                  placeholder={dictionary.customers.form.notesPlaceholder}
                   className="resize-none"
                   {...field}
                   disabled={isLoading}
                 />
-              </FormControl>
+              </div>
               <FormMessage />
             </FormItem>
           )}
         />
         <Button type="submit" disabled={isLoading}>
-          {isLoading ? (isEditing ? "Saving..." : "Adding...") : (isEditing ? "Save Changes" : "Add Customer")}
+          {isLoading
+            ? (isEditing ? (dictionary.common.saving || "Saving...") : (dictionary.common.adding || "Adding...")) // Use dictionary
+            : (isEditing ? (dictionary.common.saveChanges || "Save Changes") : (dictionary.common.addCustomer || "Add Customer")) // Use dictionary
+          }
         </Button>
       </form>
     </Form>

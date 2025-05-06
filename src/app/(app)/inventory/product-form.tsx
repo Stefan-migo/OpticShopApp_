@@ -27,24 +27,26 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { createClient } from "@/lib/supabase/client";
 import { type Product } from "./columns"; // Import Product type
+import { Dictionary } from '@/lib/i18n/types'; // Import shared Dictionary interface
+import { useDictionary } from '@/lib/i18n/dictionary-context'; // Import useDictionary hook
 
 // Define the form schema using Zod
-const formSchema = z.object({
-  name: z.string().min(1, { message: "Product name is required." }).max(100),
+const createFormSchema = (dictionary: Dictionary) => z.object({
+  name: z.string().min(1, { message: dictionary.inventory.productForm.nameRequired || "Product name is required." }).max(100), // Use dictionary
   description: z.string().optional(),
-  category_id: z.string().uuid({ message: "Please select a valid category." }).nullable(), // Allow null
-  supplier_id: z.string().uuid({ message: "Please select a valid supplier." }).nullable(), // Allow null
+  category_id: z.string().uuid({ message: dictionary.inventory.productForm.invalidCategory || "Please select a valid category." }).nullable(), // Use dictionary
+  supplier_id: z.string().uuid({ message: dictionary.inventory.productForm.invalidSupplier || "Please select a valid supplier." }).nullable(), // Use dictionary
   brand: z.string().optional(),
   model: z.string().optional(),
-  base_price: z.coerce.number().min(0, { message: "Price must be non-negative." }), // Coerce input to number
-  reorder_level: z.coerce.number().int().min(0, { message: "Reorder level must be a non-negative integer." }).nullable().optional(), // Add reorder_level
+  base_price: z.coerce.number().min(0, { message: dictionary.inventory.productForm.priceNonNegative || "Price must be non-negative." }), // Use dictionary
+  reorder_level: z.coerce.number().int().min(0, { message: dictionary.inventory.productForm.reorderLevelNonNegativeInteger || "Reorder level must be a non-negative integer." }).nullable().optional(), // Use dictionary
   // attributes: z.string().optional(), // Consider JSON editor or key-value pairs later
 });
 
-type ProductFormValues = z.infer<typeof formSchema>;
+type ProductFormValues = z.infer<ReturnType<typeof createFormSchema>>;
 
 interface ProductFormProps {
-  initialData?: Product | null; // For editing existing product
+  initialData?: Product | null; // For editing existing customer
   onSuccess?: () => void; // Callback after successful submission
 }
 
@@ -59,6 +61,8 @@ export function ProductForm({ initialData, onSuccess }: ProductFormProps) {
   const [categories, setCategories] = React.useState<Category[]>([]);
   const [suppliers, setSuppliers] = React.useState<Supplier[]>([]);
   const [isLoadingDropdowns, setIsLoadingDropdowns] = React.useState(true);
+
+  const dictionary = useDictionary(); // Get dictionary from context
 
   // Fetch categories and suppliers for dropdowns
   React.useEffect(() => {
@@ -77,9 +81,10 @@ export function ProductForm({ initialData, onSuccess }: ProductFormProps) {
         setSuppliers(supplierRes.data || []);
       } catch (error: any) {
         console.error("Error fetching dropdown data:", error);
+        // Use optional chaining for dictionary access
         toast({
-          title: "Error loading form data",
-          description: "Could not load categories or suppliers.",
+          title: dictionary?.inventory?.productForm?.loadErrorTitle || "Error loading data", // Use dictionary directly
+          description: dictionary?.inventory?.productForm?.loadErrorDescription || "Failed to load categories or suppliers.", // Use dictionary directly
           variant: "destructive",
         });
       } finally {
@@ -87,11 +92,11 @@ export function ProductForm({ initialData, onSuccess }: ProductFormProps) {
       }
     };
     fetchDropdownData();
-  }, [supabase, toast]);
+  }, [supabase, toast, dictionary]); // Add dictionary to dependencies
 
   // Define form
   const form = useForm<ProductFormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(createFormSchema(dictionary)), // Pass dictionary to schema function
     defaultValues: {
       name: initialData?.name || "",
       description: initialData?.description || "",
@@ -143,20 +148,23 @@ export function ProductForm({ initialData, onSuccess }: ProductFormProps) {
       }
 
       toast({
-        title: `Product ${isEditing ? "updated" : "added"} successfully.`,
+        title: dictionary?.inventory?.productForm?.saveSuccess || "Product saved successfully.", // Use dictionary directly
       });
       onSuccess?.(); // Call the success callback
       form.reset(); // Reset form
 
     } catch (error: any) {
       console.error("Error saving product:", error);
+      // Use optional chaining for dictionary access
       toast({
-        title: `Error ${isEditing ? "saving" : "adding"} product`,
-        description: error.message || "An unexpected error occurred.",
+        title: dictionary?.inventory?.productForm?.saveErrorTitle || "Error saving product.", // Use dictionary directly
+        description: error.message || dictionary?.common?.unexpectedError || "An unexpected error occurred.", // Use dictionary directly
         variant: "destructive",
       });
     }
   }
+
+  // No need for dictionary check here, useDictionary hook handles it
 
   return (
     <Form {...form}>
@@ -165,29 +173,29 @@ export function ProductForm({ initialData, onSuccess }: ProductFormProps) {
           control={form.control}
           name="name"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>Product Name *</FormLabel>
-              <FormControl>
-                <Input placeholder="e.g., Ray-Ban Aviator" {...field} disabled={isLoading} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+              <FormItem>
+                <FormLabel>{dictionary.inventory.productForm.nameLabel} *</FormLabel> {/* Use dictionary directly */}
+                <div> {/* Removed FormControl */}
+                  <Input placeholder={dictionary.inventory.productForm.namePlaceholder} {...field} disabled={isLoading} /> {/* Use dictionary directly */}
+                </div> {/* Close div */}
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         <FormField
           control={form.control}
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
+              <FormLabel>{dictionary.inventory.productForm.descriptionLabel}</FormLabel> {/* Use dictionary directly */}
+              <div> {/* Removed FormControl */}
                 <Textarea
-                  placeholder="Product details..."
+                  placeholder={dictionary.inventory.productForm.descriptionPlaceholder}
                   className="resize-none"
                   {...field}
                   disabled={isLoading}
                 />
-              </FormControl>
+              </div> {/* Close div */}
               <FormMessage />
             </FormItem>
           )}
@@ -198,22 +206,22 @@ export function ProductForm({ initialData, onSuccess }: ProductFormProps) {
             name="category_id"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Category</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined} disabled={isLoading}>
-                  <FormControl>
+                <FormLabel>{dictionary.inventory.productForm.categoryLabel}</FormLabel> {/* Use dictionary directly */}
+                <div> {/* Removed FormControl */}
+                  <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined} disabled={isLoading}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a category" />
+                      <SelectValue placeholder={dictionary.inventory.productForm.selectCategoryPlaceholder} /> {/* Use dictionary directly */}
                     </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="null">-- None --</SelectItem>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                    <SelectContent>
+                      <SelectItem value="null">{dictionary.common.none}</SelectItem> {/* Use dictionary directly */}
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div> {/* Close div */}
                 <FormMessage />
               </FormItem>
             )}
@@ -223,22 +231,22 @@ export function ProductForm({ initialData, onSuccess }: ProductFormProps) {
             name="supplier_id"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Supplier</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined} disabled={isLoading}>
-                  <FormControl>
+                <FormLabel>{dictionary.inventory.productForm.supplierLabel}</FormLabel> {/* Use dictionary directly */}
+                <div> {/* Removed FormControl */}
+                  <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined} disabled={isLoading}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a supplier" />
+                      <SelectValue placeholder={dictionary.inventory.productForm.selectSupplierPlaceholder} /> {/* Use dictionary directly */}
                     </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                     <SelectItem value="null">-- None --</SelectItem>
-                    {suppliers.map((sup) => (
-                      <SelectItem key={sup.id} value={sup.id}>
-                        {sup.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                    <SelectContent>
+                       <SelectItem value="null">{dictionary.common.none}</SelectItem> {/* Use dictionary directly */}
+                      {suppliers.map((sup) => (
+                        <SelectItem key={sup.id} value={sup.id}>
+                          {sup.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div> {/* Close div */}
                 <FormMessage />
               </FormItem>
             )}
@@ -250,10 +258,10 @@ export function ProductForm({ initialData, onSuccess }: ProductFormProps) {
             name="brand"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Brand</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g., Ray-Ban" {...field} disabled={isLoading} />
-                </FormControl>
+                <FormLabel>{dictionary.inventory.productForm.brandLabel}</FormLabel> {/* Use dictionary directly */}
+                <div> {/* Removed FormControl */}
+                  <Input placeholder={dictionary.inventory.productForm.brandPlaceholder} {...field} disabled={isLoading} /> {/* Use dictionary directly */}
+                </div> {/* Close div */}
                 <FormMessage />
               </FormItem>
             )}
@@ -263,10 +271,10 @@ export function ProductForm({ initialData, onSuccess }: ProductFormProps) {
             name="model"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Model</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g., RB3025" {...field} disabled={isLoading} />
-                </FormControl>
+                <FormLabel>{dictionary.inventory.productForm.modelLabel}</FormLabel> {/* Use dictionary directly */}
+                <div> {/* Removed FormControl */}
+                  <Input placeholder={dictionary.inventory.productForm.modelPlaceholder} {...field} disabled={isLoading} /> {/* Use dictionary directly */}
+                </div> {/* Close div */}
                 <FormMessage />
               </FormItem>
             )}
@@ -277,19 +285,19 @@ export function ProductForm({ initialData, onSuccess }: ProductFormProps) {
             name="reorder_level"
             render={({ field }) => (
             <FormItem>
-              <FormLabel>Reorder Level</FormLabel>
-              <FormControl>
+              <FormLabel>{dictionary.inventory.productForm.reorderLevelLabel}</FormLabel> {/* Use dictionary directly */}
+              <div> {/* Removed FormControl */}
                 <Input
                   type="number"
                   step="1"
-                  placeholder="e.g., 10"
+                  placeholder={dictionary.inventory.productForm.reorderLevelPlaceholder}
                   {...field}
                   value={field.value ?? ''} // Handle null/undefined by providing empty string
                   disabled={isLoading}
                 />
-              </FormControl>
+              </div> {/* Close div */}
               <FormDescription>
-                Set the stock level that triggers a low stock alert.
+                {dictionary.inventory.productForm.reorderLevelDescription} {/* Use dictionary directly */}
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -300,17 +308,20 @@ export function ProductForm({ initialData, onSuccess }: ProductFormProps) {
           name="base_price"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Base Price *</FormLabel>
-              <FormControl>
-                <Input type="number" step="0.01" placeholder="0.00" {...field} disabled={isLoading} />
-              </FormControl>
+              <FormLabel>{dictionary.inventory.productForm.basePriceLabel} *</FormLabel> {/* Use dictionary directly */}
+              <div> {/* Removed FormControl */}
+                <Input type="number" step="0.01" placeholder={dictionary.inventory.productForm.basePricePlaceholder} {...field} disabled={isLoading} /> {/* Use dictionary directly */}
+              </div> {/* Close div */}
               <FormMessage />
             </FormItem>
           )}
         />
         {/* TODO: Add field for attributes (JSON) */}
         <Button type="submit" disabled={isLoading}>
-          {isLoading ? (isEditing ? "Saving..." : "Adding...") : (isEditing ? "Save Changes" : "Add Product")}
+          {isLoading
+            ? (isEditing ? dictionary.common.saving : dictionary.common.adding) // Use dictionary directly
+            : (isEditing ? dictionary.common.saveChanges : dictionary.common.addProduct) // Use dictionary directly
+          }
         </Button>
       </form>
     </Form>

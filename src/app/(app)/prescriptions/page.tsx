@@ -27,6 +27,8 @@ import {
 import { PrescriptionForm } from "./prescription-form";
 import { PrescriptionDetailsDialog } from "./prescription-details-dialog"; // Import Details Dialog
 import { useToast } from "@/components/ui/use-toast";
+import { useDictionary } from "@/lib/i18n/dictionary-context"; // Import useDictionary hook
+
 
 export default function PrescriptionsPage() {
   const [data, setData] = React.useState<Prescription[]>([]);
@@ -41,6 +43,8 @@ export default function PrescriptionsPage() {
   const [viewingPrescription, setViewingPrescription] = React.useState<Prescription | null>(null); // Prescription being viewed
   const supabase = createClient();
   const { toast } = useToast();
+  const dictionary = useDictionary(); // Use the useDictionary hook
+
 
   // Function to refresh data
   const fetchPrescriptions = React.useCallback(async () => {
@@ -51,7 +55,7 @@ export default function PrescriptionsPage() {
       .select(`
         id,
         customer_id,
-        prescriber_name,
+        prescriber_id,
         prescription_date,
         expiry_date,
         type,
@@ -59,25 +63,26 @@ export default function PrescriptionsPage() {
         os_params,
         notes,
         created_at,
-        customers ( first_name, last_name )
+        customers ( first_name, last_name ),
+        prescribers:profiles ( full_name )
       `)
       .order("prescription_date", { ascending: false }); // Order by prescription date
 
     if (fetchError) {
       console.error("Error fetching prescriptions:", fetchError);
-      setError(`Failed to load prescription data: ${fetchError.message}`);
+      setError(`${dictionary?.prescriptions?.fetchError || "Failed to load prescription data"}: ${fetchError.message}`); // Use optional chaining
       setData([]);
     } else {
       setData(prescriptions as any); // Cast needed due to joined data structure
     }
     setIsLoading(false);
-  }, [supabase]);
+  }, [supabase, dictionary]); // Add dictionary to dependency array
 
   // Initial data fetch
   React.useEffect(() => {
     setIsLoading(true);
     fetchPrescriptions();
-  }, [fetchPrescriptions]);
+  }, [fetchPrescriptions]); // Removed dictionary from dependency array
 
   // Callbacks for form success
   const handleAddSuccess = () => {
@@ -116,13 +121,13 @@ export default function PrescriptionsPage() {
         .delete()
         .eq("id", deletingPrescriptionId);
       if (deleteError) throw deleteError;
-      toast({ title: "Prescription deleted successfully." });
+      toast({ title: dictionary?.prescriptions?.deleteSuccess || "Prescription deleted successfully." }); // Use optional chaining
       fetchPrescriptions(); // Refresh list
     } catch (error: any) {
       console.error("Error deleting prescription:", error);
       toast({
-        title: "Error deleting prescription",
-        description: error.message || "An unexpected error occurred.",
+        title: dictionary?.prescriptions?.deleteErrorTitle || "Error deleting prescription", // Use optional chaining
+        description: error.message || dictionary?.common?.unexpectedError || "An unexpected error occurred.", // Use optional chaining
         variant: "destructive",
       });
     } finally {
@@ -136,31 +141,36 @@ export default function PrescriptionsPage() {
     () => getPrescriptionColumns({
         onEdit: openEditDialog,
         onDelete: openDeleteDialog,
-        onViewDetails: openDetailsDialog // Pass the details handler
+        onViewDetails: openDetailsDialog, // Pass the details handler
+        dictionary // Pass dictionary
      }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [] // Handlers don't change often, empty deps ok for now
+    [dictionary] // Re-generate columns when dictionary changes
   );
+
+  if (!dictionary) {
+    return <div>{dictionary?.common?.loading || "Loading..."}</div>; // Show loading until dictionary is fetched
+  }
+
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Prescriptions</h1>
+        <h1 className="text-2xl font-semibold">{dictionary?.prescriptions?.title || "Prescriptions"}</h1> {/* Use optional chaining */}
         {/* Add Prescription Dialog */}
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button>
-              <PlusCircle className="mr-2 h-4 w-4" /> Add Prescription
+              <PlusCircle className="mr-2 h-4 w-4" /> {dictionary?.prescriptions?.addPrescriptionButton || "Add Prescription"} {/* Use optional chaining */}
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-lg"> {/* Adjust size */}
             <DialogHeader>
-              <DialogTitle>Add New Prescription</DialogTitle>
+              <DialogTitle>{dictionary?.prescriptions?.addNewPrescriptionTitle || "Add New Prescription"}</DialogTitle> {/* Use optional chaining */}
               <DialogDescription>
-                Enter the details for the new prescription.
+                {dictionary?.prescriptions?.addNewPrescriptionDescription || "Enter the details for the new prescription."} {/* Use optional chaining */}
               </DialogDescription>
             </DialogHeader>
-            <PrescriptionForm onSuccess={handleAddSuccess} />
+            <PrescriptionForm onSuccess={handleAddSuccess} dictionary={dictionary} /> {/* Added dictionary prop */}
           </DialogContent>
         </Dialog>
       </div>
@@ -168,7 +178,7 @@ export default function PrescriptionsPage() {
       {/* Data Table Area */}
       {isLoading ? (
         <div className="border shadow-sm rounded-lg p-4 text-center text-muted-foreground">
-          Loading prescriptions...
+          {dictionary?.prescriptions?.loading || "Loading prescriptions..."} {/* Use optional chaining */}
         </div>
       ) : error ? (
         <div className="border shadow-sm rounded-lg p-4 text-center text-red-600">
@@ -178,8 +188,8 @@ export default function PrescriptionsPage() {
         <DataTable
           columns={prescriptionColumns}
           data={data}
-          filterColumnKey="prescriber_name" // Filter by prescriber name instead
-          filterPlaceholder="Filter by prescriber name..."
+          filterColumnKey="prescribers.full_name" // Filter by nested prescriber name
+          filterPlaceholder={dictionary?.prescriptions?.filterPlaceholder || "Filter by prescriber name..."} // Use optional chaining
         />
       )}
 
@@ -190,13 +200,13 @@ export default function PrescriptionsPage() {
       }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Edit Prescription</DialogTitle>
+            <DialogTitle>{dictionary?.prescriptions?.editPrescriptionTitle || "Edit Prescription"}</DialogTitle> {/* Use optional chaining */}
             <DialogDescription>
-              Update the prescription details. Click save when done.
+              {dictionary?.prescriptions?.editPrescriptionDescription || "Update the prescription details. Click save when done."} {/* Use optional chaining */}
             </DialogDescription>
           </DialogHeader>
           {/* Pass initialData for editing */}
-          <PrescriptionForm initialData={editingPrescription} onSuccess={handleEditSuccess} />
+          <PrescriptionForm initialData={editingPrescription} onSuccess={handleEditSuccess} dictionary={dictionary} /> {/* Added dictionary prop */}
         </DialogContent>
       </Dialog>
 
@@ -204,16 +214,15 @@ export default function PrescriptionsPage() {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogTitle>{dictionary?.prescriptions?.deleteConfirmTitle || "Are you absolutely sure?"}</AlertDialogTitle> {/* Use optional chaining */}
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete this
-              prescription record.
+              {dictionary?.prescriptions?.deleteConfirmDescription || "This action cannot be undone. This will permanently delete this prescription record."} {/* Use optional chaining */}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeletingPrescriptionId(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setDeletingPrescriptionId(null)}>{dictionary?.common?.cancel || "Cancel"}</AlertDialogCancel> {/* Use optional chaining */}
             <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete Prescription
+              {dictionary?.prescriptions?.deleteButton || "Delete Prescription"} {/* Use optional chaining */}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -227,7 +236,7 @@ export default function PrescriptionsPage() {
            setIsDetailsDialogOpen(open);
            if (!open) setViewingPrescription(null); // Clear state when closing
          }}
-       />
+       /> {/* Removed dictionary prop */}
     </div>
   );
 }

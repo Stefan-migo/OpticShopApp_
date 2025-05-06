@@ -1,7 +1,38 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { match } from '@formatjs/intl-localematcher';
+import Negotiator from 'negotiator';
+import { i18n } from './lib/i18n/config';
+
+let locales = i18n.locales;
+let defaultLocale = i18n.defaultLocale;
+
+function getLocale(request: NextRequest): string {
+  const negotiatorHeaders: Record<string, string> = {};
+  request.headers.forEach((value, key) => (negotiatorHeaders[key] = value));
+
+  const languages = new Negotiator({ headers: negotiatorHeaders }).languages();
+
+  return match(languages, locales, defaultLocale);
+}
 
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  const pathnameIsMissingLocale = locales.every(
+    (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
+  );
+
+  // Redirect if there is no locale
+  if (pathnameIsMissingLocale) {
+    const locale = getLocale(request);
+
+    // e.g. incoming request is /products
+    // The new URL is now /en/products
+    return NextResponse.redirect(
+      new URL(`/${locale}${pathname.startsWith('/') ? '' : '/'}${pathname}`, request.url)
+    );
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -84,8 +115,10 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
+     * - api (API routes)
+     * - _next/webpack-hmr (webpack hot module replacement)
+     * - Any file with an extension (e.g. .svg, .png)
      */
-    '/((?!_next/static|_next/image|favicon.ico|/|/signup|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)', // Exclude / and /signup
+    '/((?!api|_next/static|_next/image|favicon.ico|_next/webpack-hmr|.*\\..+).*)',
   ],
 };

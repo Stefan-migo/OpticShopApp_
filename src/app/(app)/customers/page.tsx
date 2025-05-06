@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { CustomerForm } from "./customer-form";
 import { useToast } from "@/components/ui/use-toast";
+import { useDictionary } from "@/lib/i18n/dictionary-context"; // Import useDictionary hook
 
 export default function CustomersPage() {
   const [data, setData] = React.useState<Customer[]>([]);
@@ -38,6 +39,7 @@ export default function CustomersPage() {
   const [deletingCustomerId, setDeletingCustomerId] = React.useState<string | null>(null);
   const supabase = createClient();
   const { toast } = useToast();
+  const dictionary = useDictionary(); // Use the useDictionary hook
 
   // Function to refresh data
   const fetchCustomers = React.useCallback(async () => {
@@ -49,13 +51,13 @@ export default function CustomersPage() {
 
     if (fetchError) {
       console.error("Error fetching customers:", fetchError);
-      setError(`Failed to load customer data: ${fetchError.message}`);
+      setError(`${dictionary?.customers?.fetchError || "Failed to load customer data"}: ${fetchError.message}`); // Use optional chaining
       setData([]);
     } else {
       setData(customers as Customer[]);
     }
     setIsLoading(false);
-  }, [supabase]);
+  }, [supabase, dictionary]); // Add dictionary to dependency array
 
   // Initial data fetch
   React.useEffect(() => {
@@ -95,13 +97,13 @@ export default function CustomersPage() {
         .delete()
         .eq("id", deletingCustomerId);
       if (deleteError) throw deleteError;
-      toast({ title: "Customer deleted successfully." });
+      toast({ title: dictionary?.customers?.deleteSuccess || "Customer deleted successfully." }); // Use optional chaining
       fetchCustomers();
     } catch (error: any) {
       console.error("Error deleting customer:", error);
       toast({
-        title: "Error deleting customer",
-        description: error.message || "An unexpected error occurred.",
+        title: dictionary?.customers?.deleteErrorTitle || "Error deleting customer", // Use optional chaining
+        description: error.message || dictionary?.common?.unexpectedError || "An unexpected error occurred.", // Use optional chaining
         variant: "destructive",
       });
     } finally {
@@ -112,32 +114,36 @@ export default function CustomersPage() {
 
   // Generate columns with action handlers
   const customerColumns = React.useMemo(
-    () => getColumns({ onEdit: openEditDialog, onDelete: openDeleteDialog }),
+    () => getColumns({ onEdit: openEditDialog, onDelete: openDeleteDialog }), // Removed dictionary prop
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [] // Handlers don't change, empty dependency array is fine
-     // If handlers needed fetchCustomers, add it: [fetchCustomers]
+    [] // No dependencies needed as getColumns uses hook internally
   );
+
+  if (!dictionary) {
+    return <div>{dictionary?.common?.loading || "Loading..."}</div>; // Use optional chaining
+  }
+
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Customers</h1>
+        <h1 className="text-2xl font-semibold">{dictionary.customers?.title || "Customers"}</h1> {/* Use optional chaining */}
 
         {/* Add Customer Dialog */}
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button>
-              <PlusCircle className="mr-2 h-4 w-4" /> Add Customer
+              <PlusCircle className="mr-2 h-4 w-4" /> {dictionary.customers?.addCustomerButton || "Add Customer"} {/* Use optional chaining */}
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>Add New Customer</DialogTitle>
+              <DialogTitle>{dictionary.customers?.addNewCustomerTitle || "Add New Customer"}</DialogTitle> {/* Use optional chaining */}
               <DialogDescription>
-                Enter the details for the new customer. Click save when done.
+                {dictionary.customers?.addNewCustomerDescription || "Enter the details for the new customer. Click save when done."} {/* Use optional chaining */}
               </DialogDescription>
             </DialogHeader>
-            <CustomerForm onSuccess={handleAddSuccess} />
+            <CustomerForm onSuccess={handleAddSuccess} dictionary={dictionary} /> {/* Pass dictionary */}
           </DialogContent>
         </Dialog>
       </div>
@@ -145,7 +151,7 @@ export default function CustomersPage() {
       {/* Data Table Area */}
       {isLoading ? (
         <div className="border shadow-sm rounded-lg p-4 text-center text-muted-foreground">
-          Loading customers...
+          {dictionary.customers?.loading || "Loading customers..."} {/* Use optional chaining */}
         </div>
       ) : error ? (
         <div className="border shadow-sm rounded-lg p-4 text-center text-red-600">
@@ -155,8 +161,8 @@ export default function CustomersPage() {
         <DataTable
           columns={customerColumns}
           data={data}
-          filterColumnKey="email"
-          filterPlaceholder="Filter by email..."
+          filterColumnKey="email" // Filter key remains the same
+          filterPlaceholder={dictionary.customers?.filterPlaceholder || "Filter by email..."} // Use optional chaining
         />
       )}
 
@@ -167,12 +173,12 @@ export default function CustomersPage() {
       }}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Edit Customer</DialogTitle>
+            <DialogTitle>{dictionary.customers?.editCustomerTitle || "Edit Customer"}</DialogTitle> {/* Use optional chaining */}
             <DialogDescription>
-              Update the customer's details. Click save when done.
+              {dictionary.customers?.editCustomerDescription || "Update the customer's details. Click save when done."} {/* Use optional chaining */}
             </DialogDescription>
           </DialogHeader>
-          <CustomerForm initialData={editingCustomer} onSuccess={handleEditSuccess} />
+          <CustomerForm initialData={editingCustomer} onSuccess={handleEditSuccess} dictionary={dictionary} /> {/* Pass dictionary */}
         </DialogContent>
       </Dialog>
 
@@ -180,16 +186,15 @@ export default function CustomersPage() {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogTitle>{dictionary.customers?.deleteConfirmTitle || "Are you absolutely sure?"}</AlertDialogTitle> {/* Use optional chaining */}
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the
-              customer record.
+              {dictionary.customers?.deleteConfirmDescription || "This action cannot be undone. This will permanently delete the customer record."} {/* Use optional chaining */}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeletingCustomerId(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setDeletingCustomerId(null)}>{dictionary.common?.cancel || "Cancel"}</AlertDialogCancel> {/* Use optional chaining */}
             <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
+              {dictionary.common?.delete || "Delete"} {/* Use optional chaining */}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

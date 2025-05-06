@@ -14,6 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useDictionary } from "@/lib/i18n/dictionary-context"; // Import useDictionary hook
 
 // TODO: Add checkbox component using shadcn-ui add
 
@@ -55,14 +56,14 @@ export const getColumns = ({ onEdit, onDelete }: CustomerColumnsProps): ColumnDe
   //         (table.getIsSomePageRowsSelected() && "indeterminate")
   //       }
   //       onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-  //       aria-label="Select all"
+  //       aria-label={dictionary.common.selectAll || "Select all"} // Use dictionary
   //     />
   //   ),
   //   cell: ({ row }) => (
   //     <Checkbox
   //       checked={row.getIsSelected()}
   //       onCheckedChange={(value) => row.toggleSelected(!!value)}
-  //       aria-label="Select row"
+  //       aria-label={dictionary.common.selectRow || "Select row"} // Use dictionary
   //     />
   //   ),
   //   enableSorting: false,
@@ -71,12 +72,13 @@ export const getColumns = ({ onEdit, onDelete }: CustomerColumnsProps): ColumnDe
   {
     accessorKey: "first_name",
     header: ({ column }) => {
+      const dictionary = useDictionary();
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          First Name
+          {dictionary.customers.form?.firstNameLabel || "First Name"} {/* Use dictionary */}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
@@ -86,12 +88,13 @@ export const getColumns = ({ onEdit, onDelete }: CustomerColumnsProps): ColumnDe
   {
     accessorKey: "last_name",
     header: ({ column }) => {
+      const dictionary = useDictionary();
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Last Name
+          {dictionary.customers.form?.lastNameLabel || "Last Name"} {/* Use dictionary */}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
@@ -101,12 +104,13 @@ export const getColumns = ({ onEdit, onDelete }: CustomerColumnsProps): ColumnDe
   {
     accessorKey: "email",
     header: ({ column }) => {
+      const dictionary = useDictionary();
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Email
+          {dictionary.customers.form?.emailLabel || "Email"} {/* Use dictionary */}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
@@ -115,25 +119,29 @@ export const getColumns = ({ onEdit, onDelete }: CustomerColumnsProps): ColumnDe
   },
   {
     accessorKey: "phone",
-    header: "Phone",
+    header: () => {
+      const dictionary = useDictionary();
+      return dictionary.customers.form?.phoneLabel || "Phone"; // Use dictionary
+    },
     cell: ({ row }) => <div>{row.getValue("phone") || "-"}</div>,
   },
   {
     accessorKey: "created_at",
     header: ({ column }) => {
+      const dictionary = useDictionary();
        return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Created At
+          {dictionary.customers.form?.createdAtLabel || "Created At"} {/* Use dictionary */}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
     cell: ({ row }) => {
       const date = new Date(row.getValue("created_at"));
-      const formatted = date.toLocaleDateString(); // Basic formatting
+      const formatted = date.toLocaleDateString(); // Basic formatting needs localization
       return <div className="font-medium">{formatted}</div>;
     },
   },
@@ -142,34 +150,35 @@ export const getColumns = ({ onEdit, onDelete }: CustomerColumnsProps): ColumnDe
     enableHiding: false,
     cell: ({ row }) => {
       const customer = row.original;
+      const dictionary = useDictionary();
 
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
+              <span className="sr-only">{dictionary.common.openMenu || "Open menu"}</span> {/* Use dictionary */}
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuLabel>{dictionary.common.actions || "Actions"}</DropdownMenuLabel> {/* Use dictionary */}
             <DropdownMenuItem
               onClick={() => navigator.clipboard.writeText(customer.id)}
             >
-              Copy customer ID
+              {dictionary.customers.tableActions?.copyId || "Copy customer ID"} {/* Use dictionary */}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link href={`/customers/${customer.id}`} className="flex items-center">
-                <Eye className="mr-2 h-4 w-4" /> View Details
+                <Eye className="mr-2 h-4 w-4" /> {dictionary.customers.tableActions?.viewDetails || "View Details"} {/* Use dictionary */}
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onEdit(customer)}>Edit customer</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onEdit(customer)}>{dictionary.customers.tableActions?.editCustomer || "Edit customer"}</DropdownMenuItem> {/* Use dictionary */}
             <DropdownMenuItem
               className="text-red-600 focus:text-red-700 focus:bg-red-100"
               onClick={() => onDelete(customer.id)}
             >
-              Delete customer
+              {dictionary.customers.tableActions?.deleteCustomer || "Delete customer"} {/* Use dictionary */}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -22,19 +22,26 @@ import { useToast } from "@/components/ui/use-toast";
 // Define simple type for fetched customer dropdown data
 type DropdownOption = { id: string; name: string };
 
+import { Dictionary } from '@/lib/i18n/types'; // Import shared Dictionary interface
+import { useDictionary } from '@/lib/i18n/dictionary-context'; // Import useDictionary hook
+
 interface CustomerSelectProps {
   onCustomerSelect: (customerId: string | null) => void;
   initialCustomerId?: string | null;
+  // Remove dictionary prop as it will be accessed via context
+  // dictionary: Dictionary | null | undefined;
   // Add form control prop if integrating directly with react-hook-form
   // control: any;
 }
 
-export function CustomerSelect({ onCustomerSelect, initialCustomerId }: CustomerSelectProps) {
+export function CustomerSelect({ onCustomerSelect, initialCustomerId }: CustomerSelectProps) { // Remove dictionary prop
   const [customers, setCustomers] = useState<DropdownOption[]>([]);
   const [searchQuery, setSearchQuery] = useState(""); // State for search query
   const [isLoading, setIsLoading] = useState(true);
   const supabase = createClient();
   const { toast } = useToast();
+
+  const dictionary = useDictionary(); // Get dictionary from context
 
   // Fetch customers for dropdown
   useEffect(() => {
@@ -48,13 +55,15 @@ export function CustomerSelect({ onCustomerSelect, initialCustomerId }: Customer
         if (error) throw error;
         setCustomers(data?.map(c => ({
             id: c.id,
-            name: `${c.last_name || ''}${c.last_name && c.first_name ? ', ' : ''}${c.first_name || ''}` || 'Unnamed Customer'
+            // TODO: Localize customer name formatting
+            name: `${c.last_name || ''}${c.last_name && c.first_name ? ', ' : ''}${c.first_name || ''}`.trim() || dictionary.common.unnamedCustomer || 'N/A' // Add final hardcoded fallback
         })) || []);
       } catch (error: any) {
         console.error("Error fetching customers for dropdown:", error);
+        // Use optional chaining for dictionary access
         toast({
-          title: "Error loading customers",
-          description: "Could not load customer list.",
+          title: dictionary?.medicalActions?.customerSelect?.loadErrorTitle, // Use dictionary directly
+          description: dictionary?.medicalActions?.customerSelect?.loadErrorDescription, // Use dictionary directly
           variant: "destructive",
         });
       } finally {
@@ -62,7 +71,7 @@ export function CustomerSelect({ onCustomerSelect, initialCustomerId }: Customer
       }
     };
     fetchCustomers();
-  }, [supabase, toast]);
+  }, [supabase, toast, dictionary]); // Add dictionary to dependencies
 
   // Filter customers based on search query
   const filteredCustomers = customers.filter(customer => {
@@ -86,39 +95,15 @@ export function CustomerSelect({ onCustomerSelect, initialCustomerId }: Customer
     return false;
   });
 
+  // No need for dictionary check here, useDictionary hook handles it
+
   return (
     <div> {/* Wrap in a div if not using FormField directly */}
-      {/* If integrating with react-hook-form, use FormField */}
-      {/* <FormField
-        control={control} // Pass control from parent form
-        name="customer_id" // Name of the form field
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Customer *</FormLabel>
-            <FormControl>
-              <Select onValueChange={(value) => { field.onChange(value); onCustomerSelect(value); }} defaultValue={field.value ?? undefined} disabled={isLoading}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a customer" />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredCustomers.map((cust) => (
-                    <SelectItem key={cust.id} value={cust.id}>
-                      {cust.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      /> */}
-
       {/* Simple Select if not using react-hook-form */}
        <div className="space-y-2"> {/* Use a div for consistent spacing */}
-            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Select Customer</label> {/* Use a standard label */}
+            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{dictionary.medicalActions.customerSelect.label}</label> {/* Use dictionary directly */}
             <Input
-              placeholder="Search by name..."
+              placeholder={dictionary.medicalActions.customerSelect.searchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               disabled={isLoading}
@@ -127,7 +112,7 @@ export function CustomerSelect({ onCustomerSelect, initialCustomerId }: Customer
             <Select onValueChange={onCustomerSelect} defaultValue={initialCustomerId ?? undefined} disabled={isLoading}>
                 {/* Removed FormControl */}
                     <SelectTrigger>
-                        <SelectValue placeholder="Select a customer" />
+                        <SelectValue placeholder={dictionary.medicalActions.customerSelect.placeholder} /> {/* Use dictionary directly */}
                     </SelectTrigger>
                 <SelectContent>
                     {/* Render filtered customers */}

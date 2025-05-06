@@ -5,12 +5,14 @@ import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { subDays, format } from 'date-fns';
 import Link from 'next/link'; // Import Link
+import { Dictionary } from '@/lib/i18n/types'; // Import shared Dictionary interface
 
 interface DashboardContentProps {
   userName: string | null;
+  dictionary: Dictionary; // Use the imported Dictionary interface
 }
 
-export default function DashboardContent({ userName }: DashboardContentProps) {
+export default function DashboardContent({ userName, dictionary }: DashboardContentProps) {
   const supabase = createClient();
   const [salesSummary, setSalesSummary] = React.useState<{ period: string; total: number } | null>(null);
   const [customerCount, setCustomerCount] = React.useState<number | null>(null);
@@ -42,7 +44,7 @@ export default function DashboardContent({ userName }: DashboardContentProps) {
 
         if (salesError) throw new Error(`Sales Summary Error: ${salesError.message}`);
         const totalSales = salesData?.reduce((sum, order) => sum + (order.final_amount || 0), 0) || 0;
-        setSalesSummary({ period: "Last 30 Days", total: totalSales });
+        setSalesSummary({ period: dictionary.dashboard.last30DaysPeriod || "Last 30 Days", total: totalSales }); // Use dictionary
         setIsLoadingSales(false);
 
         // Fetch Customer Count
@@ -88,7 +90,7 @@ export default function DashboardContent({ userName }: DashboardContentProps) {
 
       } catch (fetchError: any) {
          console.error("Error fetching dashboard data:", fetchError);
-         setError(fetchError.message || "Failed to load dashboard data.");
+         setError(fetchError.message || dictionary.common.failedToLoadData || "Failed to load dashboard data."); // Use dictionary
          setIsLoadingSales(false);
          setIsLoadingCustomers(false);
          setIsLoadingInventory(false);
@@ -101,36 +103,36 @@ export default function DashboardContent({ userName }: DashboardContentProps) {
     };
 
     fetchData();
-  }, [supabase]);
+  }, [supabase, dictionary]); // Add dictionary to dependency array
 
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         {userName && (
-            <h1 className="text-2xl font-semibold">Good morning, {userName}!</h1>
+            <h1 className="text-2xl font-semibold">{dictionary.dashboard.greeting?.replace('{{name}}', userName) || dictionary.dashboard.greetingFallback?.replace('{{name}}', userName) || `Good morning, ${userName}!`}</h1>
         )}
         <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
              {/* Sales Summary Card */}
              <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
-                    Total Sales
+                    {dictionary.dashboard.totalSales || "Total Sales"} {/* Use dictionary */}
                     </CardTitle>
                     {/* <DollarSign className="h-4 w-4 text-muted-foreground" /> */}
                 </CardHeader>
                 <CardContent>
                     {isLoadingSales ? (
-                        <p className="text-xs text-muted-foreground">Loading...</p>
+                        <p className="text-xs text-muted-foreground">{dictionary.common.loading || "Loading..."}</p> // Use dictionary
                     ) : salesSummary ? (
                         <>
                             <div className="text-2xl font-bold">
-                                {salesSummary.total.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                                {salesSummary.total.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} {/* Currency formatting needs localization */}
                             </div>
                             <p className="text-xs text-muted-foreground">
                                 {salesSummary.period}
                             </p>
                         </>
                     ) : (
-                        <p className="text-xs text-muted-foreground">No sales data.</p>
+                        <p className="text-xs text-muted-foreground">{dictionary.dashboard.noSalesData || "No sales data."}</p> // Use dictionary
                     )}
                 </CardContent>
              </Card>
@@ -139,20 +141,20 @@ export default function DashboardContent({ userName }: DashboardContentProps) {
              <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
-                    Total Customers
+                    {dictionary.dashboard.totalCustomers || "Total Customers"} {/* Use dictionary */}
                     </CardTitle>
                     {/* <Users className="h-4 w-4 text-muted-foreground" /> */}
                 </CardHeader>
                 <CardContent>
                     {isLoadingCustomers ? (
-                        <p className="text-xs text-muted-foreground">Loading...</p>
+                        <p className="text-xs text-muted-foreground">{dictionary.common.loading || "Loading..."}</p> // Use dictionary
                     ) : customerCount !== null ? (
                         <>
                             <div className="text-2xl font-bold">{customerCount}</div>
                             {/* <p className="text-xs text-muted-foreground">All time</p> */}
                         </>
                     ) : (
-                        <p className="text-xs text-muted-foreground">No customer data.</p>
+                        <p className="text-xs text-muted-foreground">{dictionary.dashboard.noCustomerData || "No customer data."}</p> // Use dictionary
                     )}
                 </CardContent>
              </Card>
@@ -161,24 +163,24 @@ export default function DashboardContent({ userName }: DashboardContentProps) {
              <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
-                    Inventory Status
+                    {dictionary.dashboard.inventoryStatus || "Inventory Status"} {/* Use dictionary */}
                     </CardTitle>
                     {/* <Package className="h-4 w-4 text-muted-foreground" /> */}
                 </CardHeader>
                 <CardContent>
                     {isLoadingInventory ? (
-                        <p className="text-xs text-muted-foreground">Loading...</p>
+                        <p className="text-xs text-muted-foreground">{dictionary.common.loading || "Loading..."}</p> // Use dictionary
                     ) : inventorySummary ? (
                         <div className="text-xs space-y-1">
                         {Object.entries(inventorySummary).map(([status, count]) => (
                             <div key={status} className="flex justify-between">
-                                <span className="capitalize text-muted-foreground">{status}:</span>
+                                <span className="capitalize text-muted-foreground">{dictionary.common.status[status as keyof typeof dictionary.common.status] || status}:</span> {/* Status might need localization */}
                                 <span>{count}</span>
                             </div>
                         ))}
                         </div>
                     ) : (
-                        <p className="text-xs text-muted-foreground">No inventory data.</p>
+                        <p className="text-xs text-muted-foreground">{dictionary.dashboard.noInventoryData || "No inventory data."}</p> // Use dictionary
                     )}
                 </CardContent>
              </Card>
@@ -186,26 +188,26 @@ export default function DashboardContent({ userName }: DashboardContentProps) {
              {/* Upcoming Appointments Card */}
              <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Upcoming Appointments</CardTitle>
+                    <CardTitle className="text-sm font-medium">{dictionary.dashboard.upcomingAppointments || "Upcoming Appointments"}</CardTitle> {/* Use dictionary */}
                     {/* <Calendar className="h-4 w-4 text-muted-foreground" /> */}
                 </CardHeader>
                 <CardContent>
                     {isLoadingAppointments ? (
-                        <p className="text-xs text-muted-foreground">Loading...</p>
+                        <p className="text-xs text-muted-foreground">{dictionary.common.loading || "Loading..."}</p> // Use dictionary
                     ) : upcomingAppointments && upcomingAppointments.length > 0 ? (
                         <div className="text-xs space-y-1">
                             {upcomingAppointments.map(appointment => (
                                 <div key={appointment.id} className="flex justify-between">
-                                    <span className="text-muted-foreground">{format(new Date(appointment.appointment_time), 'p')}:</span>
-                                    <span>{`${appointment.customers?.first_name || ''} ${appointment.customers?.last_name || ''}`.trim() || 'N/A'}</span>
+                                    <span className="text-muted-foreground">{format(new Date(appointment.appointment_time), 'p')}:</span> {/* Time formatting needs localization */}
+                                    <span>{`${appointment.customers?.first_name || ''} ${appointment.customers?.last_name || ''}`.trim() || dictionary.common.notAvailable}</span> {/* Use dictionary for fallback */}
                                 </div>
                             ))}
                             <div className="mt-2 text-right">
-                                <Link href="/appointments" className="text-blue-500 hover:underline">View All</Link>
+                                <Link href="/appointments" className="text-blue-500 hover:underline">{dictionary.common.viewAll || "View All"}</Link> {/* Use dictionary */}
                             </div>
                         </div>
                     ) : (
-                        <p className="text-xs text-muted-foreground">No upcoming appointments.</p>
+                        <p className="text-xs text-muted-foreground">{dictionary.dashboard.noUpcomingAppointments || "No upcoming appointments."}</p> // Use dictionary
                     )}
                 </CardContent>
              </Card>

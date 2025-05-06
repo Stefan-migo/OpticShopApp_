@@ -18,6 +18,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { Dictionary } from '@/lib/i18n/types'; // Import shared Dictionary interface
 
 interface ComboboxProps {
   options: { value: string; label: string }[];
@@ -28,6 +29,7 @@ interface ComboboxProps {
   noResultsText?: string;
   triggerClassName?: string;
   disabled?: boolean;
+  dictionary?: Dictionary | null | undefined; // Add optional dictionary prop
 }
 
 export function Combobox({
@@ -39,8 +41,15 @@ export function Combobox({
   noResultsText = "No results found.",
   triggerClassName,
   disabled = false,
+  dictionary, // Accept dictionary prop
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
+
+  // Use dictionary for localization with fallback to default strings
+  const localizedPlaceholder = dictionary?.sales?.selectCustomerPlaceholder || dictionary?.sales?.selectItemPlaceholder || placeholder;
+  const localizedSearchPlaceholder = dictionary?.sales?.searchCustomersPlaceholder || dictionary?.sales?.searchItemsPlaceholder || searchPlaceholder;
+  const localizedNoResultsText = dictionary?.sales?.noCustomerFound || dictionary?.sales?.noStockFound || noResultsText;
+
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -54,15 +63,15 @@ export function Combobox({
         >
           {selectedValue
             ? options.find((option) => option.value === selectedValue)?.label
-            : placeholder}
+            : localizedPlaceholder} {/* Use localized placeholder */}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0"> {/* Use trigger width */}
         <Command>
-          <CommandInput placeholder={searchPlaceholder} />
+          <CommandInput placeholder={localizedSearchPlaceholder} /> {/* Use localized search placeholder */}
           <CommandList>
-             <CommandEmpty>{noResultsText}</CommandEmpty>
+             <CommandEmpty>{localizedNoResultsText}</CommandEmpty> {/* Use localized no results text */}
              <CommandGroup>
               {options.map((option) => (
                 <CommandItem

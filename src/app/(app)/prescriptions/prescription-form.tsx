@@ -1,13 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { useEffect, useState } from "react"; // Import useEffect and useState
+import { useEffect, useState, useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, Control, useController } from "react-hook-form"; // Added Control, useController
 import * as z from "zod";
 
-import { roleDisplayNames } from "../../../lib/roleConfig"; // Import role display names
-
+// Assuming this path is correct and the function/data is needed
+import { getRoleDisplayNames } from "../../../lib/roleConfig";
+import { Dictionary } from '@/lib/i18n/types';
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -27,115 +28,106 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"; // Need RadioGroup
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/components/ui/use-toast";
 import { createClient } from "@/lib/supabase/client";
-import { type Prescription } from "./columns"; // Import Prescription type
-import { type Customer } from "../customers/columns"; // Import Customer type for dropdown
-import { type Profile } from "../../../types/supabase"; // Import Profile type
+import { cn } from "@/lib/utils";
+import { type Prescription } from "./columns";
+import { type Customer } from "../customers/columns";
+import { type Profile } from "../../../types/supabase";
+import { TestNumberInputForm } from "@/components/TestNumberInputForm"; // Import the test component
 
-// TODO: Add RadioGroup component using shadcn-ui add
-
-// Define simple type for fetched dropdown data (customers, professionals, medical records)
+// Define simple type for fetched dropdown data
 type DropdownOption = { id: string; name: string };
 
-// --- Zod Schemas for Parameters ---
-const glassesParamsSchema = z.object({
-  sph: z.coerce.number().optional().nullable(),
-  cyl: z.coerce.number().optional().nullable(),
-  axis: z.coerce.number().int().min(0).max(180).optional().nullable(),
-  add: z.coerce.number().optional().nullable(),
-  prism: z.string().optional().nullable(), // Prism often includes base direction (e.g., "1.5 BI")
-});
-
-const contactLensParamsSchema = z.object({
-  sph: z.coerce.number().optional().nullable(),
-  cyl: z.coerce.number().optional().nullable(),
-  axis: z.coerce.number().int().min(0).max(180).optional().nullable(),
-  bc: z.coerce.number().optional().nullable(), // Base Curve
-  dia: z.coerce.number().optional().nullable(), // Diameter
-  brand: z.string().optional().nullable(),
-});
-
-// --- Main Form Schema ---
-const formSchema = z.object({
-  customer_id: z.string().uuid({ message: "Please select a customer." }),
-  medical_record_id: z.string().uuid({ message: "Invalid medical record selected." }).optional().nullable(), // Add medical_record_id field
-  prescriber_id: z.string().uuid({ message: "Invalid prescriber selected." }).optional().nullable(), // Add prescriber_id field
-  prescriber_name: z.string().optional(), // Keep for now, might be removed later
-  prescription_date: z.string().refine((val) => !!val, { message: "Prescription date is required." }), // Required string
+// --- Zod Schema Definition ---
+const createFormSchema = (dictionary: Dictionary) => z.object({
+  // Make sure these keys exist in dictionary.prescriptions.form
+  customer_id: z.string().uuid({ message: dictionary.prescriptions.form.customerRequired ?? "Please select a customer." }),
+  medical_record_id: z.string().uuid({ message: dictionary.prescriptions.form.invalidMedicalRecord ?? "Invalid medical record selected." }).optional().nullable(),
+  prescriber_id: z.string().uuid({ message: dictionary.prescriptions.form.invalidPrescriber ?? "Invalid prescriber selected." }).optional().nullable(),
+  prescriber_name: z.string().optional(),
+  prescription_date: z.string().refine((val) => !!val, { message: dictionary.prescriptions.form.prescriptionDateRequired ?? "Prescription date is required." }),
   expiry_date: z.string().optional().nullable(),
-  type: z.enum(['glasses', 'contact_lens']),
+  type: z.enum(['glasses', 'contact_lens'], { errorMap: () => ({ message: "Please select a prescription type." }) }), // Added errorMap for enum
   notes: z.string().optional(),
-  // Conditional OD/OS params based on 'type'
-  od_sph: z.coerce.number().optional().nullable(),
-  od_cyl: z.coerce.number().optional().nullable(),
-  od_axis: z.coerce.number().int().min(0).max(180).optional().nullable(),
-  od_add: z.coerce.number().optional().nullable(), // Glasses only
+  // OD/OS Params
+  od_sph: z.preprocess((val) => (val === '' ? null : val), z.coerce.number().optional().nullable()),
+  od_cyl: z.preprocess((val) => (val === '' ? null : val), z.coerce.number().optional().nullable()),
+  od_axis: z.preprocess((val) => (val === '' ? null : val), z.coerce.number().int().min(0).max(180).optional().nullable()),
+  od_add: z.preprocess((val) => (val === '' ? null : val), z.coerce.number().optional().nullable()), // Glasses only
   od_prism: z.string().optional().nullable(), // Glasses only
-  od_bc: z.coerce.number().optional().nullable(), // Contacts only
-  od_dia: z.coerce.number().optional().nullable(), // Contacts only
+  od_bc: z.preprocess((val) => (val === '' ? null : val), z.coerce.number().optional().nullable()), // Contacts only
+  od_dia: z.preprocess((val) => (val === '' ? null : val), z.coerce.number().optional().nullable()), // Contacts only
   od_brand: z.string().optional().nullable(), // Contacts only
-
-  os_sph: z.coerce.number().optional().nullable(),
-  os_cyl: z.coerce.number().optional().nullable(),
-  os_axis: z.coerce.number().int().min(0).max(180).optional().nullable(),
-  os_add: z.coerce.number().optional().nullable(), // Glasses only
+  os_sph: z.preprocess((val) => (val === '' ? null : val), z.coerce.number().optional().nullable()),
+  os_cyl: z.preprocess((val) => (val === '' ? null : val), z.coerce.number().optional().nullable()),
+  os_axis: z.preprocess((val) => (val === '' ? null : val), z.coerce.number().int().min(0).max(180).optional().nullable()),
+  os_add: z.preprocess((val) => (val === '' ? null : val), z.coerce.number().optional().nullable()), // Glasses only
   os_prism: z.string().optional().nullable(), // Glasses only
-  os_bc: z.coerce.number().optional().nullable(), // Contacts only
-  os_dia: z.coerce.number().optional().nullable(), // Contacts only
+  os_bc: z.preprocess((val) => (val === '' ? null : val), z.coerce.number().optional().nullable()), // Contacts only
+  os_dia: z.preprocess((val) => (val === '' ? null : val), z.coerce.number().optional().nullable()), // Contacts only
   os_brand: z.string().optional().nullable(), // Contacts only
 });
 
-type PrescriptionFormValues = z.infer<typeof formSchema>;
+type PrescriptionFormValues = z.infer<ReturnType<typeof createFormSchema>>;
 
 interface PrescriptionFormProps {
-  initialData?: Prescription | null; // For editing existing prescription
-  onSuccess?: () => void; // Callback after successful submission
-  customerId?: string; // Optional customer ID prop for use in Medical Actions section
+  initialData?: Prescription | null;
+  onSuccess?: () => void;
+  customerId?: string;
+  dictionary: Dictionary | null | undefined;
 }
 
-export function PrescriptionForm({ initialData, onSuccess, customerId: propCustomerId }: PrescriptionFormProps) {
+export function PrescriptionForm({ initialData, onSuccess, customerId: propCustomerId, dictionary }: PrescriptionFormProps) {
+  // Main Guard Clause
+  if (!dictionary) {
+    return <div>Loading language resources...</div>;
+  }
+
   const { toast } = useToast();
   const supabase = createClient();
   const isEditing = !!initialData;
   const [customers, setCustomers] = useState<DropdownOption[]>([]);
-  const [professionals, setProfessionals] = useState<DropdownOption[]>([]); // State for professionals
-  const [medicalRecords, setMedicalRecords] = useState<DropdownOption[]>([]); // State for medical records
+  const [professionals, setProfessionals] = useState<DropdownOption[]>([]);
+  const [medicalRecords, setMedicalRecords] = useState<DropdownOption[]>([]);
   const [isLoadingDropdowns, setIsLoadingDropdowns] = useState(true);
-  const [isLoadingMedicalRecords, setIsLoadingMedicalRecords] = useState(false); // Loading state for medical records
+  const [isLoadingMedicalRecords, setIsLoadingMedicalRecords] = useState(false);
 
-  // Helper to parse JSONB params from initialData
-  const parseInitialParams = (params: any) => {
+  // Memoize Schema
+  const formSchema = useMemo(() => {
+      return createFormSchema(dictionary);
+  }, [dictionary]);
+
+  // Parse Initial Params (Helper)
+  const parseInitialParams = (params: any): Record<string, any> => {
       if (!params) return {};
       try {
-          return typeof params === 'string' ? JSON.parse(params) : params;
+          // Check if it's already an object (e.g., from DB JSONB)
+          if (typeof params === 'object' && params !== null) return params;
+          // Otherwise, try parsing if it's a string
+          if (typeof params === 'string') return JSON.parse(params);
       } catch (e) {
           console.error("Error parsing initial params:", e);
-          return {};
       }
-  }
-
+      return {}; // Return empty object if parsing fails or input is invalid
+  };
   const initialOdParams = parseInitialParams(initialData?.od_params);
   const initialOsParams = parseInitialParams(initialData?.os_params);
 
-  // Define form
+  // Define Form
   const form = useForm<PrescriptionFormValues>({
     resolver: zodResolver(formSchema),
+    // Set default values carefully, using null where appropriate
     defaultValues: {
-      customer_id: initialData?.customer_id || propCustomerId || "", // Use propCustomerId if available
-      medical_record_id: initialData?.medical_record_id || null, // Set default for medical_record_id
-      prescriber_id: initialData?.prescriber_id || null, // Set default for prescriber_id
-      prescriber_name: initialData?.prescriber_name || "", // Keep for now
-      prescription_date: initialData?.prescription_date
-        ? new Date(initialData.prescription_date).toISOString().split('T')[0]
-        : "", // Default to empty string, required validation handles it
-      expiry_date: initialData?.expiry_date
-        ? new Date(initialData.expiry_date).toISOString().split('T')[0]
-        : null,
-      type: initialData?.type || 'glasses', // Default to glasses
+      customer_id: initialData?.customer_id || propCustomerId || "",
+      medical_record_id: initialData?.medical_record_id || null,
+      prescriber_id: initialData?.prescriber_id || null,
+      // prescriber_name: initialData?.prescriber_name || "",
+      prescription_date: initialData?.prescription_date ? new Date(initialData.prescription_date).toISOString().split('T')[0] : "",
+      expiry_date: initialData?.expiry_date ? new Date(initialData.expiry_date).toISOString().split('T')[0] : null,
+      type: initialData?.type || 'glasses',
       notes: initialData?.notes || "",
-      // OD Params
       od_sph: initialOdParams.sph ?? null,
       od_cyl: initialOdParams.cyl ?? null,
       od_axis: initialOdParams.axis ?? null,
@@ -144,7 +136,6 @@ export function PrescriptionForm({ initialData, onSuccess, customerId: propCusto
       od_bc: initialOdParams.bc ?? null,
       od_dia: initialOdParams.dia ?? null,
       od_brand: initialOdParams.brand ?? null,
-      // OS Params
       os_sph: initialOsParams.sph ?? null,
       os_cyl: initialOsParams.cyl ?? null,
       os_axis: initialOsParams.axis ?? null,
@@ -156,114 +147,126 @@ export function PrescriptionForm({ initialData, onSuccess, customerId: propCusto
     },
   });
 
-  // Determine the actual customer ID to use (prop or form value)
   const actualCustomerId = propCustomerId || form.watch("customer_id");
+  const isLoading = form.formState.isSubmitting || isLoadingDropdowns;
+  const prescriptionType = form.watch("type"); // Watch type for conditional rendering
 
-
-  // Fetch data for dropdowns (customers and professionals)
+  // useEffect for Dropdown Data...
   useEffect(() => {
-    const fetchData = async () => {
-      setIsLoadingDropdowns(true);
-      try {
-        // Fetch customers only if propCustomerId is NOT provided
-        if (!propCustomerId) {
-            const { data: customerData, error: customerError } = await supabase
-              .from("customers")
-              .select("id, first_name, last_name")
-              .order("last_name");
-            if (customerError) throw customerError;
-            setCustomers(customerData?.map(c => ({
-                id: c.id,
-                name: `${c.last_name || ''}${c.last_name && c.first_name ? ', ' : ''}${c.first_name || ''}` || 'Unnamed Customer'
-            })) || []);
-        }
+    // Added !dictionary check inside just for extra safety, although outer check should cover it
+    if (!dictionary) return;
+    let isMounted = true; // Prevent state update on unmounted component
+        const fetchData = async () => {
+          setIsLoadingDropdowns(true);
+          let customerRes, professionalRes; // Declare professionalRes here
+
+          try {
+            // Fetch customers only if propCustomerId is NOT provided
+            if (!propCustomerId) {
+                customerRes = await supabase.from("customers").select("id, first_name, last_name").order("last_name");
+            } else {
+                customerRes = { data: [], error: null }; // Placeholder if customers aren't needed
+            }
+
+            // Fetch professionals by joining profiles directly with roles
+            professionalRes = await supabase.from("profiles")
+                .select("id, full_name, roles(name)") // Select profile id, full_name, and joined role name
+                .eq("roles.name", "professional") // Filter by role name 'professional'
+                .order("full_name", { ascending: true });
+
+            if (isMounted) {
+                 if (customerRes.error) throw customerRes.error;
+                 if (professionalRes.error) throw professionalRes.error;
+
+                if (!propCustomerId) {
+                    setCustomers(customerRes.data?.map((c: any) => ({
+                        id: c.id,
+                        name: `${c.last_name || ''}${c.last_name && c.first_name ? ', ' : ''}${c.first_name || ''}` || (dictionary.common.unnamedCustomer || 'Unnamed Customer')
+                    })) || []);
+                }
+
+                // Map fetched professional profiles to dropdown options
+                setProfessionals(professionalRes.data?.map((p: any) => ({
+                    id: p.id,
+                    name: p.full_name || (dictionary.common.unnamedProfessional || 'Unnamed Professional')
+                })) || []);
+            }
+
+          } catch (error: any) {
+            console.error("Error fetching form data:", error);
+            if (isMounted) {
+                toast({
+                  title: dictionary.prescriptions.form.loadErrorTitle || "Error loading form data",
+                  description: error.message || dictionary.prescriptions.form.loadErrorDescription || "Could not load customers or professionals.", // Use error.message for more details
+                  variant: "destructive",
+                });
+            }
+          } finally {
+            if (isMounted) {
+                setIsLoadingDropdowns(false);
+            }
+          }
+        };
+        fetchData();
+        return () => { isMounted = false; }; // Cleanup
+      }, [supabase, toast, propCustomerId, dictionary]);
 
 
-        // Fetch professionals (users with role 'professional')
-        // First, get the ID of the 'professional' role
-        const { data: roleData, error: roleError } = await supabase
-          .from("roles")
-          .select("id")
-          .eq("name", "professional")
-          .single();
-
-        if (roleError) throw roleError;
-
-        const professionalRoleId = roleData.id;
-
-        // Then, fetch profiles with that role_id
-        const { data: professionalData, error: professionalError } = await supabase
-          .from("profiles")
-          .select("id, full_name") // Select id and full_name
-          .eq("role_id", professionalRoleId) // Filter by role_id
-          .order("full_name", { ascending: true }); // Order by full_name
-
-        if (professionalError) throw professionalError;
-
-         setProfessionals(professionalData?.map(p => ({
-            id: p.id,
-            name: p.full_name || 'Unnamed Professional' // Use full_name for display
-        })) || []);
-
-      } catch (error: any) {
-        console.error("Error fetching form data:", error);
-        toast({
-          title: "Error loading form data",
-          description: "Could not load customers or professionals.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoadingDropdowns(false);
-      }
-    };
-    fetchData();
-  }, [supabase, toast, propCustomerId]); // Add propCustomerId to dependencies
-
-
-  // Fetch medical records for the selected customer when actualCustomerId changes
-  useEffect(() => {
-      if (!actualCustomerId) {
+  // useEffect for Medical Records...
+   useEffect(() => {
+      if (!actualCustomerId || !dictionary) { // Add dictionary check here too
           setMedicalRecords([]);
           return;
       }
 
+      let isMounted = true;
       const fetchMedicalRecords = async () => {
           setIsLoadingMedicalRecords(true);
           try {
               const { data, error } = await supabase
                   .from("medical_records")
-                  .select("id, record_date") // Fetch ID and date for display
+                  .select("id, record_date")
                   .eq("customer_id", actualCustomerId)
                   .order("record_date", { ascending: false });
 
-              if (error) throw error;
-              setMedicalRecords(data?.map(rec => ({
-                  id: rec.id,
-                  name: `Record: ${rec.record_date}` // Display format
-              })) || []);
+              if (isMounted) {
+                  if (error) throw error;
+                  setMedicalRecords(data?.map(rec => ({
+                      id: rec.id,
+                      name: `${dictionary.prescriptions.form.recordLabel || "Record"}: ${new Date(rec.record_date).toLocaleDateString()}` // Format date nicely
+                  })) || []);
+              }
 
           } catch (error: any) {
               console.error("Error fetching medical records:", error);
-              toast({
-                  title: "Error loading medical records",
-                  description: "Could not load medical records for the selected customer.",
-                  variant: "destructive",
-              });
+              if (isMounted) {
+                  toast({
+                      title: dictionary.prescriptions.form.loadMedicalRecordsErrorTitle || "Error loading medical records",
+                      description: dictionary.prescriptions.form.loadMedicalRecordsErrorDescription || "Could not load medical records for the selected customer.",
+                      variant: "destructive",
+                  });
+              }
           } finally {
-              setIsLoadingMedicalRecords(false);
+              if (isMounted) {
+                  setIsLoadingMedicalRecords(false);
+              }
           }
-      };
+        };
 
       fetchMedicalRecords();
+      return () => { isMounted = false; }; // Cleanup
 
-  }, [actualCustomerId, supabase, toast]); // Depend on actualCustomerId
+  }, [actualCustomerId, supabase, toast, dictionary]);
 
 
-  const isLoading = form.formState.isSubmitting || isLoadingDropdowns;
-  const prescriptionType = form.watch("type"); // Watch the type field
-
-  // Define submit handler
+  // --- MODIFIED onSubmit Handler ---
   async function onSubmit(values: PrescriptionFormValues) {
+    if (!dictionary) {
+      console.error("onSubmit called but dictionary is null!");
+      toast({ title: "Error", description: "Internal error: Missing resources.", variant: "destructive" });
+      return;
+    }
+
     try {
       let error = null;
 
@@ -279,18 +282,19 @@ export function PrescriptionForm({ initialData, onSuccess, customerId: propCusto
         osParams = { sph: values.os_sph, cyl: values.os_cyl, axis: values.os_axis, bc: values.os_bc, dia: values.os_dia, brand: values.os_brand };
       }
 
-      // Remove null/undefined values from params before saving
-      const cleanParams = (params: Record<string, any>) =>
-        Object.entries(params)
+      const cleanParams = (params: Record<string, any>) => {
+        const cleaned = Object.entries(params)
           .filter(([_, v]) => v !== null && v !== undefined && v !== '')
           .reduce((acc, [k, v]) => ({ ...acc, [k]: v }), {});
+        return cleaned; // Return the cleaned object (will be {} if empty)
+      };
 
       const prescriptionData = {
-        customer_id: actualCustomerId, // Use actualCustomerId
-        prescriber_id: values.prescriber_id || null, // Include prescriber_id
-        prescriber_name: values.prescriber_name || null, // Keep for now
-        medical_record_id: values.medical_record_id || null, // Include medical_record_id
-        prescription_date: values.prescription_date, // Already string 'yyyy-mm-dd'
+        customer_id: actualCustomerId,
+        prescriber_id: values.prescriber_id || null,
+        // prescriber_name: values.prescriber_name || null, // Consider removing if always fetching from profile
+        medical_record_id: values.medical_record_id || null,
+        prescription_date: values.prescription_date,
         expiry_date: values.expiry_date || null,
         type: values.type,
         notes: values.notes || null,
@@ -299,18 +303,19 @@ export function PrescriptionForm({ initialData, onSuccess, customerId: propCusto
         updated_at: new Date().toISOString(),
       };
 
-      if (isEditing) {
-        // Update logic
+      console.log({ values, prescriptionData }); // Added logging
+
+      if (isEditing && initialData) {
         const { error: updateError } = await supabase
           .from("prescriptions")
           .update(prescriptionData)
           .eq("id", initialData.id);
         error = updateError;
       } else {
-        // Insert logic
         const { error: insertError } = await supabase
           .from("prescriptions")
-          .insert([prescriptionData]);
+          .insert([prescriptionData])
+          .select(); // Add select if you need the inserted data back
         error = insertError;
       }
 
@@ -319,61 +324,44 @@ export function PrescriptionForm({ initialData, onSuccess, customerId: propCusto
       }
 
       toast({
-        title: `Prescription ${isEditing ? "updated" : "added"} successfully.`,
+        title: dictionary.prescriptions.form.saveSuccess || `Prescription ${isEditing ? "updated" : "added"} successfully.`,
       });
-      onSuccess?.(); // Call the success callback
-      form.reset(); // Reset form
+      onSuccess?.();
+      if (!isEditing) { // Reset form only when adding, not editing
+          form.reset();
+      }
 
     } catch (error: any) {
       console.error("Error saving prescription:", error);
       toast({
-        title: `Error ${isEditing ? "saving" : "adding"} prescription`,
-        description: error.message || "An unexpected error occurred.",
+        title: dictionary.prescriptions.form.saveErrorTitle || `Error ${isEditing ? "saving" : "adding"} prescription`,
+        description: error.message || dictionary.common.unexpectedError || "An unexpected error occurred.",
         variant: "destructive",
       });
     }
   }
 
-  // Helper component for parameter inputs
-  const ParamInput = ({ control, namePrefix, label, placeholder, type = "number", step = "0.25" }: any) => (
-     <FormField
-        control={control}
-        name={`${namePrefix}_${label.toLowerCase()}`}
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel className="text-xs">{label}</FormLabel>
-            <FormControl>
-              <Input
-                type={type}
-                step={type === "number" ? step : undefined}
-                placeholder={placeholder}
-                {...field}
-                value={field.value ?? ''}
-                disabled={isLoading}
-                className="h-8 text-sm" // Smaller input
-              />
-            </FormControl>
-            <FormMessage className="text-xs" />
-          </FormItem>
-        )}
-      />
-  );
-
-  return (
+   // --- Render Logic ---
+   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto p-1"> {/* Scrollable */}
-        {/* Customer Selection - Only show if propCustomerId is NOT provided */}
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto p-1 pb-4"> {/* Added pb-4 for scroll padding */}
+
+        {/* Customer Selection */}
         {!propCustomerId && (
             <FormField
               control={form.control}
               name="customer_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Customer *</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined} disabled={isLoading || isEditing}>
+                  <FormLabel>{dictionary.prescriptions.form.customerLabel || "Customer"} *</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value ?? ""} // Changed || "" to ?? ""
+                    disabled={isLoading || isEditing}
+                  >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a customer" />
+                        <SelectValue placeholder={dictionary.prescriptions.form.selectCustomerPlaceholder || "Select a customer"} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -390,24 +378,32 @@ export function PrescriptionForm({ initialData, onSuccess, customerId: propCusto
             />
         )}
 
-        {/* Medical Record Selection - Only show if a customer is selected (either via prop or form) */}
+        {/* Medical Record Selection */}
         {actualCustomerId && (
              <FormField
               control={form.control}
               name="medical_record_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Link to Medical Record</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined} disabled={isLoading || isLoadingMedicalRecords}>
+                  <FormLabel>{dictionary.prescriptions.form.medicalRecordLabel || "Link to Medical Record"}</FormLabel>
+                  <Select
+                    onValueChange={(value) => {
+                      console.log("Medical Record Select Change:", value); // Added console log
+                      field.onChange(value);
+                    }}
+                    value={field.value ?? ""} // Changed || "" to ?? ""
+                    disabled={isLoading || isLoadingMedicalRecords}
+                  >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a medical record (Optional)" />
+                        <SelectValue placeholder={dictionary.prescriptions.form.selectMedicalRecordPlaceholder || "Select a medical record (Optional)"} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                       {medicalRecords.map((record) => (
+                      <SelectItem value={null as any}>{dictionary.common.none || "-- None --"}</SelectItem> {/* Changed value to null */}
+                      {medicalRecords.map((record) => (
                         <SelectItem key={record.id} value={record.id}>
-                          {record.name} {/* Display record date/identifier */}
+                          {record.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -415,7 +411,7 @@ export function PrescriptionForm({ initialData, onSuccess, customerId: propCusto
                   <FormMessage />
                 </FormItem>
               )}
-            />
+             />
         )}
 
         {/* Prescriber Selection */}
@@ -424,17 +420,22 @@ export function PrescriptionForm({ initialData, onSuccess, customerId: propCusto
           name="prescriber_id"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Prescriber</FormLabel> {/* Label for prescriber */}
-              <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined} disabled={isLoading}>
+              <FormLabel>{dictionary.prescriptions.form.prescriberLabel || "Prescriber"}</FormLabel>
+              <Select
+                onValueChange={field.onChange}
+                value={field.value ?? ""} // Changed || "" to ?? ""
+                disabled={isLoading}
+               >
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a prescriber (Optional)" />
+                    <SelectValue placeholder={dictionary.prescriptions.form.selectPrescriberPlaceholder || "Select a prescriber (Optional)"} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
+                   <SelectItem value={null as any}>{dictionary.common.none || "-- None --"}</SelectItem> {/* Changed value to null */}
                    {professionals.map((prof) => (
                     <SelectItem key={prof.id} value={prof.id}>
-                      {prof.name} {/* Display professional's name */}
+                      {prof.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -442,127 +443,446 @@ export function PrescriptionForm({ initialData, onSuccess, customerId: propCusto
               <FormMessage />
             </FormItem>
           )}
-        />
+         />
 
-
+        {/* Type Selection */}
         <FormField
           control={form.control}
           name="type"
           render={({ field }) => (
             <FormItem className="space-y-3">
-              <FormLabel>Prescription Type *</FormLabel>
+              <FormLabel>{dictionary.prescriptions.form.typeLabel || "Prescription Type"} *</FormLabel>
               <FormControl>
                 <RadioGroup
                   onValueChange={field.onChange}
-                  defaultValue={field.value}
+                  value={field.value}
                   className="flex space-x-4"
                   disabled={isLoading}
                 >
                   <FormItem className="flex items-center space-x-2 space-y-0">
                     <FormControl>
-                      <RadioGroupItem value="glasses" />
+                      <RadioGroupItem value="glasses" id="type-glasses" />
                     </FormControl>
-                    <FormLabel className="font-normal">Glasses</FormLabel>
+                    <FormLabel htmlFor="type-glasses" className="font-normal">{dictionary.prescriptions.form.typeGlasses || "Glasses"}</FormLabel>
                   </FormItem>
                   <FormItem className="flex items-center space-x-2 space-y-0">
                     <FormControl>
-                      <RadioGroupItem value="contact_lens" />
+                      <RadioGroupItem value="contact_lens" id="type-contact-lens" />
                     </FormControl>
-                    <FormLabel className="font-normal">Contact Lenses</FormLabel>
+                    <FormLabel htmlFor="type-contact-lens" className="font-normal">{dictionary.prescriptions.form.typeContactLens || "Contact Lenses"}</FormLabel>
                   </FormItem>
                 </RadioGroup>
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
-        />
+         />
 
+        {/* Date Fields */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
-                control={form.control}
-                name="prescription_date"
-                render={({ field }) => (
+              control={form.control}
+              name="prescription_date"
+              render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Prescription Date *</FormLabel>
+                    <FormLabel>{dictionary.prescriptions.form.prescriptionDateLabel || "Prescription Date"} *</FormLabel>
                     <FormControl>
-                    <Input type="date" {...field} value={field.value ?? ''} disabled={isLoading} />
+                      <Input type="date" {...field} value={field.value || ''} disabled={isLoading} />
                     </FormControl>
                     <FormMessage />
                 </FormItem>
-                )}
+              )}
             />
             <FormField
-                control={form.control}
-                name="expiry_date"
-                render={({ field }) => (
+              control={form.control}
+              name="expiry_date"
+              render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Expiry Date</FormLabel>
+                    <FormLabel>{dictionary.prescriptions.form.expiryDateLabel || "Expiry Date"}</FormLabel>
                     <FormControl>
-                    <Input type="date" {...field} value={field.value ?? ''} disabled={isLoading} />
+                      <Input type="date" {...field} value={field.value || ''} disabled={isLoading} />
                     </FormControl>
                     <FormMessage />
                 </FormItem>
-                )}
+              )}
             />
         </div>
 
         {/* OD Parameters */}
         <div className="border p-3 rounded-md">
-            <h4 className="font-medium mb-2">OD (Right Eye)</h4>
+            <h4 className="font-medium mb-2">{dictionary.prescriptions.form.odTitle || "OD (Right Eye)"}</h4>
             <div className={`grid grid-cols-3 md:grid-cols-4 lg:grid-cols-${prescriptionType === 'glasses' ? 5 : 4} gap-2`}>
-                <ParamInput control={form.control} namePrefix="od" label="SPH" placeholder="-1.00" />
-                <ParamInput control={form.control} namePrefix="od" label="CYL" placeholder="-0.50" />
-                <ParamInput control={form.control} namePrefix="od" label="Axis" placeholder="90" type="number" step="1" />
+                <FormField
+                  control={form.control}
+                  name="od_sph"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">{dictionary.prescriptions.form.paramLabels.sphLabel || "SPH"}</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.25"
+                          placeholder={dictionary.prescriptions.form.paramPlaceholders.sphPlaceholder || "-1.00"}
+                          {...field}
+                          value={field.value ?? ''} // Explicitly handle null/undefined for display
+                          disabled={isLoading}
+                          className="h-8 text-sm"
+                        />
+                      </FormControl>
+                      <FormMessage className="text-xs" />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="od_cyl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">{dictionary.prescriptions.form.paramLabels.cylLabel || "CYL"}</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.25"
+                          placeholder={dictionary.prescriptions.form.paramPlaceholders.cylPlaceholder || "-0.50"}
+                          {...field}
+                          value={field.value ?? ''} // Explicitly handle null/undefined for display
+                          disabled={isLoading}
+                          className="h-8 text-sm"
+                        />
+                      </FormControl>
+                      <FormMessage className="text-xs" />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="od_axis"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">{dictionary.prescriptions.form.paramLabels.axisLabel || "Axis"}</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="1"
+                          placeholder={dictionary.prescriptions.form.paramPlaceholders.axisPlaceholder || "90"}
+                          {...field}
+                          value={field.value ?? ''} // Explicitly handle null/undefined for display
+                          disabled={isLoading}
+                          className="h-8 text-sm"
+                        />
+                      </FormControl>
+                      <FormMessage className="text-xs" />
+                    </FormItem>
+                  )}
+                />
                 {prescriptionType === 'glasses' && (
                     <>
-                        <ParamInput control={form.control} namePrefix="od" label="Add" placeholder="+1.75" />
-                        <ParamInput control={form.control} namePrefix="od" label="Prism" placeholder="1.5 BI" type="text" />
+                       <FormField
+                          control={form.control}
+                          name="od_add"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs">{dictionary.prescriptions.form.paramLabels.addLabel || "Add"}</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  step="0.25"
+                                  placeholder={dictionary.prescriptions.form.paramPlaceholders.addPlaceholder || "+1.75"}
+                                  {...field}
+                                  value={field.value ?? ''} // Explicitly handle null/undefined for display
+                                  disabled={isLoading}
+                                  className="h-8 text-sm"
+                                />
+                              </FormControl>
+                              <FormMessage className="text-xs" />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="od_prism"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs">{dictionary.prescriptions.form.paramLabels.prismLabel || "Prism"}</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="text"
+                                  placeholder={dictionary.prescriptions.form.paramPlaceholders.prismPlaceholder || "1.5 BI"}
+                                  {...field}
+                                  value={field.value ?? ''} // Explicitly handle null/undefined for display
+                                  disabled={isLoading}
+                                  className="h-8 text-sm"
+                                />
+                              </FormControl>
+                              <FormMessage className="text-xs" />
+                            </FormItem>
+                          )}
+                        />
                     </>
                 )}
-                 {prescriptionType === 'contact_lens' && (
+                {prescriptionType === 'contact_lens' && (
                     <>
-                        <ParamInput control={form.control} namePrefix="od" label="BC" placeholder="8.6" step="0.1" />
-                        <ParamInput control={form.control} namePrefix="od" label="Dia" placeholder="14.2" step="0.1" />
-                        <ParamInput control={form.control} namePrefix="od" label="Brand" placeholder="Acuvue Oasys" type="text" />
+                        <FormField
+                          control={form.control}
+                          name="od_bc"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs">{dictionary.prescriptions.form.paramLabels.bcLabel || "BC"}</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  step="0.1"
+                                  placeholder={dictionary.prescriptions.form.paramPlaceholders.bcPlaceholder || "8.6"}
+                                  {...field}
+                                  value={field.value ?? ''} // Explicitly handle null/undefined for display
+                                  disabled={isLoading}
+                                  className="h-8 text-sm"
+                                />
+                              </FormControl>
+                              <FormMessage className="text-xs" />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="od_dia"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs">{dictionary.prescriptions.form.paramLabels.diaLabel || "Dia"}</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  step="0.1"
+                                  placeholder={dictionary.prescriptions.form.paramPlaceholders.diaPlaceholder || "14.2"}
+                                  {...field}
+                                  value={field.value ?? ''} // Explicitly handle null/undefined for display
+                                  disabled={isLoading}
+                                  className="h-8 text-sm"
+                                />
+                              </FormControl>
+                              <FormMessage className="text-xs" />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="od_brand"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs">{dictionary.prescriptions.form.paramLabels.brandLabel || "Brand"}</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="text"
+                                  placeholder={dictionary.prescriptions.form.paramPlaceholders.brandPlaceholder || "Acuvue Oasys"}
+                                  {...field}
+                                  value={field.value ?? ''} // Explicitly handle null/undefined for display
+                                  disabled={isLoading}
+                                  className="h-8 text-sm"
+                                />
+                              </FormControl>
+                              <FormMessage className="text-xs" />
+                            </FormItem>
+                          )}
+                        />
                     </>
                 )}
             </div>
         </div>
 
-         {/* OS Parameters */}
+        {/* OS Parameters */}
         <div className="border p-3 rounded-md">
-            <h4 className="font-medium mb-2">OS (Left Eye)</h4>
+            <h4 className="font-medium mb-2">{dictionary.prescriptions.form.osTitle || "OS (Left Eye)"}</h4>
              <div className={`grid grid-cols-3 md:grid-cols-4 lg:grid-cols-${prescriptionType === 'glasses' ? 5 : 4} gap-2`}>
-                <ParamInput control={form.control} namePrefix="os" label="SPH" placeholder="-1.25" />
-                <ParamInput control={form.control} namePrefix="os" label="CYL" placeholder="-0.75" />
-                <ParamInput control={form.control} namePrefix="os" label="Axis" placeholder="85" type="number" step="1" />
+                <FormField
+                  control={form.control}
+                  name="os_sph"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">{dictionary.prescriptions.form.paramLabels.sphLabel || "SPH"}</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.25"
+                          placeholder={dictionary.prescriptions.form.paramPlaceholders.sphPlaceholder || "-1.25"}
+                          {...field}
+                          value={field.value ?? ''} // Explicitly handle null/undefined for display
+                          disabled={isLoading}
+                          className="h-8 text-sm"
+                        />
+                      </FormControl>
+                      <FormMessage className="text-xs" />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="os_cyl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">{dictionary.prescriptions.form.paramLabels.cylLabel || "CYL"}</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.25"
+                          placeholder={dictionary.prescriptions.form.paramPlaceholders.cylPlaceholder || "-0.75"}
+                          {...field}
+                          value={field.value ?? ''} // Explicitly handle null/undefined for display
+                          disabled={isLoading}
+                          className="h-8 text-sm"
+                        />
+                      </FormControl>
+                      <FormMessage className="text-xs" />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="os_axis"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">{dictionary.prescriptions.form.paramLabels.axisLabel || "Axis"}</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="1"
+                          placeholder={dictionary.prescriptions.form.paramPlaceholders.axisPlaceholder || "85"}
+                          {...field}
+                          value={field.value ?? ''} // Explicitly handle null/undefined for display
+                          disabled={isLoading}
+                          className="h-8 text-sm"
+                        />
+                      </FormControl>
+                      <FormMessage className="text-xs" />
+                    </FormItem>
+                  )}
+                />
                 {prescriptionType === 'glasses' && (
                     <>
-                        <ParamInput control={form.control} namePrefix="os" label="Add" placeholder="+1.75" />
-                        <ParamInput control={form.control} namePrefix="os" label="Prism" placeholder="1.5 BO" type="text" />
+                        <FormField
+                          control={form.control}
+                          name="os_add"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs">{dictionary.prescriptions.form.paramLabels.addLabel || "Add"}</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  step="0.25"
+                                  placeholder={dictionary.prescriptions.form.paramPlaceholders.addPlaceholder || "+1.75"}
+                                  {...field}
+                                  value={field.value ?? ''} // Explicitly handle null/undefined for display
+                                  disabled={isLoading}
+                                  className="h-8 text-sm"
+                                />
+                              </FormControl>
+                              <FormMessage className="text-xs" />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="os_prism"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs">{dictionary.prescriptions.form.paramLabels.prismLabel || "Prism"}</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="text"
+                                  placeholder={dictionary.prescriptions.form.paramPlaceholders.prismPlaceholder || "1.5 BO"}
+                                  {...field}
+                                  value={field.value ?? ''} // Explicitly handle null/undefined for display
+                                  disabled={isLoading}
+                                  className="h-8 text-sm"
+                                />
+                              </FormControl>
+                              <FormMessage className="text-xs" />
+                            </FormItem>
+                          )}
+                        />
                     </>
                 )}
-                 {prescriptionType === 'contact_lens' && (
+                {prescriptionType === 'contact_lens' && (
                     <>
-                        <ParamInput control={form.control} namePrefix="os" label="BC" placeholder="8.6" step="0.1" />
-                        <ParamInput control={form.control} namePrefix="os" label="Dia" placeholder="14.2" step="0.1" />
-                        <ParamInput control={form.control} namePrefix="os" label="Brand" placeholder="Acuvue Oasys" type="text" />
+                        <FormField
+                          control={form.control}
+                          name="os_bc"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs">{dictionary.prescriptions.form.paramLabels.bcLabel || "BC"}</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  step="0.1"
+                                  placeholder={dictionary.prescriptions.form.paramPlaceholders.bcPlaceholder || "8.6"}
+                                  {...field}
+                                  value={field.value ?? ''} // Explicitly handle null/undefined for display
+                                  disabled={isLoading}
+                                  className="h-8 text-sm"
+                                />
+                              </FormControl>
+                              <FormMessage className="text-xs" />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="os_dia"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs">{dictionary.prescriptions.form.paramLabels.diaLabel || "Dia"}</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  step="0.1"
+                                  placeholder={dictionary.prescriptions.form.paramPlaceholders.diaPlaceholder || "14.2"}
+                                  {...field}
+                                  value={field.value ?? ''} // Explicitly handle null/undefined for display
+                                  disabled={isLoading}
+                                  className="h-8 text-sm"
+                                />
+                              </FormControl>
+                              <FormMessage className="text-xs" />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="os_brand"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs">{dictionary.prescriptions.form.paramLabels.brandLabel || "Brand"}</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="text"
+                                  placeholder={dictionary.prescriptions.form.paramPlaceholders.brandPlaceholder || "Acuvue Oasys"}
+                                  {...field}
+                                  value={field.value ?? ''} // Explicitly handle null/undefined for display
+                                  disabled={isLoading}
+                                  className="h-8 text-sm"
+                                />
+                              </FormControl>
+                              <FormMessage className="text-xs" />
+                            </FormItem>
+                          )}
+                        />
                     </>
                 )}
             </div>
         </div>
 
+        {/* Notes */}
         <FormField
           control={form.control}
           name="notes"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Notes</FormLabel>
+              <FormLabel>{dictionary.prescriptions.form.notesLabel || "Notes"}</FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder="Additional notes about the prescription..."
+                  placeholder={dictionary.prescriptions.form.notesPlaceholder || "Additional notes about the prescription..."}
                   className="resize-none"
                   {...field}
+                  value={field.value || ''}
                   disabled={isLoading}
                 />
               </FormControl>
@@ -571,10 +891,16 @@ export function PrescriptionForm({ initialData, onSuccess, customerId: propCusto
           )}
         />
 
+        {/* Submit Button */}
         <Button type="submit" disabled={isLoading}>
-          {isLoading ? (isEditing ? "Saving..." : "Adding...") : (isEditing ? "Save Changes" : "Add Prescription")}
+          {isLoading
+            ? (isEditing ? (dictionary.common.saving || "Saving...") : (dictionary.common.adding || "Adding..."))
+            : (isEditing ? (dictionary.common.saveChanges || "Save Changes") : (dictionary.common.addPrescription || "Add Prescription"))
+          }
         </Button>
       </form>
+      {/* Temporarily render the test component for debugging */}
+      <TestNumberInputForm />
     </Form>
   );
 }

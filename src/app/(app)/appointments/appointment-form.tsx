@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useEffect, useState } from "react"; // Import hooks
+import { useEffect, useState, useMemo } from "react"; // Import hooks
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form"; // Removed UseFormReturn import
 import * as z from "zod";
@@ -37,9 +37,9 @@ import { User } from "@supabase/supabase-js"; // Import User type
 // Define simple type for fetched dropdown data
 type DropdownOption = { id: string; name: string };
 
-// Define the form schema using Zod
-const formSchema = z.object({
-  customer_id: z.string().uuid({ message: "Please select a customer." }),
+// Define the form schema using Zod with localized messages
+const createFormSchema = (dictionary: Dictionary) => z.object({
+  customer_id: z.string().uuid({ message: dictionary.appointments.form.customerRequired || "Please select a customer." }),
   appointment_time: z.string().refine((val) => {
     // Validate that the string can be parsed into a valid date
     try {
@@ -47,16 +47,16 @@ const formSchema = z.object({
     } catch {
       return false;
     }
-  }, { message: "Invalid date/time format." }),
-  duration_minutes: z.coerce.number().int().min(5, { message: "Duration must be at least 5 minutes." }), // Keep coerce, remove default
-  type: z.enum(['eye_exam', 'contact_lens_fitting', 'follow_up', 'frame_selection', 'other']),
+  }, { message: dictionary.appointments.form.invalidDateTime || "Invalid date/time format." }),
+  duration_minutes: z.coerce.number().int().min(5, { message: dictionary.appointments.form.durationMin || "Duration must be at least 5 minutes." }), // Keep coerce, remove default
+  type: z.enum(['eye_exam', 'contact_lens_fitting', 'follow_up', 'frame_selection', 'other'], { errorMap: () => ({ message: dictionary.appointments.form.invalidType || "Please select a valid appointment type." }) }),
   // provider_name: z.string().optional(), // Remove this
-  provider_id: z.string().uuid({ message: "Invalid provider selected." }).optional().nullable(), // Add this
+  provider_id: z.string().uuid({ message: dictionary.appointments.form.invalidProvider || "Invalid provider selected." }).optional().nullable(), // Add this
   notes: z.string().optional(),
   // Status will likely be set server-side or defaulted, not usually in the add form
 });
 
-type AppointmentFormValues = z.infer<typeof formSchema>;
+type AppointmentFormValues = z.infer<ReturnType<typeof createFormSchema>>;
 
 // Import AppointmentData type from page component (adjust path if needed)
 // Assuming AppointmentData is defined in ../appointments/page.tsx or similar
@@ -64,18 +64,27 @@ type AppointmentFormValues = z.infer<typeof formSchema>;
 // For now, let's assume it's accessible via a relative path or a shared types location.
 // If the type isn't directly importable, we might need to redefine a similar type here.
 import { type AppointmentData } from "./page"; // Adjust path if needed
+import { Dictionary } from '@/lib/i18n/types'; // Import shared Dictionary interface
 
 interface AppointmentFormProps {
   initialData?: AppointmentData | null; // For editing
   initialDateTime?: Date; // For setting time from calendar slot selection
   onSuccess?: () => void; // Callback after successful submission
   clinicSettings?: any; // Add clinicSettings prop
+  dictionary: Dictionary | null | undefined; // Use the imported Dictionary interface and allow null/undefined
 }
 
 // Define simple type for fetched customer dropdown data
 type CustomerOption = { id: string; name: string };
 
-export function AppointmentForm({ initialData, initialDateTime, onSuccess }: AppointmentFormProps) {
+export function AppointmentForm({ initialData, initialDateTime, onSuccess, dictionary }: AppointmentFormProps) {
+  // Add conditional rendering check for dictionary
+  if (!dictionary) {
+    // You can return a loading indicator or null here
+    return <div>Loading language resources...</div>; // Or <SomeLoadingSpinner />
+  }
+
+  // Now dictionary is guaranteed to be non-null and loaded
   const { toast } = useToast();
   const supabase = createClient();
   const isEditing = !!initialData;
@@ -86,9 +95,15 @@ export function AppointmentForm({ initialData, initialDateTime, onSuccess }: App
   const [clinicSettings, setClinicSettings] = useState<any>(null); // State for clinic settings
   const [isLoadingSettings, setIsLoadingSettings] = useState(true); // Loading state for settings
 
+  // Memoize Schema
+  const formSchema = useMemo(() => {
+      return createFormSchema(dictionary);
+  }, [dictionary]);
+
 
   // Fetch customers for dropdown
   React.useEffect(() => {
+    if (!dictionary) return; // Ensure dictionary is loaded before fetching data
     const fetchCustomers = async () => {
       setIsLoadingDropdowns(true);
       try {
@@ -99,13 +114,14 @@ export function AppointmentForm({ initialData, initialDateTime, onSuccess }: App
         if (error) throw error;
         setCustomers(data?.map(c => ({
             id: c.id,
-            name: `${c.last_name || ''}${c.last_name && c.first_name ? ', ' : ''}${c.first_name || ''}` || 'Unnamed Customer'
+            // TODO: Localize customer name formatting
+            name: `${c.last_name || ''}${c.last_name && c.first_name ? ', ' : ''}${c.first_name || ''}`.trim() || (dictionary.common.unnamedCustomer || 'Unnamed Customer') // Use dictionary
         })) || []);
       } catch (error: any) {
         console.error("Error fetching customers for dropdown:", error);
         toast({
-          title: "Error loading form data",
-          description: "Could not load customers.",
+          title: dictionary.appointments.form.loadErrorTitle || "Error loading form data", // Use dictionary
+          description: dictionary.appointments.form.loadCustomersErrorDescription || "Could not load customers.", // Use dictionary
           variant: "destructive",
         });
       } finally {
@@ -113,10 +129,11 @@ export function AppointmentForm({ initialData, initialDateTime, onSuccess }: App
       }
     };
     fetchCustomers();
-  }, [supabase, toast]);
+  }, [supabase, toast, dictionary]); // Add dictionary to dependencies
 
   // Fetch professionals for dropdown (Add this useEffect)
   useEffect(() => {
+    if (!dictionary) return; // Ensure dictionary is loaded before fetching data
     const fetchProfessionals = async () => {
       try {
         // First, get the ID of the 'professional' role
@@ -141,20 +158,20 @@ export function AppointmentForm({ initialData, initialDateTime, onSuccess }: App
 
          setProfessionals(professionalData?.map(p => ({
             id: p.id,
-            name: p.full_name || 'Unnamed Professional' // Use full_name for display
+            name: p.full_name || (dictionary.common.unnamedProfessional || 'Unnamed Professional') // Use dictionary
         })) || []);
 
       } catch (error: any) {
         console.error("Error fetching professionals for dropdown:", error);
         toast({
-          title: "Error loading professionals",
-          description: "Could not load professional list.",
+          title: dictionary.appointments.form.loadErrorTitle || "Error loading form data", // Use dictionary
+          description: dictionary.appointments.form.loadProfessionalsErrorDescription || "Could not load professionals.", // Use dictionary
           variant: "destructive",
         });
       }
     };
     fetchProfessionals();
-  }, [supabase, toast]); // Add supabase and toast to dependencies
+  }, [supabase, toast, dictionary]); // Add supabase, toast, and dictionary to dependencies
 
   // Fetch logged-in user and clinic settings on mount
   useEffect(() => {
@@ -195,7 +212,7 @@ export function AppointmentForm({ initialData, initialDateTime, onSuccess }: App
 
   // Define form (removed explicit type annotation)
   const form = useForm<AppointmentFormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema), // Use the memoized schema
     defaultValues: {
       customer_id: initialData?.customer_id || "",
       // Prioritize initialDateTime from slot selection, then initialData for editing, then empty
@@ -227,6 +244,13 @@ export function AppointmentForm({ initialData, initialDateTime, onSuccess }: App
 
   // Define submit handler - Explicitly type 'values' with our Zod schema type
   const onSubmit = async (values: AppointmentFormValues) => {
+    // Explicit check within onSubmit scope
+    if (!dictionary) {
+      console.error("onSubmit called but dictionary is null!"); // Log error if this impossible state occurs
+      toast({ title: "Error", description: "Internal error: Missing resources.", variant: "destructive" });
+      return; // Prevent execution
+    }
+
     try {
       let error = null;
 
@@ -265,7 +289,7 @@ export function AppointmentForm({ initialData, initialDateTime, onSuccess }: App
       }
 
       toast({
-        title: `Appointment ${isEditing ? "updated" : "scheduled"} successfully.`,
+        title: dictionary.appointments.form.saveSuccess || `Appointment ${isEditing ? "updated" : "scheduled"} successfully.`, // Use dictionary
       });
       onSuccess?.(); // Call the success callback
       form.reset(); // Reset form
@@ -273,8 +297,8 @@ export function AppointmentForm({ initialData, initialDateTime, onSuccess }: App
     } catch (error: any) {
       console.error("Error saving appointment:", error);
       toast({
-        title: `Error ${isEditing ? "saving" : "scheduling"} appointment`,
-        description: error.message || "An unexpected error occurred.",
+        title: dictionary.appointments.form.saveErrorTitle || `Error ${isEditing ? "saving" : "scheduling"} appointment`, // Use dictionary
+        description: error.message || dictionary.common.unexpectedError || "An unexpected error occurred.", // Use dictionary
         variant: "destructive",
       });
     }
@@ -288,11 +312,11 @@ export function AppointmentForm({ initialData, initialDateTime, onSuccess }: App
           name="customer_id"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Customer *</FormLabel>
+              <FormLabel>{dictionary.appointments.form.customerLabel || "Customer"} *</FormLabel> {/* Use dictionary */}
               <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined} disabled={isLoading || isEditing}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a customer" />
+                    <SelectValue placeholder={dictionary.appointments.form.selectCustomerPlaceholder || "Select a customer"} /> {/* Use dictionary */}
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -313,7 +337,7 @@ export function AppointmentForm({ initialData, initialDateTime, onSuccess }: App
           name="appointment_time"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Date & Time *</FormLabel>
+              <FormLabel>{dictionary.appointments.form.dateTimeLabel || "Date & Time"} *</FormLabel> {/* Use dictionary */}
               <FormControl>
                 {/* Use datetime-local for combined date and time input */}
                 <Input type="datetime-local" {...field} disabled={isLoading} />
@@ -328,7 +352,7 @@ export function AppointmentForm({ initialData, initialDateTime, onSuccess }: App
           name="duration_minutes"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Duration (minutes) *</FormLabel>
+              <FormLabel>{dictionary.appointments.form.durationLabel || "Duration (minutes)"} *</FormLabel> {/* Use dictionary */}
               <FormControl>
                 <Input type="number" min="5" step="5" {...field} disabled={isLoading} />
               </FormControl>
@@ -342,19 +366,19 @@ export function AppointmentForm({ initialData, initialDateTime, onSuccess }: App
           name="type"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Appointment Type *</FormLabel>
+              <FormLabel>{dictionary.appointments.form.typeLabel || "Appointment Type"} *</FormLabel> {/* Use dictionary */}
               <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
+                    <SelectValue placeholder={dictionary.appointments.form.selectTypePlaceholder || "Select type"} /> {/* Use dictionary */}
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="eye_exam">Eye Exam</SelectItem>
-                  <SelectItem value="contact_lens_fitting">Contact Lens Fitting</SelectItem>
-                  <SelectItem value="follow_up">Follow-up</SelectItem>
-                  <SelectItem value="frame_selection">Frame Selection</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="eye_exam">{dictionary.appointments.form.typeEyeExam || "Eye Exam"}</SelectItem> {/* Use dictionary */}
+                  <SelectItem value="contact_lens_fitting">{dictionary.appointments.form.typeContactLensFitting || "Contact Lens Fitting"}</SelectItem> {/* Use dictionary */}
+                  <SelectItem value="follow_up">{dictionary.appointments.form.typeFollowUp || "Follow-up"}</SelectItem> {/* Use dictionary */}
+                  <SelectItem value="frame_selection">{dictionary.appointments.form.typeFrameSelection || "Frame Selection"}</SelectItem> {/* Use dictionary */}
+                  <SelectItem value="other">{dictionary.appointments.form.typeOther || "Other"}</SelectItem> {/* Use dictionary */}
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -367,11 +391,11 @@ export function AppointmentForm({ initialData, initialDateTime, onSuccess }: App
           name="provider_id"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Provider</FormLabel> {/* Label for provider */}
+              <FormLabel>{dictionary.appointments.form.providerLabel || "Provider"}</FormLabel> {/* Use dictionary */}
               <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined} disabled={isLoading}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a provider (Optional)" />
+                    <SelectValue placeholder={dictionary.appointments.form.selectProviderPlaceholder || "Select a provider (Optional)"} /> {/* Use dictionary */}
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -392,10 +416,10 @@ export function AppointmentForm({ initialData, initialDateTime, onSuccess }: App
           name="notes"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Notes</FormLabel>
+              <FormLabel>{dictionary.appointments.form.notesLabel || "Notes"}</FormLabel> {/* Use dictionary */}
               <FormControl>
                 <Textarea
-                  placeholder="Optional notes about the appointment..."
+                  placeholder={dictionary.appointments.form.notesPlaceholder || "Optional notes about the appointment..."} /* Use dictionary */
                   className="resize-none"
                   {...field}
                   disabled={isLoading}
@@ -407,7 +431,7 @@ export function AppointmentForm({ initialData, initialDateTime, onSuccess }: App
         />
 
         <Button type="submit" disabled={isLoading}>
-          {isLoading ? (isEditing ? "Saving..." : "Scheduling...") : (isEditing ? "Save Changes" : "Schedule Appointment")}
+          {isLoading ? (isEditing ? (dictionary.common.saving || "Saving...") : (dictionary.common.scheduling || "Scheduling...")) : (isEditing ? (dictionary.common.saveChanges || "Save Changes") : (dictionary.appointments.form.scheduleButton || "Schedule Appointment"))} {/* Use dictionary */}
         </Button>
       </form>
     </Form>

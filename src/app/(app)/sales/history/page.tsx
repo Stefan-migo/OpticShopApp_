@@ -8,6 +8,10 @@ import { DataTable } from "@/components/ui/data-table";
 import { createClient } from "@/lib/supabase/client";
 import { Dialog } from "@/components/ui/dialog"; // Import Dialog for details
 import { SalesOrderDetailsDialog } from "./sales-order-details-dialog"; // Import the details dialog component
+import { useParams } from 'next/navigation'; // Import useParams
+import { useDictionary } from '@/lib/i18n/dictionary-context'; // Import useDictionary hook
+import { Dictionary } from '@/lib/i18n/types'; // Import shared Dictionary interface
+
 
 export default function SalesHistoryPage() {
   const supabase = createClient();
@@ -16,9 +20,19 @@ export default function SalesHistoryPage() {
   const [error, setError] = React.useState<string | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = React.useState(false); // State for details dialog
   const [selectedOrder, setSelectedOrder] = React.useState<SalesOrder | null>(null); // State for selected order
+  const params = useParams(); // Get params from URL
+  const lang = params.lang as string; // Extract locale as string
+
+  const dictionary = useDictionary(); // Get dictionary from context
+
+  // Add conditional rendering check for dictionary
+  if (!dictionary) {
+    return <div>{dictionary?.common?.loading || "Loading..."}</div>; // Show loading until dictionary is fetched
+  }
 
   // Fetch sales orders
   React.useEffect(() => {
+    // No need to check for dictionary here, useDictionary hook handles it
     const fetchSalesOrders = async () => {
       setIsLoading(true);
       setError(null);
@@ -34,7 +48,8 @@ export default function SalesHistoryPage() {
 
       if (fetchError) {
         console.error("Error fetching sales orders:", fetchError);
-        setError(`Failed to load sales history: ${fetchError.message}`);
+        // Use optional chaining for dictionary access in case of initial render before context is fully ready (though useDictionary should prevent this)
+        setError(`${dictionary.sales.history.fetchError || "Failed to load sales history"}: ${fetchError.message}`); // Use dictionary directly after guard clause
         setData([]);
       } else {
         setData(orders as any); // Cast needed due to joined data
@@ -43,7 +58,8 @@ export default function SalesHistoryPage() {
     };
 
     fetchSalesOrders();
-  }, [supabase]);
+  }, [supabase, dictionary]); // Add dictionary to dependencies
+
 
   // Handler to open details view
   const handleViewDetails = (order: SalesOrder) => {
@@ -53,23 +69,26 @@ export default function SalesHistoryPage() {
 
   // Generate columns
   const columns = React.useMemo(
-    () => getSalesHistoryColumns({ onViewDetails: handleViewDetails }),
-    []
+    () => getSalesHistoryColumns({ onViewDetails: handleViewDetails, dictionary }), // Pass dictionary
+    [dictionary] // Add dictionary to dependencies
   );
+
+  // No need for loading state based on dictionary, useDictionary hook handles it
+
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Sales History</h1>
+        <h1 className="text-2xl font-semibold">{dictionary.sales.history.title || "Sales History"}</h1> {/* Use dictionary directly */}
         <Button asChild variant="outline">
-            <Link href="/sales">Back to POS</Link>
+            <Link href={`/${lang}/sales`}>{dictionary.sales.history.backToPosButton || "Back to POS"}</Link> {/* Use dictionary directly and locale */}
         </Button>
       </div>
 
       {/* Data Table Area */}
        {isLoading ? (
         <div className="border shadow-sm rounded-lg p-4 text-center text-muted-foreground">
-          Loading sales history...
+          {dictionary.sales.history.loading || "Loading..."} {/* Use dictionary directly */}
         </div>
       ) : error ? (
         <div className="border shadow-sm rounded-lg p-4 text-center text-red-600">
@@ -80,7 +99,7 @@ export default function SalesHistoryPage() {
           columns={columns}
           data={data}
           filterColumnKey="order_number" // Filter by order number
-          filterPlaceholder="Filter by order #..."
+          filterPlaceholder={dictionary.sales.history.filterPlaceholder || "Filter orders..."} // Use dictionary directly
         />
       )}
 
@@ -92,6 +111,7 @@ export default function SalesHistoryPage() {
             setIsDetailsOpen(open);
             if (!open) setSelectedOrder(null); // Clear selected order on close
         }}
+        // Removed dictionary prop as it's now accessed via context in the dialog component
       />
     </div>
   );

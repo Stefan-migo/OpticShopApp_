@@ -1,3 +1,7 @@
+"use client";
+
+import * as React from "react"; // Import React
+import { useEffect, useState } from "react"; // Import useEffect and useState
 import {
   Dialog,
   DialogContent,
@@ -9,6 +13,12 @@ import {
 import { Button } from "@/components/ui/button"; // For close button
 import { Badge } from "@/components/ui/badge";
 import { type Prescription } from "./columns"; // Import Prescription type
+import { Separator } from "@/components/ui/separator"; // Assuming Separator component exists
+import { format } from "date-fns"; // For date formatting
+import { createClient } from "@/lib/supabase/client"; // Import createClient
+
+import { Dictionary } from '@/lib/i18n/types'; // Import shared Dictionary interface
+import { useDictionary } from '@/lib/i18n/dictionary-context'; // Import useDictionary hook
 
 interface PrescriptionDetailsDialogProps {
   prescription: Prescription | null;
@@ -17,31 +27,43 @@ interface PrescriptionDetailsDialogProps {
 }
 
 // Helper to format date strings nicely
-const formatDisplayDate = (dateString: string | null | undefined) => {
-  if (!dateString) return "N/A";
+const formatDisplayDate = (dateString: string | null | undefined, dictionary: Dictionary) => { // Add dictionary param
+  if (!dateString) return dictionary.common.notAvailable; // Use dictionary
   try {
     // Add time part to avoid potential timezone interpretation issues by Date constructor
-    return new Date(dateString + 'T00:00:00').toLocaleDateString(undefined, {
+    // TODO: Localize date formatting based on locale and dictionary format string
+    // Use dictionary for locale if available, otherwise default to en-US
+    const locale = 'en-US'; // Placeholder for actual locale from dictionary or context
+    return new Date(dateString + 'T00:00:00').toLocaleDateString(locale, {
       year: 'numeric', month: 'long', day: 'numeric'
     });
   } catch (e) {
-    return "Invalid Date";
+    return dictionary.common.invalidDate; // Use dictionary
   }
 };
 
 // Helper to display parameter value or a placeholder
-const pv = (value: any) => value ?? '-';
+const pv = (value: any, dictionary: Dictionary) => value ?? dictionary.common.notAvailable; // Use dictionary for placeholder
 
 export function PrescriptionDetailsDialog({
   prescription,
   isOpen,
   onOpenChange,
 }: PrescriptionDetailsDialogProps) {
+  const dictionary = useDictionary(); // Get dictionary from context
+  // Removed supabase client and state/effect for fetching prescriber here
+  // const supabase = createClient();
+  // const [prescriberProfile, setPrescriberProfile] = useState<any>(null);
+  // const [isLoadingPrescriber, setIsLoadingPrescriber] = useState(false);
+  // Removed useEffect for fetching prescriber
+
+
   if (!prescription) return null; // Don't render if no prescription data
 
+  // TODO: Localize customer name formatting
   const customerName = prescription.customers
-    ? `${prescription.customers.last_name || ''}${prescription.customers.last_name && prescription.customers.first_name ? ', ' : ''}${prescription.customers.first_name || ''}`.trim() || 'N/A'
-    : 'N/A';
+    ? `${prescription.customers.last_name || ''}${prescription.customers.last_name && prescription.customers.first_name ? ', ' : ''}${prescription.customers.first_name || ''}`.trim() || dictionary.common.notAvailable // Use dictionary
+    : dictionary.common.notAvailable; // Use dictionary
 
   // Safely parse JSONB parameters
   let odParams: any = {};
@@ -54,121 +76,69 @@ export function PrescriptionDetailsDialog({
     // Keep params as empty objects if parsing fails
   }
 
+  // Access prescriber name from nested data
+  const prescriberDisplayName = prescription.prescribers?.full_name || dictionary.common.notAvailable; // Use dictionary
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Prescription Details</DialogTitle>
+          <DialogTitle>{dictionary.prescriptions.detailsDialog.title}</DialogTitle> {/* Use dictionary */}
           <DialogDescription>
-            Viewing prescription for {customerName}.
+            {dictionary.prescriptions.detailsDialog.description} {customerName}. {/* Use dictionary */}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4 text-sm">
           <div className="grid grid-cols-3 items-center gap-4">
-            <span className="font-medium text-muted-foreground">Customer:</span>
+            <span className="font-medium text-muted-foreground">{dictionary.prescriptions.detailsDialog.customerLabel}:</span> {/* Use dictionary */}
             <span className="col-span-2">{customerName}</span>
           </div>
-           <div className="grid grid-cols-3 items-center gap-4">
-            <span className="font-medium text-muted-foreground">Type:</span>
+          <div className="grid grid-cols-3 items-center gap-4">
+            <span className="font-medium text-muted-foreground">{dictionary.prescriptions.detailsDialog.typeLabel}:</span> {/* Use dictionary */}
             <span className="col-span-2">
-                <Badge variant="secondary" className="capitalize">
-                    {prescription.type === 'contact_lens' ? 'Contact Lenses' : 'Glasses'}
-                </Badge>
+              <Badge variant="secondary" className="capitalize">
+                {/* TODO: Localize type text */}
+                {prescription.type === 'contact_lens' ? dictionary.prescriptions.form.typeContactLens : dictionary.prescriptions.form.typeGlasses}
+              </Badge>
             </span>
           </div>
           <div className="grid grid-cols-3 items-center gap-4">
-            <span className="font-medium text-muted-foreground">Prescription Date:</span>
-            <span className="col-span-2">{formatDisplayDate(prescription.prescription_date)}</span>
+            <span className="font-medium text-muted-foreground">{dictionary.prescriptions.detailsDialog.prescriptionDateLabel}:</span> {/* Use dictionary */}
+            <span className="col-span-2">{formatDisplayDate(prescription.prescription_date, dictionary)}</span> {/* Use localized format and pass dictionary */}
           </div>
           <div className="grid grid-cols-3 items-center gap-4">
-            <span className="font-medium text-muted-foreground">Expiry Date:</span>
-            <span className="col-span-2">{formatDisplayDate(prescription.expiry_date)}</span>
+            <span className="font-medium text-muted-foreground">{dictionary.prescriptions.detailsDialog.expiryDateLabel}:</span> {/* Use dictionary */}
+            <span className="col-span-2">{formatDisplayDate(prescription.expiry_date, dictionary)}</span> {/* Use localized format and pass dictionary */}
           </div>
-           <div className="grid grid-cols-3 items-center gap-4">
-            <span className="font-medium text-muted-foreground">Prescriber:</span>
-            <span className="col-span-2">{prescription.prescriber_name || 'N/A'}</span>
+          <div className="grid grid-cols-3 items-center gap-4">
+            <span className="font-medium text-muted-foreground">{dictionary.prescriptions.detailsDialog.prescriberLabel}:</span> {/* Use dictionary */}
+            <span className="col-span-2">{prescriberDisplayName}</span> {/* Display fetched prescriber name */}
           </div>
-
           {/* Parameters Table */}
           <div className="mt-4">
-            <h4 className="font-medium mb-2">Parameters</h4>
+            <h4 className="font-medium mb-2">{dictionary.prescriptions.detailsDialog.parametersTitle}</h4>
             <div className="border rounded-md">
               <table className="w-full text-center">
                 <thead className="bg-muted/50 text-muted-foreground">
-                  <tr>
-                    <th className="p-2 font-medium">Eye</th>
-                    <th className="p-2 font-medium">SPH</th>
-                    <th className="p-2 font-medium">CYL</th>
-                    <th className="p-2 font-medium">Axis</th>
-                    {prescription.type === 'glasses' && (
-                      <>
-                        <th className="p-2 font-medium">Add</th>
-                        <th className="p-2 font-medium">Prism</th>
-                      </>
-                    )}
-                    {prescription.type === 'contact_lens' && (
-                      <>
-                        <th className="p-2 font-medium">BC</th>
-                        <th className="p-2 font-medium">Dia</th>
-                        <th className="p-2 font-medium">Brand</th>
-                      </>
-                    )}
-                  </tr>
+                  <tr><th className="p-2 font-medium">{dictionary.prescriptions.detailsDialog.eyeHeader}</th><th className="p-2 font-medium">{dictionary.prescriptions.detailsDialog.sphHeader}</th><th className="p-2 font-medium">{dictionary.prescriptions.detailsDialog.cylHeader}</th><th className="p-2 font-medium">{dictionary.prescriptions.detailsDialog.axisHeader}</th>{prescription.type === 'glasses' && (<><th className="p-2 font-medium">{dictionary.prescriptions.detailsDialog.addHeader}</th><th className="p-2 font-medium">{dictionary.prescriptions.detailsDialog.prismHeader}</th></>)}{prescription.type === 'contact_lens' && (<><th className="p-2 font-medium">{dictionary.prescriptions.detailsDialog.bcHeader}</th><th className="p-2 font-medium">{dictionary.prescriptions.detailsDialog.diaHeader}</th><th className="p-2 font-medium">{dictionary.prescriptions.detailsDialog.brandHeader}</th></>)}</tr>
                 </thead>
                 <tbody>
-                  <tr className="border-t">
-                    <td className="p-2 font-medium">OD (Right)</td>
-                    <td className="p-2">{pv(odParams.sph)}</td>
-                    <td className="p-2">{pv(odParams.cyl)}</td>
-                    <td className="p-2">{pv(odParams.axis)}</td>
-                    {prescription.type === 'glasses' && (
-                      <>
-                        <td className="p-2">{pv(odParams.add)}</td>
-                        <td className="p-2">{pv(odParams.prism)}</td>
-                      </>
-                    )}
-                     {prescription.type === 'contact_lens' && (
-                      <>
-                        <td className="p-2">{pv(odParams.bc)}</td>
-                        <td className="p-2">{pv(odParams.dia)}</td>
-                        <td className="p-2">{pv(odParams.brand)}</td>
-                      </>
-                    )}
-                  </tr>
-                  <tr className="border-t">
-                    <td className="p-2 font-medium">OS (Left)</td>
-                    <td className="p-2">{pv(osParams.sph)}</td>
-                    <td className="p-2">{pv(osParams.cyl)}</td>
-                    <td className="p-2">{pv(osParams.axis)}</td>
-                     {prescription.type === 'glasses' && (
-                      <>
-                        <td className="p-2">{pv(osParams.add)}</td>
-                        <td className="p-2">{pv(osParams.prism)}</td>
-                      </>
-                    )}
-                     {prescription.type === 'contact_lens' && (
-                      <>
-                        <td className="p-2">{pv(osParams.bc)}</td>
-                        <td className="p-2">{pv(osParams.dia)}</td>
-                        <td className="p-2">{pv(osParams.brand)}</td>
-                      </>
-                    )}
-                  </tr>
+                  <tr className="border-t"><td className="p-2 font-medium">{dictionary.prescriptions.detailsDialog.odLabel}</td><td className="p-2">{pv(odParams.sph, dictionary)}</td><td className="p-2">{pv(odParams.cyl, dictionary)}</td><td className="p-2">{pv(odParams.axis, dictionary)}</td>{prescription.type === 'glasses' && (<><td className="p-2">{pv(odParams.add, dictionary)}</td><td className="p-2">{pv(odParams.prism, dictionary)}</td></>)}{prescription.type === 'contact_lens' && (<><td className="p-2">{pv(odParams.bc, dictionary)}</td><td className="p-2">{pv(odParams.dia, dictionary)}</td><td className="p-2">{pv(odParams.brand, dictionary)}</td></>)}</tr>
+                  <tr className="border-t"><td className="p-2 font-medium">{dictionary.prescriptions.detailsDialog.osLabel}</td><td className="p-2">{pv(osParams.sph, dictionary)}</td><td className="p-2">{pv(osParams.cyl, dictionary)}</td><td className="p-2">{pv(osParams.axis, dictionary)}</td>{prescription.type === 'glasses' && (<><td className="p-2">{pv(osParams.add, dictionary)}</td><td className="p-2">{pv(osParams.prism, dictionary)}</td></>)}{prescription.type === 'contact_lens' && (<><td className="p-2">{pv(osParams.bc, dictionary)}</td><td className="p-2">{pv(osParams.dia, dictionary)}</td><td className="p-2">{pv(osParams.brand, dictionary)}</td></>)}</tr>
                 </tbody>
               </table>
             </div>
           </div>
-
           {prescription.notes && (
             <div className="mt-4">
-              <h4 className="font-medium mb-1">Notes</h4>
+              <h4 className="font-medium mb-1">{dictionary.prescriptions.detailsDialog.notesTitle}</h4>
               <p className="text-muted-foreground whitespace-pre-wrap">{prescription.notes}</p>
             </div>
           )}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>{dictionary.common.close}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

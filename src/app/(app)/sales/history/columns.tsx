@@ -37,29 +37,34 @@ export type SalesOrder = {
 };
 
 // Define props for the columns function
+import { Dictionary } from '@/lib/i18n/types'; // Import shared Dictionary interface
+
 interface SalesHistoryColumnsProps {
   onViewDetails: (order: SalesOrder) => void;
+  dictionary?: Dictionary | null | undefined; // Add optional dictionary prop
   // Add other actions if needed, e.g., onRefund, onCancel
 }
 
 // Helper function to format date/time
-const formatDateTime = (dateString: string | null | undefined) => {
-    if (!dateString) return "-";
+const formatDateTime = (dateString: string | null | undefined, dictionary?: Dictionary | null | undefined) => { // Add dictionary param
+    if (!dateString) return dictionary?.common?.notAvailable || "-"; // Localize placeholder '-'
     try {
+        // TODO: Localize date formatting based on locale and dictionary format string
         return new Date(dateString).toLocaleString(); // Use locale default format
     } catch (e) {
-        return "Invalid Date";
+        return dictionary?.common?.invalidDate || "Invalid Date"; // Use dictionary with optional chaining
     }
 };
 
 // Helper function to format currency
-const formatCurrency = (amount: number | null | undefined) => {
-    if (amount === null || amount === undefined) return "-";
+const formatCurrency = (amount: number | null | undefined, dictionary?: Dictionary | null | undefined) => { // Add dictionary param
+    if (amount === null || amount === undefined) return dictionary?.common?.notAvailable || "-"; // Localize placeholder '-'
+    // TODO: Localize currency formatting based on locale and dictionary currency settings
     return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 };
 
 // Export a function that generates the columns array
-export const getSalesHistoryColumns = ({ onViewDetails }: SalesHistoryColumnsProps): ColumnDef<SalesOrder>[] => [
+export const getSalesHistoryColumns = ({ onViewDetails, dictionary }: SalesHistoryColumnsProps): ColumnDef<SalesOrder>[] => [
   {
     accessorKey: "order_number",
     header: ({ column }) => (
@@ -67,7 +72,7 @@ export const getSalesHistoryColumns = ({ onViewDetails }: SalesHistoryColumnsPro
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
-        Order #
+        {dictionary?.sales?.history?.orderNumberHeader || "Order #"} {/* Use dictionary with optional chaining */}
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
@@ -80,19 +85,22 @@ export const getSalesHistoryColumns = ({ onViewDetails }: SalesHistoryColumnsPro
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Date
+          {dictionary?.sales?.history?.dateHeader || "Date"} {/* Use dictionary with optional chaining */}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
     ),
-    cell: ({ row }) => <div>{formatDateTime(row.getValue("order_date"))}</div>,
+    cell: ({ row }) => <div>{formatDateTime(row.getValue("order_date"), dictionary)}</div>, // Pass dictionary to helper
   },
   {
     accessorKey: "customers.last_name", // Use nested key for sorting/filtering reference
-    header: "Customer",
+    header: dictionary?.sales?.history?.customerHeader || "Customer", // Use dictionary with optional chaining
     cell: ({ row }) => {
         const firstName = row.original.customers?.first_name;
         const lastName = row.original.customers?.last_name;
-        return <div>{lastName ? `${lastName}, ${firstName || ''}` : (firstName || 'N/A')}</div>;
+        // TODO: Localize customer name formatting
+        // Use dictionary for "Unnamed Customer" fallback
+        const customerName = lastName ? `${lastName}, ${firstName || ''}` : (firstName || (dictionary?.common?.unnamedCustomer || 'Unnamed Customer'));
+        return <div>{customerName}</div>;
     },
      filterFn: (row, id, value) => { // Custom filter for nested object
         const firstName = row.original.customers?.first_name?.toLowerCase() || '';
@@ -103,11 +111,13 @@ export const getSalesHistoryColumns = ({ onViewDetails }: SalesHistoryColumnsPro
   },
   {
     accessorKey: "status",
-    header: "Status",
+    header: dictionary?.sales?.history?.statusHeader || "Status", // Use dictionary with optional chaining
     cell: ({ row }) => {
         const status = row.getValue("status") as SalesOrder['status']; // Cast to expected type
         // Add color coding based on status if desired
-        return <Badge variant={status === 'completed' ? 'default' : 'secondary'} className="capitalize">{status}</Badge>;
+        // Localize status text using dictionary
+        const localizedStatus = dictionary?.common?.status?.[status] || status;
+        return <Badge variant={status === 'completed' ? 'default' : 'secondary'} className="capitalize">{localizedStatus}</Badge>;
     },
      filterFn: (row, id, value) => {
         return value.includes(row.getValue(id))
@@ -120,11 +130,11 @@ export const getSalesHistoryColumns = ({ onViewDetails }: SalesHistoryColumnsPro
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Total Amount
+          {dictionary?.sales?.history?.totalAmountHeader || "Total Amount"} {/* Use dictionary with optional chaining */}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
     ),
-    cell: ({ row }) => <div className="text-right font-medium">{formatCurrency(row.getValue("final_amount"))}</div>,
+    cell: ({ row }) => <div className="text-right font-medium">{formatCurrency(row.getValue("final_amount"), dictionary)}</div>, // Pass dictionary to helper
   },
   {
     id: "actions",
@@ -135,13 +145,13 @@ export const getSalesHistoryColumns = ({ onViewDetails }: SalesHistoryColumnsPro
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
+              <span className="sr-only">{dictionary?.common?.openMenu || "Open menu"}</span> {/* Use dictionary with optional chaining */}
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => onViewDetails(order)}>View Details</DropdownMenuItem>
+            <DropdownMenuLabel>{dictionary?.common?.actions || "Actions"}</DropdownMenuLabel> {/* Use dictionary with optional chaining */}
+            <DropdownMenuItem onClick={() => onViewDetails(order)}>{dictionary?.sales?.history?.viewDetailsAction || "View Details"}</DropdownMenuItem> {/* Use dictionary with optional chaining */}
             {/* Add other actions like Print Receipt, Refund, Cancel if applicable */}
             {/* <DropdownMenuSeparator />
             <DropdownMenuItem className="text-red-600 focus:text-red-700 focus:bg-red-100">

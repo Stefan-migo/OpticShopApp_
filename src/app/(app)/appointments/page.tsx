@@ -1,7 +1,5 @@
 "use client"; // Needs client-side interactivity
 
-"use client"; // Needs client-side interactivity
-
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
@@ -30,8 +28,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"; // Import AlertDialog
 import { AppointmentForm } from "./appointment-form";
+import { getDictionary } from '@/lib/i18n'; // Import getDictionary
+import { Locale } from '@/lib/i18n/config'; // Import Locale
+import { useParams } from 'next/navigation'; // Import useParams
+import { Dictionary } from '@/lib/i18n/types'; // Import shared Dictionary interface
+
 
 // Setup the localizer by providing the moment Object
+// TODO: Localize localizer based on the active locale
 const locales = {
   'en-US': enUS,
 };
@@ -88,6 +92,18 @@ export default function AppointmentsPage() {
   const [clinicSettings, setClinicSettings] = React.useState<any>(null); // State for clinic settings
   const [isLoadingSettings, setIsLoadingSettings] = React.useState(true); // Loading state for settings
   const [user, setUser] = React.useState<User | null>(null); // State for logged-in user
+  const params = useParams(); // Get params from URL
+  const lang = params.lang as Locale; // Extract locale
+
+  // Fetch dictionary
+  const [dictionary, setDictionary] = React.useState<Dictionary | null>(null); // Use Dictionary interface
+  React.useEffect(() => {
+    const fetchDictionary = async () => {
+      const dict = await getDictionary(lang);
+      setDictionary(dict);
+    };
+    fetchDictionary();
+  }, [lang]); // Refetch dictionary if locale changes
 
 
   // Fetch logged-in user and clinic settings
@@ -123,16 +139,17 @@ export default function AppointmentsPage() {
 
       } catch (error: any) {
         console.error("Error fetching clinic settings:", error);
-        toast({ title: "Error loading settings", description: "Could not load clinic settings.", variant: "destructive" });
+        toast({ title: dictionary.appointments.loadSettingsErrorTitle || "Error loading settings", description: dictionary.appointments.loadSettingsErrorDescription || "Could not load clinic settings.", variant: "destructive" }); // Use dictionary
       } finally {
         setIsLoadingSettings(false);
       }
     };
     fetchData();
-  }, [supabase, toast]);
+  }, [supabase, toast, dictionary]); // Add dictionary to dependencies
 
   // Fetch appointments (memoized)
   const fetchAppointments = React.useCallback(async () => {
+    if (!dictionary) return; // Wait for dictionary to load
     setIsLoading(true);
     setError(null);
     const { data, error: fetchError } = await supabase
@@ -145,7 +162,7 @@ export default function AppointmentsPage() {
 
     if (fetchError) {
       console.error("Error fetching appointments:", fetchError);
-      setError("Failed to load appointments.");
+      setError(dictionary.appointments.fetchError || "Failed to load appointments."); // Use dictionary
       setEvents([]);
     } else {
       const formattedEvents = data?.map((appt) => {
@@ -154,11 +171,13 @@ export default function AppointmentsPage() {
         const customer = (appt.customers && typeof appt.customers === 'object' && !Array.isArray(appt.customers))
           ? appt.customers as { first_name: string | null, last_name: string | null }
           : null;
+        // TODO: Localize customer name formatting
         const customerName = customer
-           ? `${customer.last_name || ''}${customer.last_name && customer.first_name ? ', ' : ''}${customer.first_name || ''}`.trim() || 'Unknown Customer'
-           : 'Unknown Customer';
+           ? `${customer.last_name || ''}${customer.last_name && customer.first_name ? ', ' : ''}${customer.first_name || ''}`.trim() || (dictionary.common.unknownCustomer || 'Unknown Customer') // Use dictionary
+           : (dictionary.common.unknownCustomer || 'Unknown Customer'); // Use dictionary
         return {
           id: appt.id,
+          // TODO: Localize appointment type text
           title: `${customerName} (${appt.type})`, // Example title
           start: startTime,
           end: endTime,
@@ -168,11 +187,11 @@ export default function AppointmentsPage() {
       setEvents(formattedEvents);
     }
     setIsLoading(false);
-  }, [supabase]); // Dependency: supabase client
+  }, [supabase, dictionary]); // Dependency: supabase client, dictionary
 
   // Initial fetch
   React.useEffect(() => {
-    const fetchAppointments = async () => {
+    if (dictionary) { // Fetch data only after dictionary is loaded
       setIsLoading(true);
       setError(null);
       const { data, error: fetchError } = await supabase
@@ -186,7 +205,7 @@ export default function AppointmentsPage() {
 
       if (fetchError) {
         console.error("Error fetching appointments:", fetchError);
-        setError("Failed to load appointments.");
+        setError(dictionary.appointments.fetchError || "Failed to load appointments."); // Use dictionary
         setEvents([]);
       } else {
         // Transform Supabase data into react-big-calendar event format
@@ -197,11 +216,13 @@ export default function AppointmentsPage() {
           const customer = (appt.customers && typeof appt.customers === 'object' && !Array.isArray(appt.customers))
             ? appt.customers as { first_name: string | null, last_name: string | null }
             : null;
+          // TODO: Localize customer name formatting
           const customerName = customer
-             ? `${customer.last_name || ''}${customer.last_name && customer.first_name ? ', ' : ''}${customer.first_name || ''}`.trim() || 'Unknown Customer'
-             : 'Unknown Customer';
+             ? `${customer.last_name || ''}${customer.last_name && customer.first_name ? ', ' : ''}${customer.first_name || ''}`.trim() || (dictionary.common.unknownCustomer || 'Unknown Customer') // Use dictionary
+             : (dictionary.common.unknownCustomer || 'Unknown Customer'); // Use dictionary
           return {
             id: appt.id,
+            // TODO: Localize appointment type text
             title: `${customerName} (${appt.type})`, // Example title
             start: startTime,
             end: endTime,
@@ -214,7 +235,7 @@ export default function AppointmentsPage() {
     };
 
     fetchAppointments();
-  }, [fetchAppointments]); // Dependency: memoized fetch function
+  }, [fetchAppointments, dictionary]); // Dependency: memoized fetch function, dictionary
 
   const { minTime, maxTime } = React.useMemo(() => {
     let min = new Date(currentDate); // Use currentDate for min/max calculation
@@ -271,12 +292,12 @@ export default function AppointmentsPage() {
        }
     } else {
         toast({
-            title: "Select a Slot",
-            description: "Please switch to Week or Day view to select a time slot.",
+            title: dictionary.appointments.selectSlotToastTitle || "Select a Slot", // Use dictionary
+            description: dictionary.appointments.selectSlotToastDescription || "Please switch to Week or Day view to select a time slot.", // Use dictionary
             variant: "default"
         })
     }
-  }, [currentView, toast]); // Add currentView and toast to dependencies
+  }, [currentView, toast, dictionary]); // Add dictionary to dependencies
 
   // Handler for selecting an existing event on the calendar
   const handleSelectEvent = (event: CalendarEvent) => {
@@ -312,13 +333,13 @@ export default function AppointmentsPage() {
         .delete()
         .eq("id", deletingAppointmentId);
       if (deleteError) throw deleteError;
-      toast({ title: "Appointment deleted successfully." });
+      toast({ title: dictionary.appointments.deleteSuccess || "Appointment deleted successfully." }); // Use dictionary
       fetchAppointments(); // Refresh calendar
     } catch (error: any) {
       console.error("Error deleting appointment:", error);
       toast({
-        title: "Error deleting appointment",
-        description: error.message || "An unexpected error occurred.",
+        title: dictionary.appointments.deleteErrorTitle || "Error deleting appointment", // Use dictionary
+        description: error.message || dictionary.common.unexpectedError || "An unexpected error occurred.", // Use dictionary
         variant: "destructive",
       });
     } finally {
@@ -330,43 +351,43 @@ export default function AppointmentsPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Appointments</h1>
+        <h1 className="text-2xl font-semibold">{dictionary.appointments.title || "Appointments"}</h1> {/* Use dictionary */}
         {/* Add Appointment Dialog */}
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button>
-              <PlusCircle className="mr-2 h-4 w-4" /> Schedule Appointment
+              <PlusCircle className="mr-2 h-4 w-4" /> {dictionary.appointments.scheduleButton || "Schedule Appointment"} {/* Use dictionary */}
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Schedule New Appointment</DialogTitle>
+              <DialogTitle>{dictionary.appointments.scheduleNewTitle || "Schedule New Appointment"}</DialogTitle> {/* Use dictionary */}
               <DialogDescription>
- 
-                Fill in the details to schedule a new appointment.
+                {dictionary.appointments.scheduleNewDescription || "Fill in the details to schedule a new appointment."} {/* Use dictionary */}
               </DialogDescription>
             </DialogHeader>
             {/* Pass selected slot time to the form */}
             <AppointmentForm
               initialDateTime={selectedSlotStart ?? undefined}
               onSuccess={handleFormSuccess}
+              dictionary={dictionary} // Pass dictionary
             />
           </DialogContent>
         </Dialog>
       </div>
       <div className="border shadow-sm rounded-lg p-4 h-[75vh]"> {/* Give calendar a height */}
         {isLoading || isLoadingSettings ? ( // Include isLoadingSettings in loading check
-            <p className="text-muted-foreground">Loading calendar...</p>
+            <p className="text-muted-foreground">{dictionary.appointments.loadingCalendar || "Loading calendar..."}</p> {/* Use dictionary */}
         ) : error ? (
              <p className="text-red-600">{error}</p>
         ) : (
             <Calendar
-                localizer={localizer}
+                localizer={localizer} // TODO: Localize localizer
                 events={events}
                 startAccessor="start"
                 endAccessor="end"
                 style={{ height: '100%' }}
-                views={[Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA]}
+                views={[Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA]} // TODO: Localize view names
                 onSelectEvent={handleSelectEvent}
                 date={currentDate} // Control the current date
                 view={currentView} // Control the current view
@@ -414,9 +435,9 @@ export default function AppointmentsPage() {
         }}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Edit Appointment</DialogTitle>
+              <DialogTitle>{dictionary.appointments.editTitle || "Edit Appointment"}</DialogTitle> {/* Use dictionary */}
               <DialogDescription>
-                Update the appointment details.
+                {dictionary.appointments.editDescription || "Update the appointment details."} {/* Use dictionary */}
               </DialogDescription>
             </DialogHeader>
             {/* Pass initialData for editing */}
@@ -424,6 +445,7 @@ export default function AppointmentsPage() {
                 initialData={editingAppointment}
                 onSuccess={handleFormSuccess}
                 clinicSettings={clinicSettings} // Pass clinic settings to the form
+                dictionary={dictionary} // Pass dictionary
             />
              <Button
                 variant="outline"
@@ -431,7 +453,7 @@ export default function AppointmentsPage() {
                 onClick={() => editingAppointment && openDeleteDialog(editingAppointment.id)}
                 disabled={!editingAppointment}
              >
-                Delete Appointment
+                {dictionary.appointments.deleteButton || "Delete Appointment"} {/* Use dictionary */}
              </Button>
           </DialogContent>
         </Dialog>
@@ -440,16 +462,15 @@ export default function AppointmentsPage() {
         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
             <AlertDialogContent>
             <AlertDialogHeader>
-                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogTitle>{dictionary.appointments.deleteConfirmTitle || "Are you absolutely sure?"}</AlertDialogTitle> {/* Use dictionary */}
                 <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete this
-                appointment record.
+                {dictionary.appointments.deleteConfirmDescription || "This action cannot be undone. This will permanently delete this appointment record."} {/* Use dictionary */}
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setDeletingAppointmentId(null)}>Cancel</AlertDialogCancel>
+                <AlertDialogCancel onClick={() => setDeletingAppointmentId(null)}>{dictionary.common.cancel || "Cancel"}</AlertDialogCancel> {/* Use dictionary */}
                 <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                Delete Appointment
+                {dictionary.appointments.deleteButton || "Delete Appointment"} {/* Use dictionary */}
                 </AlertDialogAction>
             </AlertDialogFooter>
             </AlertDialogContent>

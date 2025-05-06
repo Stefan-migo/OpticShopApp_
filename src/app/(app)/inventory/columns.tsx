@@ -39,10 +39,11 @@ interface ProductColumnsProps {
   onView: (product: Product) => void; // Add onView handler
   onEdit: (product: Product) => void;
   onDelete: (productId: string) => void;
+  dictionary: any; // Add dictionary prop
 }
 
 // Export a function that generates the columns array
-export const getColumns = ({ onView, onEdit, onDelete }: ProductColumnsProps): ColumnDef<Product>[] => [
+export const getColumns = ({ onView, onEdit, onDelete, dictionary }: ProductColumnsProps): ColumnDef<Product>[] => [
   // Optional: Select column
   // { id: "select", ... },
   {
@@ -52,7 +53,7 @@ export const getColumns = ({ onView, onEdit, onDelete }: ProductColumnsProps): C
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
-        Name
+        {dictionary.inventory.productColumns?.nameHeader || "Name"} {/* Use dictionary */}
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
@@ -61,10 +62,10 @@ export const getColumns = ({ onView, onEdit, onDelete }: ProductColumnsProps): C
   {
     // Access nested category name if joined, otherwise show ID or placeholder
     accessorKey: "product_categories.name",
-    header: "Category",
+    header: dictionary.inventory.productColumns?.categoryHeader || "Category", // Use dictionary
     cell: ({ row }) => {
       const categoryName = row.original.product_categories?.name;
-      return categoryName ? <Badge variant="outline">{categoryName}</Badge> : <span className="text-muted-foreground">N/A</span>;
+      return categoryName ? <Badge variant="outline">{categoryName}</Badge> : <span className="text-muted-foreground">{dictionary.common.notAvailable || "N/A"}</span>; // Use dictionary
     },
     filterFn: (row, id, value) => { // Custom filter for nested object
         return value.includes(row.original.product_categories?.name)
@@ -72,7 +73,7 @@ export const getColumns = ({ onView, onEdit, onDelete }: ProductColumnsProps): C
   },
   {
     accessorKey: "brand",
-    header: "Brand",
+    header: dictionary.inventory.productColumns?.brandHeader || "Brand", // Use dictionary
     cell: ({ row }) => <div>{row.getValue("brand") || "-"}</div>,
   },
   {
@@ -83,12 +84,13 @@ export const getColumns = ({ onView, onEdit, onDelete }: ProductColumnsProps): C
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         className="text-right w-full justify-end" // Align right
       >
-        Price
+        {dictionary.inventory.productColumns?.priceHeader || "Price"} {/* Use dictionary */}
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
     cell: ({ row }) => {
       const amount = parseFloat(row.getValue("base_price"));
+      // TODO: Localize currency formatting
       const formatted = new Intl.NumberFormat("en-US", {
         style: "currency",
         currency: "USD", // Adjust currency as needed
@@ -103,13 +105,14 @@ export const getColumns = ({ onView, onEdit, onDelete }: ProductColumnsProps): C
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Created At
+          {dictionary.inventory.productColumns?.createdAtHeader || "Created At"} {/* Use dictionary */}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
     ),
     cell: ({ row }) => {
       const date = new Date(row.getValue("created_at"));
-      const formatted = date.toLocaleDateString();
+      // TODO: Localize date formatting
+      const formatted = date.toLocaleDateString(); // Basic formatting
       return <div className="font-medium">{formatted}</div>;
     },
   },
@@ -122,21 +125,21 @@ export const getColumns = ({ onView, onEdit, onDelete }: ProductColumnsProps): C
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
+              <span className="sr-only">{dictionary.common.openMenu || "Open menu"}</span> {/* Use dictionary */}
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuLabel>{dictionary.common.actions || "Actions"}</DropdownMenuLabel> {/* Use dictionary */}
             {/* Add specific product actions here */}
-            <DropdownMenuItem onClick={() => onEdit(product)}>Edit Product</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onView(product)}>View Details</DropdownMenuItem> {/* Call onView handler */}
+            <DropdownMenuItem onClick={() => onEdit(product)}>{dictionary.inventory.productColumns?.editProduct || "Edit Product"}</DropdownMenuItem> {/* Use dictionary */}
+            <DropdownMenuItem onClick={() => onView(product)}>{dictionary.inventory.productColumns?.viewDetails || "View Details"}</DropdownMenuItem> {/* Use dictionary, Call onView handler */}
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-red-600 focus:text-red-700 focus:bg-red-100"
               onClick={() => onDelete(product.id)}
             >
-              Delete Product
+              {dictionary.inventory.productColumns?.deleteProduct || "Delete Product"} {/* Use dictionary */}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -30,6 +30,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getStockColumns, type InventoryItem } from "./stock-columns"; // Import stock columns and type
 import { ProductViewDetailsDialog } from "./ProductViewDetailsDialog"; // Import the view dialog component
+import { useDictionary } from "@/lib/i18n/dictionary-context"; // Import useDictionary hook
 
 export default function InventoryPage() {
   const [productData, setProductData] = React.useState<Product[]>([]);
@@ -52,6 +53,7 @@ export default function InventoryPage() {
   const [viewingProduct, setViewingProduct] = React.useState<Product | null>(null); // Product being viewed
   const supabase = createClient();
   const { toast } = useToast();
+  const dictionary = useDictionary(); // Use the useDictionary hook at the top level
 
   // Function to refresh product data
   const fetchProducts = React.useCallback(async () => {
@@ -66,13 +68,13 @@ export default function InventoryPage() {
 
     if (fetchError) {
       console.error("Error fetching products:", fetchError);
-      setProductError(`Failed to load product data: ${fetchError.message}`);
+      setProductError(`${dictionary?.inventory?.fetchProductsError || "Failed to load product data"}: ${fetchError.message}`); // Use optional chaining
       setProductData([]);
     } else {
       setProductData(products as any);
     }
     setIsProductLoading(false);
-  }, [supabase]);
+  }, [supabase, dictionary]); // Add dictionary to dependency array
 
   // Function to refresh stock data
   const fetchStockItems = React.useCallback(async () => {
@@ -87,13 +89,13 @@ export default function InventoryPage() {
 
       if (fetchError) {
         console.error("Error fetching stock items:", fetchError);
-        setStockError(`Failed to load stock data: ${fetchError.message}`);
+        setStockError(`${dictionary?.inventory?.fetchStockError || "Failed to load stock items"}: ${fetchError.message}`); // Use optional chaining
         setStockData([]);
       } else {
         setStockData(items as any);
       }
       setIsStockLoading(false);
-  }, [supabase]);
+  }, [supabase, dictionary]); // Add dictionary to dependency array
 
   // Initial data fetch for both
   React.useEffect(() => {
@@ -101,7 +103,7 @@ export default function InventoryPage() {
     setIsStockLoading(true);
     fetchProducts();
     fetchStockItems();
-  }, [fetchProducts, fetchStockItems]);
+  }, [fetchProducts, fetchStockItems]); // Removed dictionary from dependency array
 
   // Callbacks for form success
   const handleAddProductSuccess = () => {
@@ -153,14 +155,14 @@ export default function InventoryPage() {
         .delete()
         .eq("id", deletingProductId);
       if (deleteError) throw deleteError;
-      toast({ title: "Product deleted successfully." });
+      toast({ title: dictionary?.inventory?.productDeleteSuccess || "Product deleted successfully." }); // Use optional chaining
       fetchProducts();
       fetchStockItems(); // Refresh stock list too in case of cascades/relations
     } catch (error: any) {
       console.error("Error deleting product:", error);
       toast({
-        title: "Error deleting product",
-        description: error.message || "An unexpected error occurred.",
+        title: dictionary?.inventory?.productDeleteErrorTitle || "Error deleting product", // Use optional chaining
+        description: error.message || dictionary?.common?.unexpectedError || "An unexpected error occurred.", // Use optional chaining
         variant: "destructive",
       });
     } finally {
@@ -188,13 +190,13 @@ export default function InventoryPage() {
         .delete()
         .eq("id", deletingStockItemId);
       if (deleteError) throw deleteError;
-      toast({ title: "Stock item deleted successfully." });
+      toast({ title: dictionary?.inventory?.stockDeleteSuccess || "Stock item deleted successfully." }); // Use optional chaining
       fetchStockItems(); // Refresh stock list
     } catch (error: any) {
       console.error("Error deleting stock item:", error);
       toast({
-        title: "Error deleting stock item",
-        description: error.message || "An unexpected error occurred.",
+        title: dictionary?.inventory?.stockDeleteErrorTitle || "Error deleting stock item", // Use optional chaining
+        description: error.message || dictionary?.common?.unexpectedError || "An unexpected error occurred.", // Use optional chaining
         variant: "destructive",
       });
     } finally {
@@ -205,42 +207,54 @@ export default function InventoryPage() {
 
   // Generate columns for Products table
   const productColumns = React.useMemo(
-    () => getColumns({ onView: openViewProductDialog, onEdit: openEditProductDialog, onDelete: openDeleteProductDialog }),
+    () => getColumns({ onView: openViewProductDialog, onEdit: openEditProductDialog, onDelete: openDeleteProductDialog, dictionary }), // Pass dictionary prop
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [openViewProductDialog, openEditProductDialog, openDeleteProductDialog] // Add dependencies
+    [openViewProductDialog, openEditProductDialog, openDeleteProductDialog, dictionary] // Add dictionary to dependencies
   );
 
   // Generate columns for Stock table
   const stockColumns = React.useMemo(
-    () => getStockColumns({ onEdit: openEditStockDialog, onDelete: openDeleteStockDialog }),
+    () => getStockColumns({ onEdit: openEditStockDialog, onDelete: openDeleteStockDialog, dictionary }), // Pass dictionary prop
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [openEditStockDialog, openDeleteStockDialog] // Add dependencies
+    [openEditStockDialog, openDeleteStockDialog, dictionary] // Add dictionary to dependencies
   );
+
+  if (!dictionary) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        {dictionary?.common?.loading || "Loading..."} {/* Use optional chaining */}
+      </div>
+    );
+  }
+
+  // --- Dictionary is guaranteed non-null below ---
 
   return (
     <Tabs defaultValue="products" className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <TabsList>
-          <TabsTrigger value="products">Product Catalog</TabsTrigger>
-          <TabsTrigger value="stock">Inventory Stock</TabsTrigger>
+          {/* Use dictionary directly */}
+          <TabsTrigger value="products">{dictionary.inventory.productCatalogTab}</TabsTrigger>
+          {/* Use dictionary directly */}
+          <TabsTrigger value="stock">{dictionary.inventory.inventoryStockTab}</TabsTrigger>
         </TabsList>
 
         {/* Add Product Dialog Trigger */}
         <Dialog open={isAddProductDialogOpen} onOpenChange={setIsAddProductDialogOpen}>
           <DialogTrigger asChild>
             <Button>
-              <PlusCircle className="mr-2 h-4 w-4" /> Add Product
+              <PlusCircle className="mr-2 h-4 w-4" /> {dictionary.inventory.addProductButton} {/* Use dictionary directly */}
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Add New Product</DialogTitle>
+              <DialogTitle>{dictionary.inventory.addNewProductTitle}</DialogTitle> {/* Use dictionary directly */}
               <DialogDescription>
-                Enter the details for the new product catalog item.
+                {dictionary.inventory.addNewProductDescription} {/* Use dictionary directly */}
               </DialogDescription>
             </DialogHeader>
             {/* Pass initialData as null or undefined for adding */}
-            <ProductForm onSuccess={handleAddProductSuccess} initialData={null} />
+            <ProductForm onSuccess={handleAddProductSuccess} initialData={null} dictionary={dictionary} /> {/* Pass dictionary */}
           </DialogContent>
         </Dialog>
       </div>
@@ -249,7 +263,7 @@ export default function InventoryPage() {
       <TabsContent value="products" className="mt-0">
         {isProductLoading ? (
           <div className="border shadow-sm rounded-lg p-4 text-center text-muted-foreground">
-            Loading products...
+            {dictionary.inventory.loadingProducts} {/* Use dictionary directly */}
           </div>
         ) : productError ? (
           <div className="border shadow-sm rounded-lg p-4 text-center text-red-600">
@@ -260,7 +274,7 @@ export default function InventoryPage() {
             columns={productColumns}
             data={productData}
             filterColumnKey="name"
-            filterPlaceholder="Filter products by name..."
+            filterPlaceholder={dictionary.inventory.filterProductsPlaceholder}
           />
         )}
       </TabsContent>
@@ -271,25 +285,25 @@ export default function InventoryPage() {
             <Dialog open={isAddStockDialogOpen} onOpenChange={setIsAddStockDialogOpen}>
               <DialogTrigger asChild>
                 <Button>
-                  <PlusCircle className="mr-2 h-4 w-4" /> Add Stock Item
+                  <PlusCircle className="mr-2 h-4 w-4" /> {dictionary.inventory.addStockItemButton} {/* Use dictionary directly */}
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                  <DialogTitle>Add New Stock Item</DialogTitle>
+                  <DialogTitle>{dictionary.inventory.addNewStockItemTitle}</DialogTitle> {/* Use dictionary directly */}
                   <DialogDescription>
-                    Enter the details for the new inventory item.
+                    {dictionary.inventory.addNewStockItemDescription} {/* Use dictionary directly */}
                   </DialogDescription>
                 </DialogHeader>
                  {/* Pass initialData as null or undefined for adding */}
-                <StockItemForm onSuccess={handleAddStockSuccess} initialData={null} />
+                <StockItemForm onSuccess={handleAddStockSuccess} initialData={null} dictionary={dictionary} /> {/* Pass dictionary */}
               </DialogContent>
             </Dialog>
          </div>
 
          {isStockLoading ? (
           <div className="border shadow-sm rounded-lg p-4 text-center text-muted-foreground">
-            Loading stock items...
+            {dictionary.inventory.loadingStockItems} {/* Use dictionary directly */}
           </div>
         ) : stockError ? (
           <div className="border shadow-sm rounded-lg p-4 text-center text-red-600">
@@ -300,7 +314,7 @@ export default function InventoryPage() {
           columns={stockColumns}
           data={stockData}
           filterColumnKey="serial_number" // Filter by serial number
-          filterPlaceholder="Filter by serial number..."
+          filterPlaceholder={dictionary.inventory.filterStockPlaceholder}
         />
         )}
       </TabsContent>
@@ -312,12 +326,12 @@ export default function InventoryPage() {
       }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit Product</DialogTitle>
-            <DialogDescription> {/* <<< FIXED: Removed extra closing tag here */}
-              Update the product's details. Click save when done.
+            <DialogTitle>{dictionary.inventory.editProductTitle}</DialogTitle> {/* Use dictionary directly */}
+            <DialogDescription>
+              {dictionary.inventory.editProductDescription} {/* Use dictionary directly */}
             </DialogDescription>
           </DialogHeader>
-          <ProductForm initialData={editingProduct} onSuccess={handleEditProductSuccess} />
+          <ProductForm initialData={editingProduct} onSuccess={handleEditProductSuccess} dictionary={dictionary} /> {/* Pass dictionary */}
         </DialogContent>
       </Dialog>
 
@@ -325,16 +339,15 @@ export default function InventoryPage() {
       <AlertDialog open={isDeleteProductDialogOpen} onOpenChange={setIsDeleteProductDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription> {/* <<< FIXED: Removed extra closing tag here */}
-              This action cannot be undone. This will permanently delete the product
-              and potentially associated inventory items (depending on DB constraints).
+            <AlertDialogTitle>{dictionary.inventory.deleteProductConfirmTitle}</AlertDialogTitle> {/* Use dictionary directly */}
+            <AlertDialogDescription>
+              {dictionary.inventory.deleteProductConfirmDescription} {/* Use dictionary directly */}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeletingProductId(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setDeletingProductId(null)}>{dictionary.common.cancel}</AlertDialogCancel> {/* Use dictionary directly */}
             <AlertDialogAction onClick={confirmDeleteProduct} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete Product
+              {dictionary.inventory.deleteProductButton} {/* Use dictionary directly */}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -347,13 +360,13 @@ export default function InventoryPage() {
       }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit Stock Item</DialogTitle>
-            <DialogDescription> {/* <<< FIXED: Removed extra closing tag here */}
-              Update the stock item details. Click save when done.
+            <DialogTitle>{dictionary.inventory.editStockItemTitle}</DialogTitle> {/* Use dictionary directly */}
+            <DialogDescription>
+              {dictionary.inventory.editStockItemDescription} {/* Use dictionary directly */}
             </DialogDescription>
           </DialogHeader>
           {/* Pass initialData for editing */}
-          <StockItemForm initialData={editingStockItem} onSuccess={handleEditStockSuccess} />
+          <StockItemForm onSuccess={handleEditStockSuccess} initialData={editingStockItem} dictionary={dictionary} /> {/* Pass dictionary */}
         </DialogContent>
       </Dialog>
 
@@ -362,16 +375,15 @@ export default function InventoryPage() {
       <AlertDialog open={isDeleteStockDialogOpen} onOpenChange={setIsDeleteStockDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription> {/* <<< FIXED: Removed extra closing tag here */}
-              This action cannot be undone. This will permanently delete this
-              stock item record.
+            <AlertDialogTitle>{dictionary.inventory.deleteStockItemConfirmTitle}</AlertDialogTitle> {/* Use dictionary directly */}
+            <AlertDialogDescription>
+              {dictionary.inventory.deleteStockItemConfirmDescription} {/* Corrected typo and Use dictionary directly */}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeletingStockItemId(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setDeletingStockItemId(null)}>{dictionary.common.cancel}</AlertDialogCancel> {/* Use dictionary directly */}
             <AlertDialogAction onClick={confirmDeleteStockItem} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete Stock Item
+              {dictionary.inventory.deleteStockItemButton} {/* Use dictionary directly */}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -382,6 +394,7 @@ export default function InventoryPage() {
         open={isViewProductDialogOpen}
         onOpenChange={setIsViewProductDialogOpen}
         product={viewingProduct}
+        dictionary={dictionary} // Pass dictionary
       />
     </Tabs>
   );

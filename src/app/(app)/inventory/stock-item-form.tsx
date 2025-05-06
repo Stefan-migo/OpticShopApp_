@@ -9,7 +9,7 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Form,
-  FormControl,
+  FormControl, // Keep FormControl import for type definition if needed elsewhere, but won't be used directly in JSX
   FormDescription,
   FormField,
   FormItem,
@@ -35,19 +35,21 @@ import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { type InventoryItem } from "./stock-columns"; // Import InventoryItem type
 import { type Product } from "./columns"; // Import Product type for dropdown
+import { Dictionary } from '@/lib/i18n/types'; // Import shared Dictionary interface
+import { useDictionary } from '@/lib/i18n/dictionary-context'; // Import useDictionary hook
 
 // Define the form schema using Zod
-const formSchema = z.object({
-  product_id: z.string().uuid({ message: "Please select a product." }),
+const createFormSchema = (dictionary: Dictionary) => z.object({
+  product_id: z.string().uuid({ message: dictionary.inventory.stockItemForm.productRequired || "Please select a product." }), // Use dictionary
   serial_number: z.string().optional(),
-  quantity: z.coerce.number().int().min(1, { message: "Quantity must be at least 1." }),
-  cost_price: z.coerce.number().min(0, { message: "Cost must be non-negative." }).optional().nullable(),
+  quantity: z.coerce.number().int().min(1, { message: dictionary.inventory.stockItemForm.quantityMin || "Quantity must be at least 1." }), // Use dictionary
+  cost_price: z.coerce.number().min(0, { message: dictionary.inventory.stockItemForm.costNonNegative || "Cost must be non-negative." }).optional().nullable(), // Use dictionary
   purchase_date: z.string().optional().nullable(), // Changed to string for type="date" input
   location: z.string().optional(),
-  status: z.enum(['available', 'sold', 'damaged', 'returned']), // Removed .default() here
+  status: z.enum(['available', 'sold', 'damaged', 'returned']), // Removed .default() here // TODO: Localize Zod messages
 });
 
-type StockItemFormValues = z.infer<typeof formSchema>;
+type StockItemFormValues = z.infer<ReturnType<typeof createFormSchema>>;
 
 interface StockItemFormProps {
   initialData?: InventoryItem | null; // For editing existing item
@@ -64,6 +66,8 @@ export function StockItemForm({ initialData, onSuccess }: StockItemFormProps) {
   const [products, setProducts] = React.useState<ProductOption[]>([]);
   const [isLoadingDropdowns, setIsLoadingDropdowns] = React.useState(true);
 
+  const dictionary = useDictionary(); // Get dictionary from context
+
   // Fetch products for dropdown
   React.useEffect(() => {
     const fetchProducts = async () => {
@@ -77,9 +81,10 @@ export function StockItemForm({ initialData, onSuccess }: StockItemFormProps) {
         setProducts(data || []);
       } catch (error: any) {
         console.error("Error fetching products for dropdown:", error);
+        // Use optional chaining for dictionary access
         toast({
-          title: "Error loading form data",
-          description: "Could not load products.",
+          title: dictionary?.inventory?.stockItemForm?.loadErrorTitle || "Error loading data", // Use dictionary directly
+          description: dictionary?.inventory?.stockItemForm?.loadErrorDescription || "Failed to load products.", // Use dictionary directly
           variant: "destructive",
         });
       } finally {
@@ -87,11 +92,11 @@ export function StockItemForm({ initialData, onSuccess }: StockItemFormProps) {
       }
     };
     fetchProducts();
-  }, [supabase, toast]);
+  }, [supabase, toast, dictionary]); // Add dictionary to dependencies
 
   // Define form
   const form = useForm<StockItemFormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(createFormSchema(dictionary)), // Pass dictionary to schema function
     defaultValues: {
       product_id: initialData?.product_id || "",
       serial_number: initialData?.serial_number || "",
@@ -143,20 +148,23 @@ export function StockItemForm({ initialData, onSuccess }: StockItemFormProps) {
       }
 
       toast({
-        title: `Stock item ${isEditing ? "updated" : "added"} successfully.`,
+        title: dictionary?.inventory?.stockItemForm?.saveSuccess || "Stock item saved successfully.", // Use dictionary directly
       });
       onSuccess?.(); // Call the success callback
       form.reset(); // Reset form
 
     } catch (error: any) {
       console.error("Error saving stock item:", error);
+      // Use optional chaining for dictionary access
       toast({
-        title: `Error ${isEditing ? "saving" : "adding"} stock item`,
-        description: error.message || "An unexpected error occurred.",
+        title: dictionary?.inventory?.stockItemForm?.saveErrorTitle || "Error saving stock item.", // Use dictionary directly
+        description: error.message || dictionary?.common?.unexpectedError || "An unexpected error occurred.", // Use dictionary directly
         variant: "destructive",
       });
     }
   }
+
+  // No need for dictionary check here, useDictionary hook handles it
 
   return (
     <Form {...form}>
@@ -166,21 +174,21 @@ export function StockItemForm({ initialData, onSuccess }: StockItemFormProps) {
           name="product_id"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Product *</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined} disabled={isLoading || isEditing}> {/* Disable product change when editing */}
-                <FormControl>
+              <FormLabel>{dictionary.inventory.stockItemForm.productLabel} *</FormLabel> {/* Use dictionary directly */}
+              <div> {/* Removed FormControl */}
+                <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined} disabled={isLoading || isEditing}> {/* Disable product change when editing */}
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a product" />
+                    <SelectValue placeholder={dictionary.inventory.stockItemForm.selectProductPlaceholder} /> {/* Use dictionary directly */}
                   </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {products.map((prod) => (
-                    <SelectItem key={prod.id} value={prod.id}>
-                      {prod.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                  <SelectContent>
+                    {products.map((prod) => (
+                      <SelectItem key={prod.id} value={prod.id}>
+                        {prod.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div> {/* Close div */}
               <FormMessage />
             </FormItem>
           )}
@@ -190,12 +198,12 @@ export function StockItemForm({ initialData, onSuccess }: StockItemFormProps) {
           name="serial_number"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Serial Number</FormLabel>
-              <FormControl>
-                <Input placeholder="Optional serial number" {...field} disabled={isLoading} />
-              </FormControl>
+              <FormLabel>{dictionary.inventory.stockItemForm.serialNumberLabel}</FormLabel> {/* Use dictionary directly */}
+              <div> {/* Removed FormControl */}
+                <Input placeholder={dictionary.inventory.stockItemForm.serialNumberPlaceholder} {...field} disabled={isLoading} /> {/* Use dictionary directly */}
+              </div> {/* Close div */}
               <FormDescription>
-                Leave blank if not applicable (e.g., for contact lenses).
+                {dictionary.inventory.stockItemForm.serialNumberDescription} {/* Use dictionary directly */}
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -207,10 +215,10 @@ export function StockItemForm({ initialData, onSuccess }: StockItemFormProps) {
                 name="quantity"
                 render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Quantity *</FormLabel>
-                    <FormControl>
-                    <Input type="number" min="1" step="1" placeholder="1" {...field} disabled={isLoading} />
-                    </FormControl>
+                    <FormLabel>{dictionary.inventory.stockItemForm.quantityLabel} *</FormLabel> {/* Use dictionary directly */}
+                    <div> {/* Removed FormControl */}
+                      <Input type="number" min="1" step="1" placeholder={dictionary.inventory.stockItemForm.quantityPlaceholder} {...field} disabled={isLoading} /> {/* Use dictionary directly */}
+                    </div> {/* Close div */}
                     <FormMessage />
                 </FormItem>
                 )}
@@ -220,10 +228,10 @@ export function StockItemForm({ initialData, onSuccess }: StockItemFormProps) {
                 name="cost_price"
                 render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Cost Price</FormLabel>
-                    <FormControl>
-                    <Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} disabled={isLoading} />
-                    </FormControl>
+                    <FormLabel>{dictionary.inventory.stockItemForm.costPriceLabel}</FormLabel> {/* Use dictionary directly */}
+                    <div> {/* Removed FormControl */}
+                      <Input type="number" step="0.01" placeholder={dictionary.inventory.stockItemForm.costPricePlaceholder} {...field} value={field.value ?? ''} disabled={isLoading} /> {/* Use dictionary directly */}
+                    </div> {/* Close div */}
                     <FormMessage />
                 </FormItem>
                 )}
@@ -235,8 +243,8 @@ export function StockItemForm({ initialData, onSuccess }: StockItemFormProps) {
                 name="purchase_date"
                 render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Purchase Date</FormLabel>
-                    <FormControl>
+                    <FormLabel>{dictionary.inventory.stockItemForm.purchaseDateLabel}</FormLabel> {/* Use dictionary directly */}
+                    <div> {/* Removed FormControl */}
                       {/* Use standard HTML date input */}
                       <Input
                         type="date"
@@ -244,7 +252,7 @@ export function StockItemForm({ initialData, onSuccess }: StockItemFormProps) {
                         value={field.value ?? ''} // Handle null value
                         disabled={isLoading}
                       />
-                    </FormControl>
+                    </div> {/* Close div */}
                     <FormMessage />
                 </FormItem>
                 )}
@@ -254,10 +262,10 @@ export function StockItemForm({ initialData, onSuccess }: StockItemFormProps) {
                 name="location"
                 render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Location</FormLabel>
-                    <FormControl>
-                    <Input placeholder="e.g., Shelf A1, Display Case" {...field} disabled={isLoading} />
-                    </FormControl>
+                    <FormLabel>{dictionary.inventory.stockItemForm.locationLabel}</FormLabel> {/* Use dictionary directly */}
+                    <div> {/* Removed FormControl */}
+                      <Input placeholder={dictionary.inventory.stockItemForm.locationPlaceholder} {...field} disabled={isLoading} /> {/* Use dictionary directly */}
+                    </div> {/* Close div */}
                     <FormMessage />
                 </FormItem>
                 )}
@@ -268,27 +276,30 @@ export function StockItemForm({ initialData, onSuccess }: StockItemFormProps) {
             name="status"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Status *</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="available">Available</SelectItem>
-                    <SelectItem value="sold">Sold</SelectItem>
-                    <SelectItem value="damaged">Damaged</SelectItem>
-                    <SelectItem value="returned">Returned</SelectItem>
-                  </SelectContent>
-                </Select>
+                <FormLabel>{dictionary.inventory.stockItemForm.statusLabel} *</FormLabel> {/* Use dictionary directly */}
+                <div> {/* Removed FormControl */}
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={dictionary.inventory.stockItemForm.selectStatusPlaceholder} /> {/* Use dictionary directly */}
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="available">{dictionary.common.status.available}</SelectItem> {/* Use dictionary directly */}
+                        <SelectItem value="sold">{dictionary.common.status.sold}</SelectItem> {/* Use dictionary directly */}
+                        <SelectItem value="damaged">{dictionary.common.status.damaged}</SelectItem> {/* Use dictionary directly */}
+                        <SelectItem value="returned">{dictionary.common.status.returned}</SelectItem> {/* Use dictionary directly */}
+                      </SelectContent>
+                    </Select>
+                  </div> {/* Close div */}
                 <FormMessage />
               </FormItem>
             )}
           />
 
         <Button type="submit" disabled={isLoading}>
-          {isLoading ? (isEditing ? "Saving..." : "Adding...") : (isEditing ? "Save Changes" : "Add Stock Item")}
+          {isLoading
+            ? (isEditing ? dictionary.common.saving : dictionary.common.adding) // Use dictionary directly
+            : (isEditing ? dictionary.common.saveChanges : dictionary.common.addStockItem) // Use dictionary directly
+          }
         </Button>
       </form>
     </Form>

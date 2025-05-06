@@ -9,6 +9,11 @@ import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
+import { getDictionary } from '@/lib/i18n'; // Import getDictionary
+import { Locale } from '@/lib/i18n/config'; // Import Locale
+import { useParams } from 'next/navigation'; // Import useParams
+import { Dictionary } from '@/lib/i18n/types'; // Import shared Dictionary interface
+
 
 // Define type for customer options in combobox
 type CustomerOption = {
@@ -52,10 +57,27 @@ export default function SalesPage() {
   const [isSavingSale, setIsSavingSale] = React.useState(false);
   const [defaultTaxRate, setDefaultTaxRate] = React.useState<number | null>(null);
   const [defaultTaxRateId, setDefaultTaxRateId] = React.useState<string | null>(null);
+  const params = useParams(); // Get params from URL
+  const lang = params.lang as Locale; // Extract locale
 
+  // Fetch dictionary
+  const [dictionary, setDictionary] = React.useState<Dictionary | null>(null); // Explicitly type dictionary state
+  React.useEffect(() => {
+    const fetchDictionary = async () => {
+      const dict = await getDictionary(lang);
+      setDictionary(dict);
+    };
+    fetchDictionary();
+  }, [lang]); // Refetch dictionary if locale changes
+
+  // Add conditional rendering check for dictionary
+  if (!dictionary) {
+    return <div>{/*dictionary?.common?.loading ||*/ "Loading..."}</div>; // Show loading until dictionary is fetched
+  }
 
   // Function to fetch stock items (memoized)
    const fetchStock = React.useCallback(async () => {
+      if (!dictionary) return; // Wait for dictionary to load
       setIsLoadingStock(true);
       const { data, error } = await supabase
         .from("inventory_items")
@@ -68,14 +90,16 @@ export default function SalesPage() {
             const product = (item.products && typeof item.products === 'object' && !Array.isArray(item.products))
               ? item.products as { name: string, brand: string | null, model: string | null, base_price: number }
               : null;
-            return { value: item.id, label: `${product?.brand || ''} ${product?.name || 'Unknown Product'} ${product?.model || ''} (${item.serial_number ? `SN: ${item.serial_number}` : `Qty: ${item.quantity}`})`, product_id: item.product_id, unit_price: product?.base_price || 0, inventory_quantity: item.quantity };
+            // TODO: Localize stock item label display
+            return { value: item.id, label: `${product?.brand || ''} ${product?.name || dictionary.sales.unknownProduct || 'Unknown Product'} ${product?.model || ''} (${item.serial_number ? `${dictionary.sales.serialNumberPrefix || 'SN'}: ${item.serial_number}` : `${dictionary.sales.quantityLabel || 'Qty'}: ${item.quantity}`})`, product_id: item.product_id, unit_price: product?.base_price || 0, inventory_quantity: item.quantity }; // Use dictionary
           }) || [] );
       }
       setIsLoadingStock(false);
-    }, [supabase]); // Dependency: supabase client instance
+    }, [supabase, dictionary]); // Dependency: supabase client instance, dictionary
 
   // Fetch customers for combobox
   React.useEffect(() => {
+    if (!dictionary) return; // Wait for dictionary to load
     const fetchCustomers = async () => {
       setIsLoadingCustomers(true);
       const { data, error } = await supabase
@@ -83,19 +107,22 @@ export default function SalesPage() {
         .select("id, first_name, last_name")
         .order("last_name");
       if (error) { console.error("Error fetching customers:", error); setCustomers([]); }
-      else { setCustomers( data?.map((c) => ({ value: c.id, label: `${c.last_name || ''}${c.last_name && c.first_name ? ', ' : ''}${c.first_name || ''}` || 'Unnamed Customer' })) || [] ); }
+      else { setCustomers( data?.map((c) => ({ value: c.id, label: `${c.last_name || ''}${c.last_name && c.first_name ? ', ' : ''}${c.first_name || ''}` || (dictionary.common.unnamedCustomer || 'Unnamed Customer') })) || [] ); } // Use dictionary
       setIsLoadingCustomers(false);
     };
     fetchCustomers();
-  }, [supabase]);
+  }, [supabase, dictionary]); // Add dictionary to dependencies
 
   // Fetch initial stock items
   React.useEffect(() => {
-    fetchStock();
-  }, [fetchStock]); // Dependency: memoized fetchStock function
+    if (dictionary) { // Fetch data only after dictionary is loaded
+      fetchStock();
+    }
+  }, [fetchStock, dictionary]); // Dependency: memoized fetchStock function, dictionary
 
   // Fetch default tax rate
   React.useEffect(() => {
+    if (!dictionary) return; // Wait for dictionary to load
     const fetchDefaultTaxRate = async () => {
       const { data, error } = await supabase
         .from("tax_rates")
@@ -108,8 +135,8 @@ export default function SalesPage() {
         setDefaultTaxRate(null);
         setDefaultTaxRateId(null);
         toast({
-          title: "Warning",
-          description: "Could not fetch default tax rate. Tax will not be calculated automatically.",
+          title: dictionary.sales.taxWarningTitle || "Warning", // Use dictionary
+          description: dictionary.sales.taxWarningDescription || "Could not fetch default tax rate. Tax will not be calculated automatically.", // Use dictionary
           variant: "destructive",
         });
       } else if (data) {
@@ -120,15 +147,15 @@ export default function SalesPage() {
          setDefaultTaxRate(null);
          setDefaultTaxRateId(null);
          toast({
-            title: "Info",
-            description: "No default tax rate is set. Tax will not be calculated automatically.",
+            title: dictionary.sales.taxInfoTitle || "Info", // Use dictionary
+            description: dictionary.sales.taxInfoDescription || "No default tax rate is set. Tax will not be calculated automatically.", // Use dictionary
             variant: "default",
          });
       }
     };
 
     fetchDefaultTaxRate();
-  }, [supabase, toast]); // Dependencies: supabase client and toast
+  }, [supabase, toast, dictionary]); // Dependencies: supabase client, toast, dictionary
 
 
   // Function to add the selected stock item to the current order
@@ -165,15 +192,20 @@ export default function SalesPage() {
 
   // Function to record the sale
   const handleRecordSale = async () => {
+    if (!dictionary) { // Ensure dictionary is loaded
+      console.error("handleRecordSale called but dictionary is null!");
+      toast({ title: "Error", description: "Internal error: Missing resources.", variant: "destructive" });
+      return;
+    }
     if (currentOrderItems.length === 0) {
-      toast({ title: "Cannot record empty sale.", variant: "destructive" });
+      toast({ title: dictionary.sales.emptySaleToast || "Cannot record empty sale.", variant: "destructive" }); // Use dictionary
       return;
     }
     setIsSavingSale(true);
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not found.");
+      if (!user) throw new Error(dictionary.common.userNotFound || "User not found."); // Use dictionary
 
       // --- Transaction Start (Conceptual) ---
       const orderData = {
@@ -187,13 +219,13 @@ export default function SalesPage() {
         status: 'completed' as const
       };
       const { data: newOrder, error: orderError } = await supabase.from("sales_orders").insert(orderData).select().single();
-      if (orderError || !newOrder) throw orderError || new Error("Failed to create sales order.");
+      if (orderError || !newOrder) throw orderError || new Error(dictionary.sales.createOrderError || "Failed to create sales order."); // Use dictionary
 
       const orderItemsData = currentOrderItems.map(item => ({ order_id: newOrder.id, inventory_item_id: item.inventory_item_id, product_id: item.product_id, quantity: item.quantity, unit_price: item.unit_price, discount_amount: 0, line_total: item.line_total }));
       const { error: itemsError } = await supabase.from("sales_order_items").insert(orderItemsData);
       if (itemsError) throw itemsError; // TODO: Rollback order?
 
-      const paymentData = { order_id: newOrder.id, amount: finalTotal, method: 'cash' as const };
+      const paymentData = { order_id: newOrder.id, amount: finalTotal, method: 'cash' as const }; // TODO: Allow payment method selection
       const { error: paymentError } = await supabase.from("payments").insert(paymentData);
       if (paymentError) throw paymentError; // TODO: Rollback order/items?
 
@@ -213,11 +245,11 @@ export default function SalesPage() {
       if (failedUpdates.length > 0) {
           // Log errors and potentially notify user, but proceed with sale confirmation for now
           failedUpdates.forEach((failure, index) => {
-               console.error(`Failed to update inventory for item ID: ${currentOrderItems[index]?.inventory_item_id}`, (failure as PromiseRejectedResult).reason);
+               console.error(`${dictionary.sales.inventoryUpdateFailed || "Failed to update inventory for item ID"}: ${currentOrderItems[index]?.inventory_item_id}`, (failure as PromiseRejectedResult).reason); // Use dictionary
           });
           toast({
-              title: "Warning: Inventory Update Issue",
-              description: "Some inventory items might not have been updated correctly. Please verify stock levels.",
+              title: dictionary.sales.inventoryUpdateWarningTitle || "Warning: Inventory Update Issue", // Use dictionary
+              description: dictionary.sales.inventoryUpdateWarningDescription || "Some inventory items might not have been updated correctly. Please verify stock levels.", // Use dictionary
               variant: "destructive", // Use destructive to highlight potential issue
               duration: 10000, // Keep message longer
           });
@@ -226,7 +258,7 @@ export default function SalesPage() {
       }
       // --- Transaction End (Conceptual) ---
 
-      toast({ title: "Sale recorded successfully!", description: `Order #${newOrder.order_number}` });
+      toast({ title: dictionary.sales.saleSuccessTitle || "Sale recorded successfully!", description: `${dictionary.sales.orderNumberLabel || "Order"} #${newOrder.order_number}` }); // Use dictionary
 
       // Reset POS state
       setCurrentOrderItems([]);
@@ -238,54 +270,55 @@ export default function SalesPage() {
 
     } catch (error: any) {
       console.error("Error recording sale:", error);
-      toast({ title: "Error Recording Sale", description: error.message || "An unexpected error occurred.", variant: "destructive" });
+      toast({ title: dictionary.sales.saleErrorTitle || "Error Recording Sale", description: error.message || dictionary.common.unexpectedError || "An unexpected error occurred.", variant: "destructive" }); // Use dictionary
     } finally {
       setIsSavingSale(false);
     }
   };
 
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Point of Sale</h1>
+        <h1 className="text-2xl font-semibold">{dictionary.sales.title || "Point of Sale"}</h1> {/* Use dictionary */}
         <Button asChild variant="outline">
-            <Link href="/sales/history">View Past Sales</Link>
+            <Link href={`/${lang}/sales/history`}>{dictionary.sales.viewHistoryButton || "View Past Sales"}</Link> {/* Use dictionary and locale */}
         </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
         <div className="md:col-span-2 lg:col-span-3 border rounded-lg shadow-sm p-4 space-y-4">
-           <h2 className="text-lg font-semibold">New Sale</h2>
+           <h2 className="text-lg font-semibold">{dictionary.sales.newSaleTitle || "New Sale"}</h2> {/* Use dictionary */}
            <div>
-             <label className="text-sm font-medium mb-1 block">Customer</label>
-             <Combobox options={customers} selectedValue={selectedCustomerId} onSelectValue={setSelectedCustomerId} placeholder="Select customer..." searchPlaceholder="Search customers..." noResultsText="No customer found." triggerClassName="w-[300px]" disabled={isLoadingCustomers || isSavingSale} />
+             <label className="text-sm font-medium mb-1 block">{dictionary.sales.customerLabel || "Customer"}</label> {/* Use dictionary */}
+             <Combobox options={customers} selectedValue={selectedCustomerId} onSelectValue={setSelectedCustomerId} placeholder={dictionary.sales.selectCustomerPlaceholder || "Select customer..."} searchPlaceholder={dictionary.sales.searchCustomersPlaceholder || "Search customers..."} noResultsText={dictionary.sales.noCustomerFound || "No customer found."} triggerClassName="w-[300px]" disabled={isLoadingCustomers || isSavingSale} dictionary={dictionary} /> {/* Pass dictionary */}
            </div>
             <div>
-             <label className="text-sm font-medium mb-1 block">Add Item</label>
+             <label className="text-sm font-medium mb-1 block">{dictionary.sales.addItemLabel || "Add Item"}</label> {/* Use dictionary */}
              <div className="flex items-center gap-2">
-                <Combobox options={stockItems} selectedValue={selectedStockItemId} onSelectValue={setSelectedStockItemId} placeholder="Select item..." searchPlaceholder="Search items..." noResultsText="No available stock found." triggerClassName="w-[400px]" disabled={isLoadingStock || isSavingSale} />
+                <Combobox options={stockItems} selectedValue={selectedStockItemId} onSelectValue={setSelectedStockItemId} placeholder={dictionary.sales.selectItemPlaceholder || "Select item..."} searchPlaceholder={dictionary.sales.searchItemsPlaceholder || "Search items..."} noResultsText={dictionary.sales.noStockFound || "No available stock found."} triggerClassName="w-[400px]" disabled={isLoadingStock || isSavingSale} dictionary={dictionary} /> {/* Pass dictionary */}
                 <Button onClick={handleAddItem} disabled={!selectedStockItemId || isLoadingStock || isSavingSale}>
-                    <PlusCircle className="mr-1 h-4 w-4" /> Add
+                    <PlusCircle className="mr-1 h-4 w-4" /> {dictionary.sales.addButton || "Add"} {/* Use dictionary */}
                 </Button>
              </div>
            </div>
            <div className="border rounded-md p-2 min-h-[100px]">
-                <h3 className="text-sm font-medium mb-2">Current Sale Items</h3>
+                <h3 className="text-sm font-medium mb-2">{dictionary.sales.currentSaleItemsTitle || "Current Sale Items"}</h3> {/* Use dictionary */}
                 {currentOrderItems.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No items added yet.</p>
+                    <p className="text-sm text-muted-foreground">{dictionary.sales.noItemsAdded || "No items added yet."}</p>
                 ) : (
                     <ul className="space-y-2">
                         {currentOrderItems.map((item, index) => (
                             <li key={`${item.inventory_item_id}-${index}`} className="flex justify-between items-center border-b pb-1">
                                 <div>
-                                    <span className="font-medium">{item.label}</span>
-                                    <span className="text-xs text-muted-foreground ml-2">Qty: {item.quantity}</span>
+                                    <span className="font-medium">{item.label}</span> {/* TODO: Localize item label */}
+                                    <span className="text-xs text-muted-foreground ml-2">{dictionary.sales.quantityLabel || "Qty"}: {item.quantity}</span> {/* Use dictionary */}
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <span className="font-medium">{item.line_total.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>
+                                    <span className="font-medium">{item.line_total.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span> {/* TODO: Localize currency formatting */}
                                     <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => handleRemoveItem(index)} disabled={isSavingSale}>
                                         <X className="h-4 w-4" />
-                                        <span className="sr-only">Remove item</span>
+                                        <span className="sr-only">{dictionary.common.removeItem || "Remove item"}</span> {/* Use dictionary */}
                                     </Button>
                                 </div>
                             </li>
@@ -296,25 +329,25 @@ export default function SalesPage() {
         </div>
 
         <div className="border rounded-lg shadow-sm p-4 flex flex-col gap-4">
-            <h2 className="text-lg font-semibold">Order Summary</h2>
+            <h2 className="text-lg font-semibold">{dictionary.sales.orderSummaryTitle || "Order Summary"}</h2> {/* Use dictionary */}
             <div className="flex justify-between">
-                <span>Subtotal:</span>
-                <span>{subtotal.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>
+                <span>{dictionary.sales.subtotalLabel || "Subtotal"}:</span> {/* Use dictionary */}
+                <span>{subtotal.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span> {/* TODO: Localize currency formatting */}
             </div>
              <div className="flex justify-between items-center">
-                 <span className="text-sm">Tax{defaultTaxRate !== null ? ` (${defaultTaxRate}%)` : ''}:</span>
-                 <span>{taxAmount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>
+                 <span className="text-sm">{dictionary.sales.taxLabel || "Tax"}{defaultTaxRate !== null ? ` (${defaultTaxRate}%)` : ''}:</span> {/* Use dictionary */}
+                 <span>{taxAmount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span> {/* TODO: Localize currency formatting */}
             </div>
              <div className="flex justify-between items-center">
-                <label htmlFor="discount" className="text-sm">Discount:</label>
-                <Input id="discount" type="number" step="0.01" min="0" value={discountAmount} onChange={(e) => setDiscountAmount(parseFloat(e.target.value) || 0)} className="h-8 w-24 text-right" placeholder="0.00" disabled={isSavingSale} />
+                <label htmlFor="discount" className="text-sm">{dictionary.sales.discountLabel || "Discount"}:</label> {/* Use dictionary */}
+                <Input id="discount" type="number" step="0.01" min="0" value={discountAmount} onChange={(e) => setDiscountAmount(parseFloat(e.target.value) || 0)} className="h-8 w-24 text-right" placeholder={dictionary.sales.discountPlaceholder || "0.00"} disabled={isSavingSale} /> {/* Use dictionary */}
             </div>
              <div className="border-t pt-2 mt-2 flex justify-between font-semibold text-lg">
-                <span>Total:</span>
-                <span>{finalTotal.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>
+                <span>{dictionary.sales.totalLabel || "Total"}:</span> {/* Use dictionary */}
+                <span>{finalTotal.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span> {/* TODO: Localize currency formatting */}
             </div>
             <Button className="w-full mt-auto" disabled={currentOrderItems.length === 0 || isSavingSale} onClick={handleRecordSale}>
-                {isSavingSale ? "Recording Sale..." : <><ShoppingCart className="mr-2 h-4 w-4" /> Process Payment / Record Sale</>}
+                {isSavingSale ? (dictionary.sales.recordingSaleButton || "Recording Sale...") : <><ShoppingCart className="mr-2 h-4 w-4" /> {dictionary.sales.processPaymentButton || "Process Payment / Record Sale"}</>} {/* Use dictionary */}
             </Button>
         </div>
       </div>
