@@ -16,9 +16,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
+import { useParams } from 'next/navigation'; // Import useParams
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
+  const params = useParams(); // Get params from URL
+  const lang = params.lang as string; // Extract locale
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -111,7 +114,7 @@ export default function SignupPage() {
             </Button>
             <p className="mt-4 text-xs text-center text-muted-foreground">
               Already have an account?{" "}
-            <Link href="/login" className="underline">
+            <Link href={`/${lang}/login`} className="underline">
               Sign in
             </Link>
           </p>

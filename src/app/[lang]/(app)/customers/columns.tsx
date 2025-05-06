@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useDictionary } from "@/lib/i18n/dictionary-context"; // Import useDictionary hook
+import { useParams } from 'next/navigation'; // Import useParams
 
 // TODO: Add checkbox component using shadcn-ui add
 
@@ -169,7 +170,7 @@ export const getColumns = ({ onEdit, onDelete }: CustomerColumnsProps): ColumnDe
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href={`/customers/${customer.id}`} className="flex items-center">
+              <Link href={`/${useParams().lang}/customers/${customer.id}`} className="flex items-center">
                 <Eye className="mr-2 h-4 w-4" /> {dictionary.customers.tableActions?.viewDetails || "View Details"} {/* Use dictionary */}
               </Link>
             </DropdownMenuItem>

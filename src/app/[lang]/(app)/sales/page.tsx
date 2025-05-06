@@ -1,6 +1,7 @@
 "use client"; // Likely needs to be client component for interactivity
 
-import * as React from "react";
+import * as React from "react"; // Namespace import
+import { useContext } from "react"; // Named import
 import Link from "next/link"; // Import Link
 import { Button } from "@/components/ui/button";
 import { PlusCircle, ShoppingCart, Check, ChevronsUpDown, X } from "lucide-react";
@@ -13,6 +14,7 @@ import { getDictionary } from '@/lib/i18n'; // Import getDictionary
 import { Locale } from '@/lib/i18n/config'; // Import Locale
 import { useParams } from 'next/navigation'; // Import useParams
 import { Dictionary } from '@/lib/i18n/types'; // Import shared Dictionary interface
+import { DictionaryContext } from '@/lib/i18n/dictionary-context'; // Import DictionaryContext
 
 
 // Define type for customer options in combobox
@@ -60,15 +62,7 @@ export default function SalesPage() {
   const params = useParams(); // Get params from URL
   const lang = params.lang as Locale; // Extract locale
 
-  // Fetch dictionary
-  const [dictionary, setDictionary] = React.useState<Dictionary | null>(null); // Explicitly type dictionary state
-  React.useEffect(() => {
-    const fetchDictionary = async () => {
-      const dict = await getDictionary(lang);
-      setDictionary(dict);
-    };
-    fetchDictionary();
-  }, [lang]); // Refetch dictionary if locale changes
+  const dictionary = useContext(DictionaryContext); // Consume dictionary from context
 
   // Add conditional rendering check for dictionary
   if (!dictionary) {
@@ -77,28 +71,34 @@ export default function SalesPage() {
 
   // Function to fetch stock items (memoized)
    const fetchStock = React.useCallback(async () => {
+      console.log('fetchStock useCallback called.');
       if (!dictionary) return; // Wait for dictionary to load
       setIsLoadingStock(true);
       const { data, error } = await supabase
         .from("inventory_items")
         .select(`id, product_id, serial_number, quantity, products ( name, brand, model, base_price )`)
         .eq('status', 'available').gt('quantity', 0);
+      console.log('Supabase query result - data:', data, 'error:', error);
       if (error) { console.error("Error fetching stock items:", error); setStockItems([]); }
       else {
-        setStockItems( data?.map((item) => {
+        const processedData = data?.map((item) => {
             // Explicitly handle potential null for joined product and type check
             const product = (item.products && typeof item.products === 'object' && !Array.isArray(item.products))
               ? item.products as { name: string, brand: string | null, model: string | null, base_price: number }
               : null;
             // TODO: Localize stock item label display
             return { value: item.id, label: `${product?.brand || ''} ${product?.name || dictionary.sales.unknownProduct || 'Unknown Product'} ${product?.model || ''} (${item.serial_number ? `${dictionary.sales.serialNumberPrefix || 'SN'}: ${item.serial_number}` : `${dictionary.sales.quantityLabel || 'Qty'}: ${item.quantity}`})`, product_id: item.product_id, unit_price: product?.base_price || 0, inventory_quantity: item.quantity }; // Use dictionary
-          }) || [] );
+          }) || [];
+        console.log('stockItems after setting state:', processedData);
+        setStockItems(processedData);
       }
       setIsLoadingStock(false);
     }, [supabase, dictionary]); // Dependency: supabase client instance, dictionary
 
+
   // Fetch customers for combobox
   React.useEffect(() => {
+    console.log('useEffect for fetching customers running. Dictionary available:', !!dictionary);
     if (!dictionary) return; // Wait for dictionary to load
     const fetchCustomers = async () => {
       setIsLoadingCustomers(true);
@@ -106,15 +106,22 @@ export default function SalesPage() {
         .from("customers")
         .select("id, first_name, last_name")
         .order("last_name");
+      console.log('Customers fetched - data:', data, 'error:', error);
       if (error) { console.error("Error fetching customers:", error); setCustomers([]); }
-      else { setCustomers( data?.map((c) => ({ value: c.id, label: `${c.last_name || ''}${c.last_name && c.first_name ? ', ' : ''}${c.first_name || ''}` || (dictionary.common.unnamedCustomer || 'Unnamed Customer') })) || [] ); } // Use dictionary
+      else {
+        const processedData = data?.map((c) => ({ value: c.id, label: `${c.last_name || ''}${c.last_name && c.first_name ? ', ' : ''}${c.first_name || ''}` || (dictionary.common.unnamedCustomer || 'Unnamed Customer') })) || [];
+        console.log('Customers after setting state:', processedData);
+        setCustomers(processedData);
+      }
       setIsLoadingCustomers(false);
     };
     fetchCustomers();
   }, [supabase, dictionary]); // Add dictionary to dependencies
 
+
   // Fetch initial stock items
   React.useEffect(() => {
+    console.log('useEffect for initial stock running. Dictionary available:', !!dictionary);
     if (dictionary) { // Fetch data only after dictionary is loaded
       fetchStock();
     }
@@ -198,7 +205,7 @@ export default function SalesPage() {
       return;
     }
     if (currentOrderItems.length === 0) {
-      toast({ title: dictionary.sales.emptySaleToast || "Cannot record empty sale.", variant: "destructive" }); // Use dictionary
+      toast({ title: dictionary.sales.emptySaleToast || "Cannot record empty sale.", variant:"destructive" }); // Use dictionary
       return;
     }
     setIsSavingSale(true);
@@ -270,7 +277,7 @@ export default function SalesPage() {
 
     } catch (error: any) {
       console.error("Error recording sale:", error);
-      toast({ title: dictionary.sales.saleErrorTitle || "Error Recording Sale", description: error.message || dictionary.common.unexpectedError || "An unexpected error occurred.", variant: "destructive" }); // Use dictionary
+      toast({ title: dictionary.sales.saleErrorTitle || "Error Recording Sale", description: error.message || dictionary.common.unexpectedError || "An unexpected error occurred.", variant:"destructive" }); // Use dictionary
     } finally {
       setIsSavingSale(false);
     }
@@ -281,9 +288,7 @@ export default function SalesPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">{dictionary.sales.title || "Point of Sale"}</h1> {/* Use dictionary */}
-        <Button asChild variant="outline">
-            <Link href={`/${lang}/sales/history`}>{dictionary.sales.viewHistoryButton || "View Past Sales"}</Link> {/* Use dictionary and locale */}
-        </Button>
+            <Link href={`/${lang || 'en'}/sales/history`} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">{dictionary.sales.viewHistoryButton || "View Past Sales"}</Link> {/* Use dictionary and locale */}
       </div>
 
       <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">

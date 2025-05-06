@@ -1,7 +1,12 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { Locale } from '@/lib/i18n/config'; // Import Locale type
 
-export default function LandingPage() {
+export default function LandingPage({
+  params: { lang },
+}: {
+  params: { lang: Locale };
+}) {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-24 bg-gradient-to-b from-sky-100 to-white">
       <div className="text-center">
@@ -12,12 +17,12 @@ export default function LandingPage() {
           Streamline your optical shop operations with our intuitive SaaS solution. Manage inventory, customers, prescriptions, and appointments effortlessly.
         </p>
         <div className="mt-10 flex justify-center gap-x-6">
-          <Link href="/login" passHref>
+          <Link href={`/${lang}/login`} passHref>
             <Button size="lg">
               Login to Your Account
             </Button>
           </Link>
-          <Link href="/signup" passHref>
+          <Link href={`/${lang}/signup`} passHref>
             <Button size="lg" variant="outline">
               Get Started <span aria-hidden="true">→</span>
             </Button>

@@ -267,6 +267,8 @@
     "saleSuccessTitle": "Venta registrada",
     "orderNumberLabel": "Orden #",
     "saleErrorTitle": "Error al registrar la venta",
+    "unknownProduct": "Producto Desconocido",
+    "serialNumberPrefix": "N/S: ",
     "title": "Punto de venta",
     "viewHistoryButton": "Ver historial de ventas",
     "newSaleTitle": "Nueva venta",
@@ -327,8 +329,7 @@
         "loadingPayments": "Cargando pagos...",
         "noPaymentsRecorded": "No se registraron pagos para esta orden.",
         "orderNotesTitle": "Notas de la orden",
-        "loadErrorTitle": "Error al cargar los detalles de la orden.",
-        "serialNumberPrefix": "N/S: "
+        "loadErrorTitle": "Error al cargar los detalles de la orden."
       }
     }
   },
@@ -462,5 +463,12 @@
       "invalidType": "Invalid appointment type selected.",
       "invalidProvider": "Invalid provider selected."
     }
+  },
+  "settings": {
+    "selectLanguagePlaceholder": "Seleccionar idioma"
+  },
+  "languages": {
+    "en": "Inglés",
+    "es": "Español"
   }
 }

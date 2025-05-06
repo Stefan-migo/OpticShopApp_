@@ -97,21 +97,21 @@ export default async function AppLayout({
 
   // Placeholder for navigation items - adjust icons and paths as needed
   const navItems = [
-    { href: `/dashboard`, label: dictionary.navigation.dashboard, icon: Home }, // Use dictionary directly
-    { href: `/customers`, label: dictionary.navigation.customers, icon: Eye }, // Use dictionary directly
-    { href: `/inventory`, label: dictionary.navigation.inventory, icon: Package }, // Use dictionary directly
-    { href: `/purchase-orders`, label: dictionary.navigation.purchaseOrders, icon: ShoppingCart }, // Use dictionary directly
-    { href: `/prescriptions`, label: dictionary.navigation.prescriptions, icon: Contact }, // Use dictionary directly
-    { href: `/appointments`, label: dictionary.navigation.appointments, icon: Calendar }, // Use dictionary directly
-    { href: `/sales`, label: dictionary.navigation.sales, icon: ShoppingCart }, // Use dictionary directly
-    { href: `/reports`, label: dictionary.navigation.reports, icon: LineChart }, // Use dictionary directly
-    { href: `/medical-actions`, label: dictionary.navigation.medicalActions, icon: Settings }, // Use dictionary directly, Add Medical Actions link
-    // { href: `/settings`, label: dictionary.navigation.settings, icon: Settings }, // Use dictionary directly, Placeholder route
+    { href: `/${lang}/dashboard`, label: dictionary.navigation.dashboard, icon: Home }, // Use dictionary directly
+    { href: `/${lang}/customers`, label: dictionary.navigation.customers, icon: Eye }, // Use dictionary directly
+    { href: `/${lang}/inventory`, label: dictionary.navigation.inventory, icon: Package }, // Use dictionary directly
+    { href: `/${lang}/purchase-orders`, label: dictionary.navigation.purchaseOrders, icon: ShoppingCart }, // Use dictionary directly
+    { href: `/${lang}/prescriptions`, label: dictionary.navigation.prescriptions, icon: Contact }, // Use dictionary directly
+    { href: `/${lang}/appointments`, label: dictionary.navigation.appointments, icon: Calendar }, // Use dictionary directly
+    { href: `/${lang}/sales`, label: dictionary.navigation.sales, icon: ShoppingCart }, // Use dictionary directly
+    { href: `/${lang}/reports`, label: dictionary.navigation.reports, icon: LineChart }, // Use dictionary directly
+    { href: `/${lang}/medical-actions`, label: dictionary.navigation.medicalActions, icon: Settings }, // Use dictionary directly, Add Medical Actions link
+    { href: `/${lang}/settings`, label: dictionary.navigation.settings, icon: Settings }, // Use dictionary directly, Placeholder route
   ];
 
   // Conditionally add Admin link
   if (userRole === 'admin') {
-    navItems.push({ href: `/admin/users`, label: dictionary.navigation.userManagement, icon: Users }); // Use dictionary directly, Use Users icon for admin
+    navItems.push({ href: `/${lang}/admin/users`, label: dictionary.navigation.userManagement, icon: Users }); // Use dictionary directly, Use Users icon for admin
   }
 
   return (
@@ -121,7 +121,7 @@ export default async function AppLayout({
         <div className="hidden border-r bg-muted/40 md:block">
           <div className="flex h-full max-h-screen flex-col gap-2">
             <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-              <Link href={`/dashboard`} className="flex items-center gap-2 font-semibold"> {/* Updated href */}
+              <Link href={`/${lang}/dashboard`} className="flex items-center gap-2 font-semibold"> {/* Updated href with locale */}
                 <Package2 className="h-6 w-6" /> {/* Replace with Optic Logo */}
                 <span className="">{dictionary.app.name}</span> {/* Use dictionary directly */}
               </Link>
@@ -135,7 +135,7 @@ export default async function AppLayout({
               <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
                 {navItems.map((item) => (
                   <Link
-                    key={item.label}
+                    key={item.href} // Changed key to item.href
                     href={item.href}
                     className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
                     // Add active state logic here based on current path
@@ -198,7 +198,7 @@ export default async function AppLayout({
                   </Link>
                   {navItems.map((item) => (
                     <Link
-                      key={item.label}
+                      key={item.href} // Changed key to item.href
                       href={item.href}
                       className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
                       // Add active state logic here
@@ -211,7 +211,7 @@ export default async function AppLayout({
                    {/* Conditional Admin Link for Mobile */}
                    {userRole === 'admin' && (
                        <Link
-                          key="admin-users-mobile"
+                          key={`/${lang}/admin/users`} // Changed key to href
                           href={`/${lang}/admin/users`} // Updated href with locale
                           className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
                       >

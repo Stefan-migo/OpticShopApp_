@@ -6,13 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { subDays, format } from 'date-fns';
 import Link from 'next/link'; // Import Link
 import { Dictionary } from '@/lib/i18n/types'; // Import shared Dictionary interface
+import { Locale } from '@/lib/i18n/config'; // Import Locale type
 
 interface DashboardContentProps {
   userName: string | null;
   dictionary: Dictionary; // Use the imported Dictionary interface
+  lang: Locale; // Add lang prop
 }
 
-export default function DashboardContent({ userName, dictionary }: DashboardContentProps) {
+export default function DashboardContent({ userName, dictionary, lang }: DashboardContentProps) {
   const supabase = createClient();
   const [salesSummary, setSalesSummary] = React.useState<{ period: string; total: number } | null>(null);
   const [customerCount, setCustomerCount] = React.useState<number | null>(null);
@@ -203,7 +205,7 @@ export default function DashboardContent({ userName, dictionary }: DashboardCont
                                 </div>
                             ))}
                             <div className="mt-2 text-right">
-                                <Link href="/appointments" className="text-blue-500 hover:underline">{dictionary.common.viewAll || "View All"}</Link> {/* Use dictionary */}
+                                <Link href={`/${lang}/appointments`} className="text-blue-500 hover:underline">{dictionary.common.viewAll || "View All"}</Link> {/* Use dictionary and lang prop */}
                             </div>
                         </div>
                     ) : (

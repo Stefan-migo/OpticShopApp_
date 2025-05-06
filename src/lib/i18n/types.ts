@@ -429,6 +429,8 @@ export interface Dictionary {
     saleSuccessTitle?: string;
     orderNumberLabel?: string;
     saleErrorTitle?: string;
+    unknownProduct?: string;
+    serialNumberPrefix?: string;
     title?: string;
     viewHistoryButton?: string;
     newSaleTitle?: string;
@@ -490,7 +492,6 @@ export interface Dictionary {
         noPaymentsRecorded?: string;
         orderNotesTitle?: string;
         loadErrorTitle?: string;
-        serialNumberPrefix?: string; // Added serialNumberPrefix key
       };
     };
   };
@@ -508,6 +509,36 @@ export interface Dictionary {
     reports?: string;
     medicalActions?: string;
     userManagement?: string;
+    settings?: string;
+  };
+  settings: {
+    title?: string;
+    applicationSettingsTitle?: string;
+    applicationSettingsDescription?: string;
+    generalSectionTitle?: string;
+    generalSectionDescription?: string;
+    appointmentSettingsTitle?: string;
+    appointmentSettingsDescription?: string;
+    defaultSlotDurationLabel?: string;
+    defaultSlotDurationPlaceholder?: string;
+    workingHoursLabel?: string;
+    hideWorkingHoursButton?: string;
+    showWorkingHoursButton?: string;
+    daysOfWeek?: {
+      monday?: string;
+      tuesday?: string;
+      wednesday?: string;
+      thursday?: string;
+      friday?: string;
+      saturday?: string;
+      sunday?: string;
+    };
+    saveAppointmentSettingsButton?: string;
+    selectLanguagePlaceholder?: string;
+  };
+  languages: {
+    en?: string;
+    es?: string;
   };
   // Add other top-level keys as needed
 }

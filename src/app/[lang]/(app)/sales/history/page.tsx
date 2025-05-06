@@ -25,11 +25,6 @@ export default function SalesHistoryPage() {
 
   const dictionary = useDictionary(); // Get dictionary from context
 
-  // Add conditional rendering check for dictionary
-  if (!dictionary) {
-    return <div>{dictionary?.common?.loading || "Loading..."}</div>; // Show loading until dictionary is fetched
-  }
-
   // Fetch sales orders
   React.useEffect(() => {
     // No need to check for dictionary here, useDictionary hook handles it
@@ -79,10 +74,12 @@ export default function SalesHistoryPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">{dictionary.sales.history.title || "Sales History"}</h1> {/* Use dictionary directly */}
-        <Button asChild variant="outline">
-            <Link href={`/${lang}/sales`}>{dictionary.sales.history.backToPosButton || "Back to POS"}</Link> {/* Use dictionary directly and locale */}
-        </Button>
+        <h1 className="text-2xl font-semibold">{dictionary.sales.history.title || "Sales History"}</h1>
+        <Link href={`/${lang}/sales`} passHref>
+          <Button variant="outline">
+              {dictionary.sales.history.backToPosButton || "Back to POS"}
+          </Button>
+        </Link>
       </div>
 
       {/* Data Table Area */}

@@ -171,18 +171,13 @@ export function SalesOrderDetailsDialog({
                 <div><span className="font-medium text-muted-foreground">{dictionary.sales.history.detailsDialog.orderDateLabel}:</span> {formatDisplayDateTime(order.order_date, dictionary)}</div> {/* Use dictionary directly */} {/* Corrected dictionary access */}
                 {/* Add user/staff who created order if needed */}
             </div>
-
             {error && <p className="text-red-600 mb-4">{error}</p>}
-
             {/* Items Table */}
             <h4 className="font-medium mb-2">{dictionary.sales.history.detailsDialog.itemsTitle}</h4> {/* Use dictionary directly */}
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>{dictionary.sales.history.detailsDialog.productHeader}</TableHead> {/* Use dictionary directly */}
-                        <TableHead className="text-center">{dictionary.sales.history.detailsDialog.qtyHeader}</TableHead> {/* Use dictionary directly */}
-                        <TableHead className="text-right">{dictionary.sales.history.detailsDialog.unitPriceHeader}</TableHead> {/* Use dictionary directly */}
-                        <TableHead className="text-right">{dictionary.sales.history.detailsDialog.lineTotalHeader}</TableHead> {/* Use dictionary directly */}
+                        <TableHead>{dictionary.sales.history.detailsDialog.productHeader}</TableHead><TableHead className="text-center">{dictionary.sales.history.detailsDialog.qtyHeader}</TableHead><TableHead className="text-right">{dictionary.sales.history.detailsDialog.unitPriceHeader}</TableHead><TableHead className="text-right">{dictionary.sales.history.detailsDialog.lineTotalHeader}</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -193,11 +188,8 @@ export function SalesOrderDetailsDialog({
                             <TableRow key={item.id}>
                                 <TableCell>
                                     {item.products?.brand || ''} {item.products?.name || dictionary.common.notAvailable} {item.products?.model || ''} {/* Use dictionary directly */}
-                                    {item.inventory_items?.serial_number && <span className="text-xs text-muted-foreground ml-1">{dictionary.sales.history.detailsDialog.serialNumberPrefix}{item.inventory_items.serial_number}</span>} {/* Use dictionary for prefix */}
-                                </TableCell>
-                                <TableCell className="text-center">{item.quantity}</TableCell>
-                                <TableCell className="text-right">{formatDisplayCurrency(item.unit_price)}</TableCell>
-                                <TableCell className="text-right">{formatDisplayCurrency(item.line_total)}</TableCell>
+                                    {item.inventory_items?.serial_number && <span className="text-xs text-muted-foreground ml-1">{dictionary.sales.serialNumberPrefix}{item.inventory_items.serial_number}</span>} {/* Use dictionary for prefix */}
+                                </TableCell><TableCell className="text-center">{item.quantity}</TableCell><TableCell className="text-right">{formatDisplayCurrency(item.unit_price)}</TableCell><TableCell className="text-right">{formatDisplayCurrency(item.line_total)}</TableCell>
                             </TableRow>
                         ))
                     ) : (
@@ -205,7 +197,6 @@ export function SalesOrderDetailsDialog({
                     )}
                 </TableBody>
             </Table>
-
              {/* Totals Section */}
              <div className="mt-4 pt-2 border-t text-sm space-y-1 text-right mr-2">
                  <div><span className="font-medium text-muted-foreground">{dictionary.sales.history.detailsDialog.subtotalLabel}:</span> {formatDisplayCurrency(order.total_amount)}</div> {/* Use dictionary directly */}
@@ -213,16 +204,12 @@ export function SalesOrderDetailsDialog({
                  <div><span className="font-medium text-muted-foreground">{dictionary.sales.history.detailsDialog.taxLabel}:</span> +{formatDisplayCurrency(order.tax_amount)}</div> {/* Use dictionary directly */}
                  <div className="font-bold text-base"><span className="font-medium text-muted-foreground">{dictionary.sales.history.detailsDialog.totalLabel}:</span> {formatDisplayCurrency(order.final_amount)}</div> {/* Use dictionary directly */}
              </div>
-
              {/* Payments Table */}
              <h4 className="font-medium mt-4 mb-2">{dictionary.sales.history.detailsDialog.paymentsTitle}</h4> {/* Use dictionary directly */}
              <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>{dictionary.sales.history.detailsDialog.dateHeader}</TableHead> {/* Use dictionary directly */}
-                        <TableHead>{dictionary.sales.history.detailsDialog.methodHeader}</TableHead> {/* Use dictionary directly */}
-                        <TableHead>{dictionary.sales.history.detailsDialog.referenceHeader}</TableHead> {/* Use dictionary directly */}
-                        <TableHead className="text-right">{dictionary.sales.history.detailsDialog.amountHeader}</TableHead> {/* Use dictionary directly */}
+                        <TableHead>{dictionary.sales.history.detailsDialog.dateHeader}</TableHead><TableHead>{dictionary.sales.history.detailsDialog.methodHeader}</TableHead><TableHead>{dictionary.sales.history.detailsDialog.referenceHeader}</TableHead><TableHead className="text-right">{dictionary.sales.history.detailsDialog.amountHeader}</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -231,10 +218,7 @@ export function SalesOrderDetailsDialog({
                     ) : payments.length > 0 ? (
                         payments.map((payment) => (
                             <TableRow key={payment.id}>
-                                <TableCell>{formatDisplayDateTime(payment.payment_date, dictionary)}</TableCell> {/* Pass dictionary */}
-                                <TableCell className="capitalize">{payment.method}</TableCell>
-                                <TableCell>{payment.transaction_ref || dictionary.common.notAvailable}</TableCell> {/* Use dictionary for placeholder */}
-                                <TableCell className="text-right">{formatDisplayCurrency(payment.amount)}</TableCell>
+                                <TableCell>{formatDisplayDateTime(payment.payment_date, dictionary)}</TableCell><TableCell className="capitalize">{payment.method}</TableCell><TableCell>{payment.transaction_ref || dictionary.common.notAvailable}</TableCell><TableCell className="text-right">{formatDisplayCurrency(payment.amount)}</TableCell>
                             </TableRow>
                         ))
                      ) : (
@@ -242,14 +226,12 @@ export function SalesOrderDetailsDialog({
                     )}
                 </TableBody>
              </Table>
-
              {order.notes && (
                 <div className="mt-4">
                 <h4 className="font-medium mb-1">{dictionary.sales.history.detailsDialog.orderNotesTitle}</h4> {/* Use dictionary directly */}
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{order.notes}</p>
                 </div>
             )}
-
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>{dictionary.common.close}</Button> {/* Use dictionary directly */}

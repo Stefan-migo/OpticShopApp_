@@ -267,6 +267,8 @@
     "saleSuccessTitle": "Sale Recorded",
     "orderNumberLabel": "Order #",
     "saleErrorTitle": "Error Recording Sale",
+    "unknownProduct": "Unknown Product",
+    "serialNumberPrefix": "SN: ",
     "title": "Point of Sale",
     "viewHistoryButton": "View Sales History",
     "newSaleTitle": "New Sale",
@@ -327,8 +329,7 @@
         "loadingPayments": "Loading payments...",
         "noPaymentsRecorded": "No payments recorded for this order.",
         "orderNotesTitle": "Order Notes",
-        "loadErrorTitle": "Failed to load order details.",
-        "serialNumberPrefix": "SN: "
+        "loadErrorTitle": "Failed to load order details."
       }
     }
   },
@@ -465,5 +466,12 @@
       "invalidType": "Invalid appointment type selected.",
       "invalidProvider": "Invalid provider selected."
     }
+  },
+  "settings": {
+    "selectLanguagePlaceholder": "Select Language"
+  },
+  "languages": {
+    "en": "English",
+    "es": "Spanish"
   }
 }

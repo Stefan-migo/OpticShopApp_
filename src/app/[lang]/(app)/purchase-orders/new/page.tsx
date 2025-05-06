@@ -7,12 +7,15 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { useParams } from 'next/navigation'; // Import useParams
 
 import { PurchaseOrderForm } from "../purchase-order-form"; // Import the form component
 
 export default function NewPurchaseOrderPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const params = useParams(); // Get params from URL
+  const lang = params.lang as string; // Extract locale
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Placeholder for the form submission logic
@@ -54,7 +57,7 @@ export default function NewPurchaseOrderPage() {
     <div className="container mx-auto py-10">
       <div className="flex items-center gap-4 mb-6">
         <Button variant="outline" size="icon" asChild>
-          <Link href="/purchase-orders">
+          <Link href={`/${lang}/purchase-orders`}>
             <ChevronLeft className="h-4 w-4" />
           </Link>
         </Button>

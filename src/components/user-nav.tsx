@@ -16,7 +16,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { LogOut, Settings, User } from "lucide-react";
 import Link from "next/link"; // Import Link
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation"; // Import useRouter and useParams
 import { useToast } from "./ui/use-toast";
 
 // TODO: Add avatar component using shadcn-ui add
@@ -52,8 +52,8 @@ export function UserNav({ userRole = "User" }: UserNavProps) {
         variant: "destructive",
       });
     } else {
-      // Redirect to login page and refresh to clear server state
-      router.push("/login");
+      // Redirect to login page with locale and refresh to clear server state
+      router.push(`/${useParams().lang}/login`);
       router.refresh();
       toast({ title: "Logged out successfully." });
     }
@@ -96,7 +96,7 @@ export function UserNav({ userRole = "User" }: UserNavProps) {
         <DropdownMenuGroup>
           {/* Wrap Profile item in Link */}
           <DropdownMenuItem asChild>
-            <Link href="/profile">
+            <Link href={`/${useParams().lang}/profile`}>
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>
                 {/* <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut> */}
@@ -104,7 +104,7 @@ export function UserNav({ userRole = "User" }: UserNavProps) {
           </DropdownMenuItem>
           {/* Wrap Settings item in Link */}
           <DropdownMenuItem asChild>
-             <Link href="/settings">
+             <Link href={`/${useParams().lang}/settings`}>
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>
                 {/* <DropdownMenuShortcut>⌘S</DropdownMenuShortcut> */}

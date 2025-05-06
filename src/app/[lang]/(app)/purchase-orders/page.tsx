@@ -7,12 +7,14 @@ import { getColumns } from "./columns";
 import { DataTable } from "@/components/ui/data-table"; // Assuming a generic DataTable component exists
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { useRouter } from "next/navigation"; // Import useRouter
+import { useRouter, useParams } from "next/navigation"; // Import useRouter and useParams
 import { useToast } from "@/components/ui/use-toast"; // Import useToast
 
 export default function PurchaseOrdersPage() {
   const router = useRouter(); // Initialize useRouter
   const { toast } = useToast(); // Initialize useToast
+  const params = useParams(); // Get params from URL
+  const lang = params.lang as string; // Extract locale
 
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -91,7 +93,7 @@ export default function PurchaseOrdersPage() {
     <div className="container mx-auto py-10">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-semibold">Purchase Orders</h1>
-        <Link href="/purchase-orders/new">
+        <Link href={`/${lang}/purchase-orders/new`}>
           <Button>Add New Purchase Order</Button>
         </Link>
       </div>

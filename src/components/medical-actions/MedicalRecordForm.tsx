@@ -201,9 +201,7 @@ export function MedicalRecordForm({ customerId, initialData, onSuccess, dictiona
           render={({ field }) => (
             <FormItem>
               <FormLabel>{dictionary.medicalActions.recordForm.recordDateLabel || "Record Date"} *</FormLabel> {/* Use dictionary directly */}
-              <FormControl>
-                <Input type="date" {...field} value={field.value ?? ''} disabled={isLoading} />
-              </FormControl>
+              <FormControl><Input type="date" {...field} value={field.value ?? ''} disabled={isLoading} /></FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -216,11 +214,7 @@ export function MedicalRecordForm({ customerId, initialData, onSuccess, dictiona
             <FormItem>
               <FormLabel>{dictionary.medicalActions.recordForm.professionalLabel || "Professional"}</FormLabel> {/* Use dictionary directly */}
               <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined} disabled={isLoading}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder={dictionary.medicalActions.recordForm.selectProfessionalPlaceholder || "Select a professional (Optional)"} /> {/* Use dictionary directly */}
-                  </SelectTrigger>
-                </FormControl>
+                <FormControl><SelectTrigger><SelectValue placeholder={dictionary.medicalActions.recordForm.selectProfessionalPlaceholder || "Select a professional (Optional)"} /></SelectTrigger></FormControl>
                 <SelectContent>
                   {professionals.map((prof) => (
                     <SelectItem key={prof.id} value={prof.id}>
@@ -240,9 +234,7 @@ export function MedicalRecordForm({ customerId, initialData, onSuccess, dictiona
           render={({ field }) => (
             <FormItem>
               <FormLabel>{dictionary.medicalActions.recordForm.chiefComplaintLabel || "Chief Complaint"}</FormLabel> {/* Use dictionary directly */}
-              <FormControl>
-                <Textarea placeholder={dictionary.medicalActions.recordForm.chiefComplaintPlaceholder || "Enter chief complaint..."} className="resize-none" {...field} value={field.value ?? ''} disabled={isLoading} /> {/* Use dictionary directly */}
-              </FormControl>
+              <FormControl><Textarea placeholder={dictionary.medicalActions.recordForm.chiefComplaintPlaceholder || "Enter chief complaint..."} className="resize-none" {...field} value={field.value ?? ''} disabled={isLoading} /></FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -254,9 +246,7 @@ export function MedicalRecordForm({ customerId, initialData, onSuccess, dictiona
           render={({ field }) => (
             <FormItem>
               <FormLabel>{dictionary.medicalActions.recordForm.diagnosisLabel || "Diagnosis"}</FormLabel> {/* Use dictionary directly */}
-              <FormControl>
-                <Textarea placeholder={dictionary.medicalActions.recordForm.diagnosisPlaceholder || "Enter diagnosis..."} className="resize-none" {...field} value={field.value ?? ''} disabled={isLoading} /> {/* Use dictionary directly */}
-              </FormControl>
+              <FormControl><Textarea placeholder={dictionary.medicalActions.recordForm.diagnosisPlaceholder || "Enter diagnosis..."} className="resize-none" {...field} value={field.value ?? ''} disabled={isLoading} /></FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -268,9 +258,7 @@ export function MedicalRecordForm({ customerId, initialData, onSuccess, dictiona
           render={({ field }) => (
             <FormItem>
               <FormLabel>{dictionary.medicalActions.recordForm.examinationFindingsLabel || "Examination Findings"}</FormLabel> {/* Use dictionary directly */}
-              <FormControl>
-                <Textarea placeholder={dictionary.medicalActions.recordForm.examinationFindingsPlaceholder || "Enter examination findings..."} className="resize-none" {...field} value={field.value ?? ''} disabled={isLoading} /> {/* Use dictionary directly */}
-              </FormControl>
+              <FormControl><Textarea placeholder={dictionary.medicalActions.recordForm.examinationFindingsPlaceholder || "Enter examination findings..."} className="resize-none" {...field} value={field.value ?? ''} disabled={isLoading} /></FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -282,9 +270,7 @@ export function MedicalRecordForm({ customerId, initialData, onSuccess, dictiona
           render={({ field }) => (
             <FormItem>
               <FormLabel>{dictionary.medicalActions.recordForm.medicalHistoryLabel || "Medical History"}</FormLabel> {/* Use dictionary directly */}
-              <FormControl>
-                <Textarea placeholder={dictionary.medicalActions.recordForm.medicalHistoryPlaceholder || "Enter medical history..."} className="resize-none" {...field} value={field.value ?? ''} disabled={isLoading} /> {/* Use dictionary directly */}
-              </FormControl>
+              <FormControl><Textarea placeholder={dictionary.medicalActions.recordForm.medicalHistoryPlaceholder || "Enter medical history..."} className="resize-none" {...field} value={field.value ?? ''} disabled={isLoading} /></FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -296,9 +282,7 @@ export function MedicalRecordForm({ customerId, initialData, onSuccess, dictiona
           render={({ field }) => (
             <FormItem>
               <FormLabel>{dictionary.medicalActions.recordForm.treatmentPlanLabel || "Treatment Plan"}</FormLabel> {/* Use dictionary directly */}
-              <FormControl>
-                <Textarea placeholder={dictionary.medicalActions.recordForm.treatmentPlanPlaceholder || "Enter treatment plan..."} className="resize-none" {...field} value={field.value ?? ''} disabled={isLoading} /> {/* Use dictionary directly */}
-              </FormControl>
+              <FormControl><Textarea placeholder={dictionary.medicalActions.recordForm.treatmentPlanPlaceholder || "Enter treatment plan..."} className="resize-none" {...field} value={field.value ?? ''} disabled={isLoading} /></FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -310,9 +294,7 @@ export function MedicalRecordForm({ customerId, initialData, onSuccess, dictiona
           render={({ field }) => (
             <FormItem>
               <FormLabel>{dictionary.medicalActions.recordForm.notesLabel || "Notes"}</FormLabel> {/* Use dictionary directly */}
-              <FormControl>
-                <Textarea placeholder={dictionary.medicalActions.recordForm.notesPlaceholder || "Additional notes..."} className="resize-none" {...field} value={field.value ?? ''} disabled={isLoading} /> {/* Use dictionary directly */}
-              </FormControl>
+              <FormControl><Textarea placeholder={dictionary.medicalActions.recordForm.notesPlaceholder || "Additional notes..."} className="resize-none" {...field} value={field.value ?? ''} disabled={isLoading} /></FormControl>
               <FormMessage />
             </FormItem>
           )}

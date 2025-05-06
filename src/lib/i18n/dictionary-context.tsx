@@ -4,7 +4,7 @@ import { createContext, useContext } from 'react';
 import { Dictionary } from './types';
 
 // Create a context for the dictionary
-const DictionaryContext = createContext<Dictionary | undefined>(undefined);
+export const DictionaryContext = createContext<Dictionary | undefined>(undefined);
 
 // Custom hook to access the dictionary context
 export function useDictionary() {

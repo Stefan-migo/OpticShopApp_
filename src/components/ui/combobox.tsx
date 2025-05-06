@@ -45,8 +45,7 @@ export function Combobox({
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
 
-  // Use dictionary for localization with fallback to default strings
-  const localizedPlaceholder = dictionary?.sales?.selectCustomerPlaceholder || dictionary?.sales?.selectItemPlaceholder || placeholder;
+  // Use dictionary for localization with fallback to default strings for search and no results
   const localizedSearchPlaceholder = dictionary?.sales?.searchCustomersPlaceholder || dictionary?.sales?.searchItemsPlaceholder || searchPlaceholder;
   const localizedNoResultsText = dictionary?.sales?.noCustomerFound || dictionary?.sales?.noStockFound || noResultsText;
 
@@ -63,7 +62,7 @@ export function Combobox({
         >
           {selectedValue
             ? options.find((option) => option.value === selectedValue)?.label
-            : localizedPlaceholder} {/* Use localized placeholder */}
+            : placeholder} {/* Use the placeholder prop directly */}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>

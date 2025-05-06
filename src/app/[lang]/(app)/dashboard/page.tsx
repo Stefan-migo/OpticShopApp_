@@ -34,6 +34,6 @@ export default async function DashboardPage({
   // However, passing null for userName is safe if profile fetching fails.
 
   return (
-    <DashboardContent userName={userName} dictionary={dictionary} />
+    <DashboardContent userName={userName} dictionary={dictionary} lang={lang} />
   );
 }

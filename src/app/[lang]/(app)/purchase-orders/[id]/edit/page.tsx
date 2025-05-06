@@ -10,11 +10,14 @@ import { useToast } from "@/components/ui/use-toast";
 import { PurchaseOrderForm } from "../../purchase-order-form"; // Import the form component
 import { type PurchaseOrderFormValues } from "../../purchase-order-form"; // Import form values type
 import { type PurchaseOrder } from "../../columns"; // Import PurchaseOrder type
+import { useParams } from 'next/navigation'; // Import useParams
 
 export default function EditPurchaseOrderPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { toast } = useToast();
   const { id } = React.use(params); // Unwrap params with React.use()
+  const routeParams = useParams(); // Get route params
+  const lang = routeParams.lang as string; // Extract locale
 
   const [purchaseOrder, setPurchaseOrder] = useState<PurchaseOrder | null>(null);
   const [loading, setLoading] = useState(true);
@@ -92,7 +95,7 @@ export default function EditPurchaseOrderPage({ params }: { params: Promise<{ id
     <div className="container mx-auto py-10">
       <div className="flex items-center gap-4 mb-6">
         <Button variant="outline" size="icon" asChild>
-          <Link href="/purchase-orders">
+          <Link href={`/${lang}/purchase-orders`}>
             <ChevronLeft className="h-4 w-4" />
           </Link>
         </Button>
