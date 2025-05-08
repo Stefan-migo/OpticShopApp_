@@ -45,3 +45,9 @@ const ThemeSwitcher = () => {
 };
 
 export default ThemeSwitcher;
+
+
+
+<html lang="es" className="dark" color-scheme="light;">
+
+</html>
