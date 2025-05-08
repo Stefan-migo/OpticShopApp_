@@ -170,7 +170,6 @@ export default async function AppLayout({
             {/* </div> */}
           </div>
         </div>
-
         {/* Main Content Area */}
         <div className="flex flex-col">
           {/* Header */}
@@ -223,7 +222,6 @@ export default async function AppLayout({
                 {/* Optional: Mobile Sidebar Footer */}
               </SheetContent>
             </Sheet>
-
             {/* Header Content (e.g., Search, User Menu) */}
             <div className="w-full flex-1">
               {/* Optional: Search Form */}
@@ -238,12 +236,9 @@ export default async function AppLayout({
                 </div>
               </form> */}
             </div>
-
             {/* User Nav Component - Pass userRole */}
             <UserNav userRole={userRole} />
-
           </header>
-
           {/* Page Content */}
           <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
             {children} {/* Render children directly */}

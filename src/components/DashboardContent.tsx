@@ -108,111 +108,139 @@ export default function DashboardContent({ userName, dictionary, lang }: Dashboa
   }, [supabase, dictionary]); // Add dictionary to dependency array
 
   return (
-    <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+    // Apply background and text color to the main container
+    // min-h-screen is important to ensure the background covers the full viewport height
+    <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 bg-background text-foreground min-h-screen transition-colors duration-300">
         {userName && (
-            <h1 className="text-2xl font-semibold">{dictionary.dashboard.greeting?.replace('{{name}}', userName) || dictionary.dashboard.greetingFallback?.replace('{{name}}', userName) || `Good morning, ${userName}!`}</h1>
+            // Apply text color to the greeting
+            <h1 className="text-2xl font-semibold text-foreground">
+              {dictionary.dashboard.greeting?.replace('{{name}}', userName) || dictionary.dashboard.greetingFallback?.replace('{{name}}', userName) || `Good morning, ${userName}!`}
+            </h1>
         )}
+        {/* Apply background and gap to the grid container */}
         <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-             {/* Sales Summary Card */}
-             <Card>
+              {/* Sales Summary Card - Apply neumorphic styles */}
+              {/* Assuming Card component from shadcn/ui is already styled with bg-card, text-card-foreground etc. */}
+              {/* We add the neumorphic shadow and rounded corners here */}
+              <Card className="rounded-xl shadow-neumorphic">
+                 {/* Card Header - Apply text color to title */}
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
+                    <CardTitle className="text-foreground text-sm font-medium"> {/* Use text-foreground for title */}
                     {dictionary.dashboard.totalSales || "Total Sales"} {/* Use dictionary */}
                     </CardTitle>
+                    {/* Icon - Use text-muted-foreground for icon color */}
                     {/* <DollarSign className="h-4 w-4 text-muted-foreground" /> */}
                 </CardHeader>
+                 {/* Card Content - Apply text colors */}
                 <CardContent>
                     {isLoadingSales ? (
-                        <p className="text-xs text-muted-foreground">{dictionary.common.loading || "Loading..."}</p> // Use dictionary
+                        <p className="text-xs text-muted-foreground">{dictionary.common.loading || "Loading..."}</p> // Use text-muted-foreground
                     ) : salesSummary ? (
                         <>
-                            <div className="text-2xl font-bold">
+                            {/* Apply text-foreground to the main value */}
+                            <div className="text-2xl font-bold text-foreground">
                                 {salesSummary.total.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} {/* Currency formatting needs localization */}
                             </div>
+                            {/* Apply text-muted-foreground to the period text */}
                             <p className="text-xs text-muted-foreground">
                                 {salesSummary.period}
                             </p>
                         </>
                     ) : (
-                        <p className="text-xs text-muted-foreground">{dictionary.dashboard.noSalesData || "No sales data."}</p> // Use dictionary
+                        <p className="text-xs text-muted-foreground">{dictionary.dashboard.noSalesData || "No sales data."}</p> // Use text-muted-foreground
                     )}
                 </CardContent>
-             </Card>
+              </Card>
 
-             {/* Customer Count Card */}
-             <Card>
+              {/* Customer Count Card - Apply neumorphic styles */}
+              <Card className="rounded-xl shadow-neumorphic">
+                 {/* Card Header - Apply text color to title */}
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
+                    <CardTitle className="text-foreground text-sm font-medium"> {/* Use text-foreground for title */}
                     {dictionary.dashboard.totalCustomers || "Total Customers"} {/* Use dictionary */}
                     </CardTitle>
+                    {/* Icon - Use text-muted-foreground for icon color */}
                     {/* <Users className="h-4 w-4 text-muted-foreground" /> */}
                 </CardHeader>
+                 {/* Card Content - Apply text colors */}
                 <CardContent>
                     {isLoadingCustomers ? (
-                        <p className="text-xs text-muted-foreground">{dictionary.common.loading || "Loading..."}</p> // Use dictionary
+                        <p className="text-xs text-muted-foreground">{dictionary.common.loading || "Loading..."}</p> // Use text-muted-foreground
                     ) : customerCount !== null ? (
                         <>
-                            <div className="text-2xl font-bold">{customerCount}</div>
-                            {/* <p className="text-xs text-muted-foreground">All time</p> */}
+                            {/* Apply text-foreground to the main value */}
+                            <div className="text-2xl font-bold text-foreground">{customerCount}</div>
+                            {/* <p className="text-xs text-muted-foreground">All time</p> */} {/* Use text-muted-foreground */}
                         </>
                     ) : (
-                        <p className="text-xs text-muted-foreground">{dictionary.dashboard.noCustomerData || "No customer data."}</p> // Use dictionary
+                        <p className="text-xs text-muted-foreground">{dictionary.dashboard.noCustomerData || "No customer data."}</p> // Use text-muted-foreground
                     )}
                 </CardContent>
-             </Card>
+              </Card>
 
-             {/* Inventory Summary Card */}
-             <Card>
+              {/* Inventory Summary Card - Apply neumorphic styles */}
+              <Card className="rounded-xl shadow-neumorphic">
+                 {/* Card Header - Apply text color to title */}
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
+                    <CardTitle className="text-foreground text-sm font-medium"> {/* Use text-foreground for title */}
                     {dictionary.dashboard.inventoryStatus || "Inventory Status"} {/* Use dictionary */}
                     </CardTitle>
+                    {/* Icon - Use text-muted-foreground for icon color */}
                     {/* <Package className="h-4 w-4 text-muted-foreground" /> */}
                 </CardHeader>
+                 {/* Card Content - Apply text colors */}
                 <CardContent>
                     {isLoadingInventory ? (
-                        <p className="text-xs text-muted-foreground">{dictionary.common.loading || "Loading..."}</p> // Use dictionary
+                        <p className="text-xs text-muted-foreground">{dictionary.common.loading || "Loading..."}</p> // Use text-muted-foreground
                     ) : inventorySummary ? (
                         <div className="text-xs space-y-1">
                         {Object.entries(inventorySummary).map(([status, count]) => (
                             <div key={status} className="flex justify-between">
-                                <span className="capitalize text-muted-foreground">{dictionary.common.status[status as keyof typeof dictionary.common.status] || status}:</span> {/* Status might need localization */}
-                                <span>{count}</span>
+                                {/* Apply text-muted-foreground to status labels */}
+                                <span className="capitalize text-muted-foreground">{dictionary.common.status[status as keyof typeof dictionary.common.status] || status}:</span>
+                                {/* Apply text-foreground to counts */}
+                                <span className="text-foreground">{count}</span>
                             </div>
                         ))}
                         </div>
                     ) : (
-                        <p className="text-xs text-muted-foreground">{dictionary.dashboard.noInventoryData || "No inventory data."}</p> // Use dictionary
+                        <p className="text-xs text-muted-foreground">{dictionary.dashboard.noInventoryData || "No inventory data."}</p> // Use text-muted-foreground
                     )}
                 </CardContent>
-             </Card>
+              </Card>
 
-             {/* Upcoming Appointments Card */}
-             <Card>
+              {/* Upcoming Appointments Card - Apply neumorphic styles */}
+              <Card className="rounded-xl shadow-neumorphic">
+                 {/* Card Header - Apply text color to title */}
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">{dictionary.dashboard.upcomingAppointments || "Upcoming Appointments"}</CardTitle> {/* Use dictionary */}
+                    <CardTitle className="text-foreground text-sm font-medium">{dictionary.dashboard.upcomingAppointments || "Upcoming Appointments"}</CardTitle> {/* Use text-foreground and dictionary */}
+                    {/* Icon - Use text-muted-foreground for icon color */}
                     {/* <Calendar className="h-4 w-4 text-muted-foreground" /> */}
                 </CardHeader>
+                 {/* Card Content - Apply text colors */}
                 <CardContent>
                     {isLoadingAppointments ? (
-                        <p className="text-xs text-muted-foreground">{dictionary.common.loading || "Loading..."}</p> // Use dictionary
+                        <p className="text-xs text-muted-foreground">{dictionary.common.loading || "Loading..."}</p> // Use text-muted-foreground
                     ) : upcomingAppointments && upcomingAppointments.length > 0 ? (
                         <div className="text-xs space-y-1">
                             {upcomingAppointments.map(appointment => (
                                 <div key={appointment.id} className="flex justify-between">
-                                    <span className="text-muted-foreground">{format(new Date(appointment.appointment_time), 'p')}:</span> {/* Time formatting needs localization */}
-                                    <span>{`${appointment.customers?.first_name || ''} ${appointment.customers?.last_name || ''}`.trim() || dictionary.common.notAvailable}</span> {/* Use dictionary for fallback */}
+                                    {/* Apply text-muted-foreground to time */}
+                                    <span className="text-muted-foreground">{format(new Date(appointment.appointment_time), 'p')}:</span>
+                                    {/* Apply text-foreground to customer name */}
+                                    <span className="text-foreground">{`${appointment.customers?.first_name || ''} ${appointment.customers?.last_name || ''}`.trim() || dictionary.common.notAvailable}</span> {/* Use text-foreground and dictionary */}
                                 </div>
                             ))}
+                            {/* Apply text-primary to the link */}
                             <div className="mt-2 text-right">
-                                <Link href={`/${lang}/appointments`} className="text-blue-500 hover:underline">{dictionary.common.viewAll || "View All"}</Link> {/* Use dictionary and lang prop */}
+                                <Link href={`/${lang}/appointments`} className="text-primary hover:underline">{dictionary.common.viewAll || "View All"}</Link> {/* Use text-primary, dictionary, and lang prop */}
                             </div>
                         </div>
                     ) : (
-                        <p className="text-xs text-muted-foreground">{dictionary.dashboard.noUpcomingAppointments || "No upcoming appointments."}</p> // Use dictionary
+                        <p className="text-xs text-muted-foreground">{dictionary.dashboard.noUpcomingAppointments || "No upcoming appointments."}</p> // Use text-muted-foreground and dictionary
                     )}
                 </CardContent>
-             </Card>
+              </Card>
         </div>
         {/* Add other dashboard sections like recent activity, charts, etc. later */}
     </main>

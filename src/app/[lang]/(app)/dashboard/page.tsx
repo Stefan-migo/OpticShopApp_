@@ -1,3 +1,6 @@
+//OpticShopApp_/src/app/[lang]/(app)/dashboard/page.tsx
+
+
 import { createServerComponentClient } from "@/lib/supabase/server-component-client";
 import { cookies } from "next/headers";
 import DashboardContent from "@/components/DashboardContent";

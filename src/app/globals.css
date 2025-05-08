@@ -1,91 +1,297 @@
 @import "tailwindcss";
-@import 'react-big-calendar/lib/css/react-big-calendar.css'; /* Import react-big-calendar CSS */
+@import 'react-big-calendar/lib/css/react-big-calendar.css';
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+    --font-sans: 'Inter', sans-serif;
+    --radius: 0.75rem;
+
+    /* Base Light Theme CSS Variables */
+    --background: 0 0% 98%;
+    --foreground: 220 15% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 15% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 15% 12%;
+    --primary: 210 80% 50%;  /* Updated primary */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 10% 90%;
+    --secondary-foreground: 220 15% 12%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 210 30% 45%;
+    --accent: 200 80% 65%;
+    --accent-foreground: 220 15% 12%;
+    --destructive: 0 80% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 210 40% 90%;
+    --input: 210 40% 96%;
+    --ring: 210 80% 50%;
+
+    /* Neumorphic Shadow Variables (Light Theme) */
+    --shadow-light: hsl(0 0% 100% / 0.9);
+    --shadow-dark: hsl(210 20% 70% / 0.3);
+    color-scheme: light;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.269 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.371 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.439 0 0);
+    /* Dark Theme CSS Variables */
+    --background: 220 15% 12%;
+    --foreground: 0 0% 95%;
+    --card: 220 15% 18%;
+    --card-foreground: 0 0% 95%;
+    --popover: 220 15% 18%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 210 90% 55%; /* Lighter primary for dark */
+    --primary-foreground: 220 15% 12%;
+    --secondary: 220 10% 30%;
+    --secondary-foreground: 0 0% 85%;
+    --muted: 220 10% 25%;
+    --muted-foreground: 210 30% 55%;
+    --accent: 200 80% 55%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 0 0% 95%;
+    --border: 220 15% 30%;
+    --input: 220 15% 25%;
+    --ring: 210 90% 55%;
+
+    /* Neumorphic Shadow Variables (Dark Theme) */
+    --shadow-light: hsl(220 15% 25% / 0.8);
+    --shadow-dark: hsl(220 20% 5% / 0.5);
+    color-scheme: dark;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Custom theme for ocean */
+.ocean {
+    --background: 205 50% 97%;
+    --foreground: 215 30% 20%;
+    --card: 195 45% 100%;
+    --card-foreground: 215 30% 20%;
+    --popover: 195 45% 100%;
+    --popover-foreground: 215 30% 20%;
+    --primary: 210 80% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 180 40% 85%;
+    --secondary-foreground: 215 30% 15%;
+    --muted: 200 40% 98%;
+    --muted-foreground: 210 30% 40%;
+    --accent: 170 60% 65%;
+    --accent-foreground: 215 30% 15%;
+    --destructive: 0 60% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 200 40% 90%;
+    --input: 200 40% 98%;
+    --ring: 210 80% 50%;
+    --shadow-light: hsl(195 45% 100% / 0.7);
+    --shadow-dark: hsl(205 50% 65% / 0.3);
+    color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Custom theme for forest */
+.forest {
+    --background: 90 25% 98%;
+    --foreground: 120 25% 15%;
+    --card: 80 30% 100%;
+    --card-foreground: 120 25% 15%;
+    --popover: 80 30% 100%;
+    --popover-foreground: 120 25% 15%;
+    --primary: 130 60% 40%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 40 50% 75%;
+    --secondary-foreground: 120 20% 25%;
+    --muted: 70 20% 95%;
+    --muted-foreground: 100 20% 35%;
+    --accent: 100 50% 60%;
+    --accent-foreground: 120 20% 25%;
+    --destructive: 20 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 70 20% 85%;
+    --input: 70 20% 95%;
+    --ring: 130 60% 40%;
+    --shadow-light: hsl(80 30% 100% / 0.7);
+    --shadow-dark: hsl(90 25% 65% / 0.3);
+    color-scheme: light;
 }
+
+/* Custom theme for earthy-teal */
+.earthy-teal {
+    --background: 180 20% 95%; /* Approximating a light earthy background */
+    --foreground: 180 40% 20%; /* Approximating a dark teal text */
+    --card: 180 20% 98%; /* Slightly lighter card */
+    --card-foreground: 180 40% 20%;
+    --popover: 180 20% 98%;
+    --popover-foreground: 180 40% 20%;
+    --primary: 180 60% 40%; /* Teal primary */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 30 60% 50%; /* Amber secondary */
+    --secondary-foreground: 180 40% 15%;
+    --muted: 180 20% 90%;
+    --muted-foreground: 180 30% 30%;
+    --accent: 180 70% 30%; /* Darker teal accent */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 80% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 180 20% 80%;
+    --input: 180 20% 90%;
+    --ring: 180 60% 40%;
+    --shadow-light: hsl(180 20% 100% / 0.7);
+    --shadow-dark: hsl(180 20% 70% / 0.3);
+    color-scheme: dark;
+}
+
+/* Custom theme for pastel-sky */
+.pastel-sky {
+    --background: 200 60% 98%; /* Very light sky blue */
+    --foreground: 210 30% 30%; /* Slightly darker blue text */
+    --card: 200 60% 100%; /* Lighter card */
+    --card-foreground: 210 30% 30%;
+    --popover: 200 60% 100%;
+    --popover-foreground: 210 30% 30%;
+    --primary: 200 70% 60%; /* Sky blue primary */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 350 60% 70%; /* Soft pink secondary */
+    --secondary-foreground: 210 30% 25%;
+    --muted: 200 60% 95%;
+    --muted-foreground: 210 30% 40%;
+    --accent: 200 80% 50%; /* Brighter sky blue accent */
+    --accent-foreground: 210 30% 25%;
+    --destructive: 0 80% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 200 60% 90%;
+    --input: 200 60% 95%;
+    --ring: 200 70% 60%;
+    --shadow-light: hsl(200 60% 100% / 0.7);
+    --shadow-dark: hsl(200 60% 70% / 0.3);
+    color-scheme: light;
+}
+
+/* Custom theme for cool-neutrals */
+.cool-neutrals {
+    --background: 220 10% 98%; /* Very light cool gray */
+    --foreground: 220 20% 20%; /* Dark cool gray text */
+    --card: 220 10% 100%; /* White card */
+    --card-foreground: 220 20% 20%;
+    --popover: 220 10% 100%;
+    --popover-foreground: 220 20% 20%;
+    --primary: 210 80% 50%; /* Blue primary */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 10% 80%; /* Lighter cool gray secondary */
+    --secondary-foreground: 220 20% 30%;
+    --muted: 220 10% 95%;
+    --muted-foreground: 220 20% 40%;
+    --accent: 210 70% 60%; /* Slightly lighter blue accent */
+    --accent-foreground: 220 20% 30%;
+    --destructive: 0 80% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 10% 90%;
+    --input: 220 10% 95%;
+    --ring: 210 80% 50%;
+    --shadow-light: hsl(220 10% 100% / 0.7);
+    --shadow-dark: hsl(220 10% 70% / 0.3);
+    color-scheme: light;
+}
+
+/* Custom theme for emerald-gold */
+.emerald-gold {
+    --background: 60 40% 98%; /* Pale yellow/cream background */
+    --foreground: 180 50% 10%; /* Very dark teal text */
+    --card: 60 40% 100%; /* White card */
+    --card-foreground: 180 50% 10%;
+    --popover: 60 40% 100%;
+    --popover-foreground: 180 50% 10%;
+    --primary: 40 70% 50%; /* Muted gold primary */
+    --primary-foreground: 180 50% 10%;
+    --secondary: 160 40% 60%; /* Medium muted green secondary */
+    --secondary-foreground: 180 50% 15%;
+    --muted: 60 40% 95%;
+    --muted-foreground: 180 40% 30%;
+    --accent: 160 60% 50%; /* Dark teal green accent */
+    --accent-foreground: 60 40% 98%;
+    --destructive: 0 80% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 60 40% 90%;
+    --input: 60 40% 95%;
+    --ring: 40 70% 50%;
+    --shadow-light: hsl(60 40% 100% / 0.7);
+    --shadow-dark: hsl(60 40% 70% / 0.3);
+    color-scheme: light;
+}
+
+/* Custom theme for vibrant-green */
+.vibrant-green {
+    --background: 100 20% 98%; /* Light green background */
+    --foreground: 120 40% 10%; /* Very dark green text */
+    --card: 100 20% 100%; /* White card */
+    --card-foreground: 120 40% 10%;
+    --popover: 100 20% 100%;
+    --popover-foreground: 120 40% 10%;
+    --primary: 80 80% 40%; /* Lime green primary */
+    --primary-foreground: 120 40% 10%;
+    --secondary: 160 40% 50%; /* Teal secondary */
+    --secondary-foreground: 120 30% 20%;
+    --muted: 100 20% 95%;
+    --muted-foreground: 120 30% 30%;
+    --accent: 80 90% 30%; /* Darker lime green accent */
+    --accent-foreground: 120 30% 20%;
+    --destructive: 0 80% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 100 20% 90%;
+    --input: 100 20% 95%;
+    --ring: 80 80% 40%;
+    --shadow-light: hsl(100 20% 100% / 0.7);
+    --shadow-dark: hsl(100 20% 70% / 0.3);
+    color-scheme: light;
+}
+
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+    font-family: var(--font-sans);
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    transition: background-color 0.3s ease, color 0.3s ease;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+/* Neumorphic shadow utilities */
+.shadow-neumorphic {
+    box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
+}
+.shadow-neumorphic-sm {
+    box-shadow: 3px 3px 6px var(--shadow-dark), -3px -3px 6px var(--shadow-light);
+}
+.shadow-neumorphic-inset {
+    box-shadow: inset 5px 5px 10px var(--shadow-dark), inset -5px -5px 10px var(--shadow-light);
+}
+.shadow-neumorphic-inset-sm {
+    box-shadow: inset 3px 3px 6px var(--shadow-dark), inset -3px -3px 6px var(--shadow-light);
+}
+
+/* Tailwind classes mapped to CSS variables */
+.bg-background { background-color: hsl(var(--background)); }
+.text-foreground { color: hsl(var(--foreground)); }
+.bg-card { background-color: hsl(var(--card)); }
+.text-card-foreground { color: hsl(var(--card-foreground)); }
+.bg-primary { background-color: hsl(var(--primary)); }
+.text-primary-foreground { color: hsl(var(--primary-foreground)); }
+.bg-secondary { background-color: hsl(var(--secondary)); }
+.text-secondary-foreground { color: hsl(var(--secondary-foreground)); }
+.text-muted-foreground { color: hsl(var(--muted-foreground)); }
+.bg-muted { background-color: hsl(var(--muted)); }
+.border-border { border-color: hsl(var(--border)); }
+.bg-input { background-color: hsl(var(--input)); }
+.ring-ring { --tw-ring-color: hsl(var(--ring)); }
+
+.rounded-xl { border-radius: var(--radius); }
+.rounded-lg { border-radius: var(--radius); }
+.rounded-md { border-radius: calc(var(--radius) - 4px); }
+.rounded-sm { border-radius: calc(var(--radius) - 8px); }
+
+select option {
+    background-color: hsl(var(--card));
+    color: hsl(var(--foreground));
 }

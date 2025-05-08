@@ -101,7 +101,7 @@ export function CustomerSelect({ onCustomerSelect, initialCustomerId }: Customer
     <div> {/* Wrap in a div if not using FormField directly */}
       {/* Simple Select if not using react-hook-form */}
        <div className="space-y-2"> {/* Use a div for consistent spacing */}
-            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{dictionary.medicalActions.customerSelect.label}</label> {/* Use dictionary directly */}
+            <label className="text-text-primary text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{dictionary.medicalActions.customerSelect.label}</label> {/* Applied text-text-primary and use dictionary directly */}
             <Input
               placeholder={dictionary.medicalActions.customerSelect.searchPlaceholder}
               value={searchQuery}

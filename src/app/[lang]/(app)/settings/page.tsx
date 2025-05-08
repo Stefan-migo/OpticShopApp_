@@ -15,6 +15,7 @@ import { Dictionary } from '@/lib/i18n/types'; // Import Dictionary type
 import { getDictionary } from '@/lib/i18n'; // Import getDictionary helper
 import { useParams } from 'next/navigation'; // Import useParams
 import { Locale } from '@/lib/i18n/config'; // Import Locale type
+import ThemeSwitcher from './ThemeSwitcher'; // Import ThemeSwitcher
 
 // TODO: Research other common application settings (e.g., theme, notifications, defaults)
 
@@ -237,6 +238,10 @@ export default function SettingsPage() {
            <div>
              <h3 className="text-lg font-medium mb-2">{dictionary.settings.generalSectionTitle || "General"}</h3> {/* Use dictionary */}
              <p className="text-sm text-muted-foreground">{dictionary.settings.generalSectionDescription || "General application settings will go here (e.g., theme switcher)."}</p> {/* Use dictionary */}
+             {/* Theme Switcher Component */}
+             <div className="mt-4">
+               <ThemeSwitcher />
+             </div>
              {/* Language Switcher Component */}
              <div className="mt-4">
                <LanguageSwitcher dictionary={dictionary} />

@@ -116,7 +116,7 @@ export function DataTable<TData, TValue>({
         </DropdownMenu>
       </div>
       {/* Table */}
-      <div className="rounded-md border">
+      <div className="rounded-lg"> {/* Adjusted rounded corners, removed border */}
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -168,7 +168,7 @@ export function DataTable<TData, TValue>({
       </div>
       {/* Pagination */}
       <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="flex-1 text-sm text-muted-foreground">
+        <div className="flex-1 text-sm text-text-secondary"> {/* Applied text-text-secondary */}
           {table.getFilteredSelectedRowModel().rows.length} of{" "}
           {table.getFilteredRowModel().rows.length} row(s) selected.
         </div>

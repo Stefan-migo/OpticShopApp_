@@ -67,7 +67,7 @@ export function UserNav({ userRole = "User" }: UserNavProps) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <Avatar className="h-8 w-8">
+          <Avatar className="h-8 w-8 shadow-neumorphic-sm rounded-full"> {/* Applied Neumorphic shadow and rounded-full */}
             {/* Optional: Add user avatar image */}
             {/* <AvatarImage src="/avatars/01.png" alt="@shadcn" /> */}
             <AvatarFallback>
@@ -81,14 +81,14 @@ export function UserNav({ userRole = "User" }: UserNavProps) {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             {/* Use state variable for name */}
-            <p className="text-sm font-medium leading-none">{userName || 'User'}</p>
+            <p className="text-sm font-medium leading-none text-text-primary">{userName || 'User'}</p> {/* Applied text-text-primary */}
             {/* Use state variable for email */}
-            <p className="text-xs leading-none text-muted-foreground">
+            <p className="text-xs leading-none text-text-secondary"> {/* Applied text-text-secondary */}
               {userEmail || 'Loading...'}
             </p>
             {/* Display the role */}
-            <p className="text-xs leading-none text-muted-foreground pt-1">
-              Role: <span className="font-medium capitalize">{userRole}</span>
+            <p className="text-xs leading-none text-text-secondary pt-1"> {/* Applied text-text-secondary */}
+              Role: <span className="font-medium capitalize text-text-primary">{userRole}</span> {/* Applied text-text-primary */}
             </p>
           </div>
         </DropdownMenuLabel>

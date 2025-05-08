@@ -127,24 +127,24 @@ export function MedicalHistoryDisplay({ customerId }: MedicalHistoryDisplayProps
   return (
     <div className="space-y-6">
       {medicalRecords.length === 0 && prescriptions.length === 0 ? (
-        <div>{dictionary.medicalActions.history.noHistoryMessage}</div>
+        <div className="text-text-primary">{dictionary.medicalActions.history.noHistoryMessage}</div> /* Applied text-text-primary */
       ) : (
         <>
           {/* Display Medical Records */}
           <div>
-            <h3 className="text-lg font-semibold mb-2">{dictionary.medicalActions.history.medicalRecordsTitle}</h3>
+            <h3 className="text-lg font-semibold mb-2 text-text-primary">{dictionary.medicalActions.history.medicalRecordsTitle}</h3> {/* Applied text-text-primary */}
             {medicalRecords.map((record) => (
               <Card key={record.id} className="mb-4">
                 <CardHeader>
                   {/* TODO: Localize date formatting */}
                   <CardTitle>{dictionary.medicalActions.history.recordDateLabel}: {record.record_date}</CardTitle>
-                   <div className="text-sm text-muted-foreground">{dictionary.medicalActions.history.professionalLabel}: {record.profiles?.full_name || dictionary.common.notAvailable}</div>
+                   <div className="text-sm text-text-secondary">{dictionary.medicalActions.history.professionalLabel}: {record.profiles?.full_name || dictionary.common.notAvailable}</div> {/* Applied text-text-secondary */}
                 </CardHeader>
-                <CardContent className="text-sm">
-                  <p><strong>{dictionary.medicalActions.history.chiefComplaintLabel}:</strong> {record.chief_complaint || dictionary.common.notAvailable}</p>
-                  <p><strong>{dictionary.medicalActions.history.diagnosisLabel}:</strong> {record.diagnosis || dictionary.common.notAvailable}</p>
-                  <p><strong>{dictionary.medicalActions.history.treatmentPlanLabel}:</strong> {record.treatment_plan || dictionary.common.notAvailable}</p>
-                  <p><strong>{dictionary.medicalActions.history.notesLabel}:</strong> {record.notes || dictionary.common.notAvailable}</p>
+                <CardContent className="text-sm text-text-primary"> {/* Applied text-text-primary */}
+                  <p className="text-text-primary"><strong className="font-semibold">{dictionary.medicalActions.history.chiefComplaintLabel}:</strong> {record.chief_complaint || dictionary.common.notAvailable}</p> {/* Applied text-text-primary to p and font-semibold to strong */}
+                  <p className="text-text-primary"><strong className="font-semibold">{dictionary.medicalActions.history.diagnosisLabel}:</strong> {record.diagnosis || dictionary.common.notAvailable}</p> {/* Applied text-text-primary to p and font-semibold to strong */}
+                  <p className="text-text-primary"><strong className="font-semibold">{dictionary.medicalActions.history.treatmentPlanLabel}:</strong> {record.treatment_plan || dictionary.common.notAvailable}</p> {/* Applied text-text-primary to p and font-semibold to strong */}
+                  <p className="text-text-primary"><strong className="font-semibold">{dictionary.medicalActions.history.notesLabel}:</strong> {record.notes || dictionary.common.notAvailable}</p> {/* Applied text-text-primary to p and font-semibold to strong */}
                    {/* TODO: Link to related prescriptions */}
                 </CardContent>
               </Card>
@@ -153,71 +153,71 @@ export function MedicalHistoryDisplay({ customerId }: MedicalHistoryDisplayProps
 
           {/* Display Prescriptions */}
           <div>
-            <h3 className="text-lg font-semibold mb-2">{dictionary.medicalActions.history.prescriptionsTitle}</h3>
+            <h3 className="text-lg font-semibold mb-2 text-text-primary">{dictionary.medicalActions.history.prescriptionsTitle}</h3> {/* Applied text-text-primary */}
             {prescriptions.map((prescription) => (
                <Card key={prescription.id} className="mb-4">
                 <CardHeader>
                   {/* TODO: Localize date formatting */}
                   <CardTitle>{dictionary.medicalActions.history.prescriptionDateLabel}: {prescription.prescription_date}</CardTitle>
-                   <div className="text-sm text-muted-foreground">{dictionary.medicalActions.history.typeLabel}: {prescription.type}</div> {/* TODO: Localize type text */}
-                   <div className="text-sm text-muted-foreground">{dictionary.medicalActions.history.prescriberLabel}: {prescription.profiles?.full_name || dictionary.common.notAvailable}</div>
+                   <div className="text-sm text-text-secondary">{dictionary.medicalActions.history.typeLabel}: {prescription.type}</div> {/* Applied text-text-secondary and TODO: Localize type text */}
+                   <div className="text-sm text-text-secondary">{dictionary.medicalActions.history.prescriberLabel}: {prescription.profiles?.full_name || dictionary.common.notAvailable}</div> {/* Applied text-text-secondary */}
                 </CardHeader>
-                <CardContent className="text-sm">
-                   <p><strong>{dictionary.medicalActions.history.notesLabel}:</strong> {prescription.notes || '-'}</p>
+                <CardContent className="text-sm text-text-primary"> {/* Applied text-text-primary */}
+                   <p className="text-text-primary"><strong>{dictionary.medicalActions.history.notesLabel}:</strong> {prescription.notes || '-'}</p> {/* Applied text-text-primary to p */}
                    {/* Display OD/OS params */}
                    <div className="mt-2">
-                       <h4 className="font-medium text-sm mb-1">{dictionary.medicalActions.history.odParamsTitle}:</h4>
+                       <h4 className="font-medium text-sm mb-1 text-text-primary">{dictionary.medicalActions.history.odParamsTitle}:</h4> {/* Applied text-text-primary */}
                        {prescription.od_params ? (
-                           <div className="text-xs ml-2">
+                           <div className="text-xs ml-2 text-text-primary"> {/* Applied text-text-primary */}
                                {prescription.type === 'glasses' ? (
                                    <>
-                                       <p><strong>{dictionary.medicalActions.history.sphLabel}:</strong> {prescription.od_params.sph ?? '-'}</p>
-                                       <p><strong>{dictionary.medicalActions.history.cylLabel}:</strong> {prescription.od_params.cyl ?? '-'}</p>
-                                       <p><strong>{dictionary.medicalActions.history.axisLabel}:</strong> {prescription.od_params.axis ?? '-'}</p>
-                                       <p><strong>{dictionary.medicalActions.history.addLabel}:</strong> {prescription.od_params.add ?? '-'}</p>
-                                       <p><strong>{dictionary.medicalActions.history.prismLabel}:</strong> {prescription.od_params.prism || '-'}</p>
+                                       <p className="text-text-primary"><strong>{dictionary.medicalActions.history.sphLabel}:</strong> {prescription.od_params.sph ?? '-'}</p> {/* Applied text-text-primary to p */}
+                                       <p className="text-text-primary"><strong>{dictionary.medicalActions.history.cylLabel}:</strong> {prescription.od_params.cyl ?? '-'}</p> {/* Applied text-text-primary to p */}
+                                       <p className="text-text-primary"><strong>{dictionary.medicalActions.history.axisLabel}:</strong> {prescription.od_params.axis ?? '-'}</p> {/* Applied text-text-primary to p */}
+                                       <p className="text-text-primary"><strong>{dictionary.medicalActions.history.addLabel}:</strong> {prescription.od_params.add ?? '-'}</p> {/* Applied text-text-primary to p */}
+                                       <p className="text-text-primary"><strong>{dictionary.medicalActions.history.prismLabel}:</strong> {prescription.od_params.prism || '-'}</p> {/* Applied text-text-primary to p */}
                                    </>
                                ) : ( // contact_lens
                                    <>
-                                       <p><strong>{dictionary.medicalActions.history.sphLabel}:</strong> {prescription.od_params.sph ?? '-'}</p>
-                                       <p><strong>{dictionary.medicalActions.history.cylLabel}:</strong> {prescription.od_params.cyl ?? '-'}</p>
-                                       <p><strong>{dictionary.medicalActions.history.axisLabel}:</strong> {prescription.od_params.axis ?? '-'}</p>
-                                       <p><strong>{dictionary.medicalActions.history.bcLabel}:</strong> {prescription.od_params.bc ?? '-'}</p>
-                                       <p><strong>{dictionary.medicalActions.history.diaLabel}:</strong> {prescription.od_params.dia ?? '-'}</p>
-                                       <p><strong>{dictionary.medicalActions.history.brandLabel}:</strong> {prescription.od_params.brand || '-'}</p>
+                                       <p className="text-text-primary"><strong>{dictionary.medicalActions.history.sphLabel}:</strong> {prescription.od_params.sph ?? '-'}</p> {/* Applied text-text-primary to p */}
+                                       <p className="text-text-primary"><strong>{dictionary.medicalActions.history.cylLabel}:</strong> {prescription.od_params.cyl ?? '-'}</p> {/* Applied text-text-primary to p */}
+                                       <p className="text-text-primary"><strong>{dictionary.medicalActions.history.axisLabel}:</strong> {prescription.od_params.axis ?? '-'}</p> {/* Applied text-text-primary to p */}
+                                       <p className="text-text-primary"><strong>{dictionary.medicalActions.history.bcLabel}:</strong> {prescription.od_params.bc ?? '-'}</p> {/* Applied text-text-primary to p */}
+                                       <p className="text-text-primary"><strong>{dictionary.medicalActions.history.diaLabel}:</strong> {prescription.od_params.dia ?? '-'}</p> {/* Applied text-text-primary to p */}
+                                       <p className="text-text-primary"><strong>{dictionary.medicalActions.history.brandLabel}:</strong> {prescription.od_params.brand || '-'}</p> {/* Applied text-text-primary to p */}
                                    </>
                                )}
                            </div>
                        ) : (
-                           <div className="text-xs ml-2">{dictionary.common.notAvailable}</div>
+                           <div className="text-xs ml-2 text-text-primary">{dictionary.common.notAvailable}</div> /* Applied text-text-primary */
                        )}
                    </div>
 
                     <div className="mt-2">
-                       <h4 className="font-medium text-sm mb-1">{dictionary.medicalActions.history.osParamsTitle}:</h4>
+                       <h4 className="font-medium text-sm mb-1 text-text-primary">{dictionary.medicalActions.history.osParamsTitle}:</h4> {/* Applied text-text-primary */}
                        {prescription.os_params ? (
-                           <div className="text-xs ml-2">
+                           <div className="text-xs ml-2 text-text-primary"> {/* Applied text-text-primary */}
                                {prescription.type === 'glasses' ? (
                                    <>
-                                       <p><strong>{dictionary.medicalActions.history.sphLabel}:</strong> {prescription.os_params.sph ?? '-'}</p>
-                                       <p><strong>{dictionary.medicalActions.history.cylLabel}:</strong> {prescription.os_params.cyl ?? '-'}</p>
-                                       <p><strong>{dictionary.medicalActions.history.axisLabel}:</strong> {prescription.os_params.axis ?? '-'}</p>
-                                       <p><strong>{dictionary.medicalActions.history.addLabel}:</strong> {prescription.os_params.add ?? '-'}</p>
-                                       <p><strong>{dictionary.medicalActions.history.prismLabel}:</strong> {prescription.os_params.prism || '-'}</p>
+                                       <p className="text-text-primary"><strong>{dictionary.medicalActions.history.sphLabel}:</strong> {prescription.os_params.sph ?? '-'}</p> {/* Applied text-text-primary to p */}
+                                       <p className="text-text-primary"><strong>{dictionary.medicalActions.history.cylLabel}:</strong> {prescription.os_params.cyl ?? '-'}</p> {/* Applied text-text-primary to p */}
+                                       <p className="text-text-primary"><strong>{dictionary.medicalActions.history.axisLabel}:</strong> {prescription.os_params.axis ?? '-'}</p> {/* Applied text-text-primary to p */}
+                                       <p className="text-text-primary"><strong>{dictionary.medicalActions.history.addLabel}:</strong> {prescription.os_params.add ?? '-'}</p> {/* Applied text-text-primary to p */}
+                                       <p className="text-text-primary"><strong>{dictionary.medicalActions.history.prismLabel}:</strong> {prescription.os_params.prism || '-'}</p> {/* Applied text-text-primary to p */}
                                    </>
                                ) : ( // contact_lens
                                    <>
-                                       <p><strong>{dictionary.medicalActions.history.sphLabel}:</strong> {prescription.os_params.sph ?? '-'}</p>
-                                       <p><strong>{dictionary.medicalActions.history.cylLabel}:</strong> {prescription.os_params.cyl ?? '-'}</p>
-                                       <p><strong>{dictionary.medicalActions.history.axisLabel}:</strong> {prescription.os_params.axis ?? '-'}</p>
-                                       <p><strong>{dictionary.medicalActions.history.bcLabel}:</strong> {prescription.os_params.bc ?? '-'}</p>
-                                       <p><strong>{dictionary.medicalActions.history.diaLabel}:</strong> {prescription.os_params.dia ?? '-'}</p>
-                                       <p><strong>{dictionary.medicalActions.history.brandLabel}:</strong> {prescription.os_params.brand || '-'}</p>
+                                       <p className="text-text-primary"><strong>{dictionary.medicalActions.history.sphLabel}:</strong> {prescription.os_params.sph ?? '-'}</p> {/* Applied text-text-primary to p */}
+                                       <p className="text-text-primary"><strong>{dictionary.medicalActions.history.cylLabel}:</strong> {prescription.os_params.cyl ?? '-'}</p> {/* Applied text-text-primary to p */}
+                                       <p className="text-text-primary"><strong>{dictionary.medicalActions.history.axisLabel}:</strong> {prescription.os_params.axis ?? '-'}</p> {/* Applied text-text-primary to p */}
+                                       <p className="text-text-primary"><strong>{dictionary.medicalActions.history.bcLabel}:</strong> {prescription.os_params.bc ?? '-'}</p> {/* Applied text-text-primary to p */}
+                                       <p className="text-text-primary"><strong>{dictionary.medicalActions.history.diaLabel}:</strong> {prescription.os_params.dia ?? '-'}</p> {/* Applied text-text-primary to p */}
+                                       <p><strong>{dictionary.medicalActions.history.brandLabel}:</strong> {prescription.os_params.brand || '-'}</p> {/* Applied text-text-primary to p */}
                                    </>
                                )}
                            </div>
                        ) : (
-                           <div className="text-xs ml-2">{dictionary.common.notAvailable}</div>
+                           <div className="text-xs ml-2 text-text-primary">{dictionary.common.notAvailable}</div> /* Applied text-text-primary */
                        )}
                    </div>
 

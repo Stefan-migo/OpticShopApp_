@@ -67,10 +67,10 @@ export function Combobox({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0"> {/* Use trigger width */}
-        <Command>
-          <CommandInput placeholder={localizedSearchPlaceholder} /> {/* Use localized search placeholder */}
+        <Command className="rounded-lg bg-element-bg text-text-primary"> {/* Applied Neumorphic styles */}
+          <CommandInput placeholder={localizedSearchPlaceholder} className="rounded-md bg-element-bg shadow-neumorphic-inset text-text-primary placeholder:text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 ring-offset-app-bg" /> {/* Applied Neumorphic styles */}
           <CommandList>
-             <CommandEmpty>{localizedNoResultsText}</CommandEmpty> {/* Use localized no results text */}
+             <CommandEmpty className="text-text-secondary">{localizedNoResultsText}</CommandEmpty> {/* Applied text-text-secondary */}
              <CommandGroup>
               {options.map((option) => (
                 <CommandItem
@@ -82,10 +82,11 @@ export function Combobox({
                     onSelectValue(selectedOption ? selectedOption.value : null)
                     setOpen(false)
                   }}
+                  className="text-text-primary focus:bg-accent focus:text-accent-foreground" // Applied text-text-primary and focus styles
                 >
                   <Check
                     className={cn(
-                      "mr-2 h-4 w-4",
+                      "mr-2 h-4 w-4 text-accent-primary", // Applied text-accent-primary
                       selectedValue === option.value ? "opacity-100" : "opacity-0"
                     )}
                   />

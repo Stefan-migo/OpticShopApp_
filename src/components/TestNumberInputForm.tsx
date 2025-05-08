@@ -50,9 +50,9 @@ export function TestNumberInputForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4 border rounded-md">
-        <h3 className="text-lg font-medium">Test Number Input</h3>
-        <p>Watched value: {String(watchedTestNumber)}</p> {/* Display watched value */}
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4 rounded-lg bg-element-bg shadow-neumorphic"> {/* Applied Neumorphic styles */}
+        <h3 className="text-lg font-medium text-text-primary">Test Number Input</h3> {/* Applied text-text-primary */}
+        <p className="text-text-secondary">Watched value: {String(watchedTestNumber)}</p> {/* Applied text-text-secondary */}
 
         <FormField
           control={form.control}

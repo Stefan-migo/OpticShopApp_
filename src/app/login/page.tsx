@@ -53,7 +53,7 @@ export default function LoginPage() {
       // Redirect to the dashboard or home page upon successful login
       // Use router.refresh() to ensure server components re-render with new auth state
       router.refresh();
-      router.push("/dashboard"); // Redirect to the new dashboard route
+      router.push(`/${lang}/dashboard`); // Redirect to the new dashboard route
     }
   };
 
