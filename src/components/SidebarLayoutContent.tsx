@@ -3,7 +3,7 @@
 import Link from "next/link";
 import React from 'react';
 import {
-  Home, Eye, Package, ShoppingCart, Contact, Calendar, LineChart, Settings, Users, Package2, Menu, AlertCircle, FileText, TrendingUp, Stethoscope
+  Home, Eye, Package, ShoppingCart, Contact, Calendar, LineChart, Settings, Users, Package2, Menu, AlertCircle, FileText, TrendingUp, Stethoscope, ClipboardPlus
   // Add any other specific icons used directly (like Package2, Menu)
 } from "lucide-react";
 
@@ -50,6 +50,7 @@ const iconMap: { [key: string]: React.ElementType } = {
   FileText, // If you used "FileText" as a string name
   TrendingUp,
   Stethoscope,
+  ClipboardPlus,
   // Add a fallback icon
   AlertCircle: AlertCircle,
 };
@@ -107,7 +108,6 @@ const SidebarLayoutContent: React.FC<SidebarLayoutContentProps> = ({
            <UserNav userRole={userRole} />
         </SidebarFooter>
       </Sidebar>
-
       <div className="flex flex-col">
         <header className="flex h-14 items-center gap-4 bg-muted/40 px-4 lg:h-[60px] lg:px-6">
           <ActualSidebarTrigger className="shrink-0 hidden md:block">

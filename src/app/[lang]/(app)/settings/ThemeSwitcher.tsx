@@ -32,12 +32,12 @@ const ThemeSwitcher = () => {
         <SelectItem value="system">System</SelectItem>
         <SelectItem value="light">Light</SelectItem>
         <SelectItem value="dark">Dark</SelectItem>
-        <SelectItem value="ocean">Ocean</SelectItem>
         <SelectItem value="forest">Forest</SelectItem>
         <SelectItem value="earthy-teal">Earthy Teal</SelectItem>
-        <SelectItem value="pastel-sky">Pastel Sky</SelectItem>
         <SelectItem value="cool-neutrals">Cool Neutrals</SelectItem>
-        <SelectItem value="emerald-gold">Emerald Gold</SelectItem>
+        <SelectItem value="terracotta-sun">Terracotta Sun</SelectItem>
+        <SelectItem value="twilight-indigo">Twilight Indigo</SelectItem>
+        <SelectItem value="crimson-steel">Crimson Steel</SelectItem>
         <SelectItem value="vibrant-green">Vibrant Green</SelectItem>
       </SelectContent>
     </Select>

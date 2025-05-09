@@ -154,7 +154,7 @@ export default function CustomersPage() {
           {dictionary.customers?.loading || "Loading customers..."} {/* Use optional chaining */}
         </div>
       ) : error ? (
-        <div className="border shadow-sm rounded-lg p-4 text-center text-red-600">
+        <div className="border shadow-sm rounded-lg p-4 text-center text-destructive-foreground">
           {error}
         </div>
       ) : (

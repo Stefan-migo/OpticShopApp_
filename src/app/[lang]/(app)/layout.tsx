@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { redirect } from "next/navigation";
-import { Home, Package, ShoppingCart, Users, Contact, Calendar, Settings, Eye, LineChart } from "lucide-react"; // Keep icons needed for navItems
+import { Home, Package, ShoppingCart, Users, Contact, Calendar, Settings, Eye, LineChart, ClipboardPlus } from "lucide-react"; // Keep icons needed for navItems
 
 import { createServerComponentClient } from "@/lib/supabase/server-component-client";
 import { getDictionary } from "@/lib/i18n";
@@ -78,14 +78,14 @@ export default async function AppLayout({
   // Provide fallback for label in case dictionary lookup returns undefined
   const navItems = [
     { href: `/${lang}/dashboard`, label: dictionary.navigation.dashboard || '', icon: 'Home' },
-    { href: `/${lang}/customers`, label: dictionary.navigation.customers || '', icon: 'Eye' },
+    { href: `/${lang}/customers`, label: dictionary.navigation.customers || '', icon: 'Contact' },
     { href: `/${lang}/inventory`, label: dictionary.navigation.inventory || '', icon: 'Package' },
     { href: `/${lang}/purchase-orders`, label: dictionary.navigation.purchaseOrders || '', icon: 'ShoppingCart' },
-    { href: `/${lang}/prescriptions`, label: dictionary.navigation.prescriptions || '', icon: 'Contact' },
+    { href: `/${lang}/prescriptions`, label: dictionary.navigation.prescriptions || '', icon: 'Eye' },
     { href: `/${lang}/appointments`, label: dictionary.navigation.appointments || '', icon: 'Calendar' },
     { href: `/${lang}/sales`, label: dictionary.navigation.sales || '', icon: 'ShoppingCart' }, // Consider a different icon for sales if needed
     { href: `/${lang}/reports`, label: dictionary.navigation.reports || '', icon: 'LineChart' },
-    { href: `/${lang}/medical-actions`, label: dictionary.navigation.medicalActions || '', icon: 'Settings' }, // Consider a more specific icon for medical actions
+    { href: `/${lang}/medical-actions`, label: dictionary.navigation.medicalActions || '', icon: 'ClipboardPlus' }, // Consider a more specific icon for medical actions
     { href: `/${lang}/settings`, label: dictionary.navigation.settings || '', icon: 'Settings' },
   ];
 

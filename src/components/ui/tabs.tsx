@@ -14,7 +14,7 @@ const TabsList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      "inline-flex h-10 items-center justify-center rounded-lg bg-element-bg p-1 text-text-primary shadow-neumorphic-inset", // Applied Neumorphic styles
+      "inline-flex h-10 items-center justify-center rounded-lg p-1 text-muted-foreground", // Applied Neumorphic styles
       className
     )}
     {...props}

@@ -7,7 +7,7 @@
 
     /* Base Light Theme CSS Variables */
     --background: 0 0% 98%;
-    --background-color: 0 0% 98%;
+    --background-color: 0 0% 98%; /* Added for clarity if used directly */
     --foreground: 220 15% 12%;
     --card: 0 0% 100%;
     --card-foreground: 220 15% 12%;
@@ -61,35 +61,7 @@
     color-scheme: dark;
 }
 
-/* Custom Themes */
-
-.ocean {
-    /* Ocean Theme CSS Variables (Example HSL values) */
-    --background: 200 50% 95%; /* Light blue/gray background */
-    --foreground: 210 30% 20%; /* Dark text */
-    --card: 200 50% 98%; /* Slightly lighter card background */
-    --card-foreground: 210 30% 20%;
-    --popover: 200 50% 98%;
-    --popover-foreground: 210 30% 20%;
-    --primary: 200 70% 40%; /* Ocean blue accent */
-    --primary-foreground: 0 0% 100%; /* White text on accent */
-    --secondary: 210 20% 85%; /* Muted secondary */
-    --secondary-foreground: 210 30% 20%;
-    --muted: 200 30% 90%; /* Muted background */
-    --muted-foreground: 210 30% 40%; /* Muted text */
-    --accent: 220 60% 50%; /* Another accent color */
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 80% 50%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 210 20% 80%;
-    --input: 200 30% 90%;
-    --ring: 200 70% 40%;
-
-    /* Neumorphic Shadow Variables (Ocean Theme) */
-    --shadow-light: hsl(200 50% 100% / 0.9);
-    --shadow-dark: hsl(210 20% 60% / 0.3);
-    color-scheme: light;
-}
+/* --- Existing Custom Themes --- */
 
 .forest {
     /* Forest Theme CSS Variables (Example HSL values) */
@@ -147,6 +119,139 @@
     color-scheme: light;
 }
 
+/* --- New Custom Themes Based on Provided Palettes --- */
+
+.cool-neutrals { /* Palette 1: 30393E, 988F88, F8E5D7, D5C1B6, FAEFEB, F8BD97 */
+    --background: 210 33% 96%; /* FAEFEB */
+    --foreground: 210 11% 22%; /* 30393E */
+    --card: 30 56% 91%;       /* F8E5D7 */
+    --card-foreground: 210 11% 22%; /* 30393E */
+    --popover: 30 56% 91%;      /* F8E5D7 */
+    --popover-foreground: 210 11% 22%; /* 30393E */
+    --primary: 27 83% 81%;      /* F8BD97 */
+    --primary-foreground: 210 11% 22%; /* 30393E for contrast on light orange */
+    --secondary: 26 25% 77%;    /* D5C1B6 */
+    --secondary-foreground: 210 11% 22%; /* 30393E */
+    --muted: 31 7% 56%;        /* 988F88 */
+    --muted-foreground: 210 11% 35%; /* Slightly lighter than main foreground */
+    --accent: 27 83% 81%;       /* F8BD97 */
+    --accent-foreground: 210 11% 22%; /* 30393E */
+    --destructive: 0 80% 50%; /* Reusing default light theme destructive */
+    --destructive-foreground: 0 0% 98%;
+    --border: 26 25% 85%;    /* Lighter D5C1B6 */
+    --input: 30 56% 93%;       /* Lighter F8E5D7 */
+    --ring: 27 83% 70%;       /* Darker F8BD97 */
+
+    --shadow-light: hsl(210 33% 100% / 0.9); /* Lighter than background */
+    --shadow-dark: hsl(210 15% 75% / 0.25);  /* Darker, muted version of background base */
+    color-scheme: light;
+}
+
+.terracotta-sun { /* Palette 2: 022D33, 24413F, B9654B, 914C2F, D3A687, FADEC6 */
+    --background: 30 75% 88%;  /* FADEC6 */
+    --foreground: 190 93% 11%; /* 022D33 */
+    --card: 30 75% 92%;       /* Lighter FADEC6 */
+    --card-foreground: 190 93% 11%; /* 022D33 */
+    --popover: 30 75% 92%;      /* Lighter FADEC6 */
+    --popover-foreground: 190 93% 11%; /* 022D33 */
+    --primary: 15 46% 51%;      /* B9654B */
+    --primary-foreground: 30 75% 95%; /* Very light for contrast on terracotta */
+    --secondary: 16 50% 37%;    /* 914C2F */
+    --secondary-foreground: 30 75% 95%; /* Very light */
+    --muted: 29 43% 65%;       /* D3A687 */
+    --muted-foreground: 174 30% 20%; /* 24413F */
+    --accent: 29 43% 55%;       /* Darker D3A687 */
+    --accent-foreground: 190 93% 11%; /* 022D33 */
+    --destructive: 0 80% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 29 43% 75%;    /* Lighter D3A687 */
+    --input: 30 75% 90%;      /* Slightly darker FADEC6 */
+    --ring: 15 46% 45%;       /* Darker B9654B */
+
+    --shadow-light: hsl(30 75% 98% / 0.9);
+    --shadow-dark: hsl(30 30% 70% / 0.25);
+    color-scheme: light;
+}
+
+.twilight-indigo { /* Palette 3: 1033EA (assuming), 3D4D55, A79E9C, D3C3B9, B58863, 161616 */
+    --background: 0 0% 8%;      /* 161616 */
+    --foreground: 26 25% 83%;    /* D3C3B9 */
+    --card: 208 16% 29%;     /* 3D4D55 */
+    --card-foreground: 26 25% 83%; /* D3C3B9 */
+    --popover: 208 16% 29%;    /* 3D4D55 */
+    --popover-foreground: 26 25% 83%; /* D3C3B9 */
+    --primary: 230 82% 48%;    /* 1033EA (approx HSL for a vibrant blue like image) */
+    --primary-foreground: 0 0% 95%; /* White/vlight gray for contrast */
+    --secondary: 27 36% 55%;   /* B58863 */
+    --secondary-foreground: 0 0% 8%; /* 161616 for contrast on beige */
+    --muted: 15 6% 43%;       /* Darker A79E9C for muted bg elements */
+    --muted-foreground: 15 6% 73%;    /* Lighter A79E9C for text on muted */
+    --accent: 27 36% 55%;      /* B58863 */
+    --accent-foreground: 0 0% 8%;  /* 161616 */
+    --destructive: 0 70% 55%; /* Reusing default dark theme destructive */
+    --destructive-foreground: 0 0% 95%;
+    --border: 208 16% 20%;    /* Darker 3D4D55 */
+    --input: 208 16% 25%;     /* Slightly lighter 3D4D55 for input fields */
+    --ring: 230 82% 55%;      /* Brighter 1033EA */
+
+    --shadow-light: hsl(208 16% 35% / 0.8); /* Lighter version of card bg */
+    --shadow-dark: hsl(0 0% 3% / 0.6);    /* Very dark, almost black */
+    color-scheme: dark;
+}
+
+.vibrant-green { /* Palette 4: 032820, 80A416, C5C764, 08652C, AD9F3C, 5E7343 */
+    --background: 162 87% 8%;  /* 032820 */
+    --foreground: 61 40% 58%;   /* C5C764 */
+    --card: 148 86% 21%;     /* 08652C */
+    --card-foreground: 61 40% 58%; /* C5C764 */
+    --popover: 148 86% 21%;    /* 08652C */
+    --popover-foreground: 61 40% 58%; /* C5C764 */
+    --primary: 74 77% 36%;     /* 80A416 */
+    --primary-foreground: 162 87% 90%; /* Very light green/white for contrast */
+    --secondary: 52 49% 45%;   /* AD9F3C */
+    --secondary-foreground: 162 87% 8%; /* 032820 for contrast on mustard */
+    --muted: 80 25% 36%;      /* 5E7343 */
+    --muted-foreground: 61 40% 70%; /* Lighter C5C764 for text on muted */
+    --accent: 52 49% 45%;      /* AD9F3C */
+    --accent-foreground: 162 87% 8%; /* 032820 */
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 0 0% 95%;
+    --border: 80 25% 25%;     /* Darker 5E7343 */
+    --input: 148 86% 15%;      /* Darker 08652C */
+    --ring: 74 77% 40%;        /* Brighter 80A416 */
+
+    --shadow-light: hsl(148 70% 30% / 0.8); /* Lighter green shadow */
+    --shadow-dark: hsl(162 90% 3% / 0.6);  /* Very dark green shadow */
+    color-scheme: dark;
+}
+
+.crimson-steel { /* Palette 5: E22227, C7080C, 6C0102, 440101, 222B31, 55666E */
+    --background: 212 17% 16%; /* 222B31 */
+    --foreground: 0 0% 85%;    /* A light gray for general text */
+    --card: 206 13% 38%;     /* 55666E */
+    --card-foreground: 0 0% 90%; /* Lighter gray */
+    --popover: 206 13% 38%;    /* 55666E */
+    --popover-foreground: 0 0% 90%;
+    --primary: 358 77% 51%;    /* E22227 */
+    --primary-foreground: 0 0% 95%; /* White/vlight gray */
+    --secondary: 358 94% 40%;  /* C7080C */
+    --secondary-foreground: 0 0% 95%;
+    --muted: 359 97% 21%;     /* 6C0102 - very dark red */
+    --muted-foreground: 206 13% 65%; /* Lighter version of card for muted text */
+    --accent: 358 94% 40%;     /* C7080C */
+    --accent-foreground: 0 0% 95%;
+    --destructive: 358 77% 51%; /* E22227 - perfect destructive */
+    --destructive-foreground: 0 0% 95%;
+    --border: 206 13% 25%;    /* Darker 55666E */
+    --input: 206 13% 30%;     /* Slightly darker than card for input */
+    --ring: 358 77% 55%;       /* Brighter E22227 */
+
+    --shadow-light: hsl(206 15% 48% / 0.8); /* Lighter version of card bg */
+    --shadow-dark: hsl(212 20% 8% / 0.6);  /* Darker, almost black */
+    color-scheme: dark;
+}
+
+
 /* Neumorphic shadow utilities */
 .shadow-neumorphic {
     box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
@@ -162,6 +267,8 @@
 }
 
 /* Tailwind classes mapped to CSS variables */
+/* These should be handled by tailwind.config.js color mapping, but can be direct fallbacks or overrides if needed */
+/* It's generally better to rely on the tailwind.config.js setup for these */
 .bg-element-bg { background-color: hsl(var(--background)); }
 .text-foreground { color: hsl(var(--foreground)); }
 .bg-card { background-color: hsl(var(--card)); }
@@ -175,10 +282,14 @@
 .border-border { border-color: hsl(var(--border)); }
 .bg-input { background-color: hsl(var(--input)); }
 .ring-ring { --tw-ring-color: hsl(var(--ring)); }
+.bg-popover { background-color: hsl(var(--popover)); }
+.text-popover-foreground { color: hsl(var(--popover-foreground)); }
+.bg-accent { background-color: hsl(var(--accent)); }
+.text-accent-foreground { color: hsl(var(--accent-foreground)); }
+.bg-destructive { background-color: hsl(var(--destructive)); }
+.text-destructive-foreground { color: hsl(var(--destructive-foreground)); }
 
 .rounded-xl { border-radius: var(--radius); }
-.rounded-lg { border-radius: var(--radius); }
+.rounded-lg { border-radius: var(--radius); } /* Assuming lg is same as xl for consistency with var(--radius) */
 .rounded-md { border-radius: calc(var(--radius) - 4px); }
 .rounded-sm { border-radius: calc(var(--radius) - 8px); }
-
-

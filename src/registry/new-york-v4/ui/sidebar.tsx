@@ -170,7 +170,7 @@ function Sidebar({
       <div
         data-slot="sidebar"
         className={cn(
-          "bg-element-bg text-text-primary flex h-full w-(--sidebar-width) flex-col rounded-2xl shadow-neumorphic",
+          "text-text-primary flex h-full w-(--sidebar-width) flex-col rounded-2xl shadow-neumorphic",
           className
         )}
         {...props}
@@ -187,7 +187,7 @@ function Sidebar({
           data-sidebar="sidebar"
           data-slot="sidebar"
           data-mobile="true"
-          className="bg-element-bg text-text-primary w-(--sidebar-width) p-0 [&>button]:hidden rounded-r-2xl shadow-neumorphic" // Apply Neumorphic styles to mobile sheet
+          className="bg-primary text-text-primary w-(--sidebar-width) p-0 [&>button]:hidden rounded-r-2xl shadow-neumorphic" // Apply Neumorphic styles to mobile sheet
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
@@ -207,7 +207,7 @@ function Sidebar({
 
   return (
     <div
-      className="group peer text-text-primary hidden md:block" // Use text-text-primary
+      className="group peer text-primary-foreground hidden md:block" // Use text-text-primary
       data-state={state}
       data-collapsible={state === "collapsed" ? collapsible : ""}
       data-variant={variant}
@@ -268,7 +268,7 @@ function SidebarTrigger({
       data-slot="sidebar-trigger"
       variant="ghost"
       size="icon"
-      className={cn("size-7 text-text-primary hover:text-accent-primary active:shadow-neumorphic-inset", className)} // Apply Neumorphic styles
+      className={cn("size-7 text-primary-foreground hover:text-accent-primary active:shadow-neumorphic-inset", className)} // Apply Neumorphic styles
       onClick={(event) => {
         onClick?.(event)
         toggleSidebar()
@@ -311,7 +311,7 @@ function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
     <main
       data-slot="sidebar-inset"
       className={cn(
-        "bg-background relative flex w-full flex-1 flex-col",
+        "relative flex w-full flex-1 flex-col",
         "md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2",
         className
       )}
@@ -328,7 +328,7 @@ function SidebarInput({
     <Input
       data-slot="sidebar-input"
       data-sidebar="input"
-      className={cn("bg-background h-8 w-full shadow-none", className)}
+      className={cn("bg-input h-8 w-full shadow-none", className)}
       {...props}
     />
   )
@@ -339,7 +339,7 @@ function SidebarHeader({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="sidebar-header"
       data-sidebar="header"
-      className={cn("flex flex-col gap-2 p-2", className)}
+      className={cn("flex flex-col gap-2 p-2 bg-muted", className)}
       {...props}
     />
   )
@@ -350,7 +350,7 @@ function SidebarFooter({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="sidebar-footer"
       data-sidebar="footer"
-      className={cn("flex flex-col gap-2 p-2", className)}
+      className={cn("flex flex-col gap-2 p-2 bg-element-bg", className)}
       {...props}
     />
   )
@@ -407,7 +407,7 @@ function SidebarGroupLabel({
       data-slot="sidebar-group-label"
       data-sidebar="group-label"
       className={cn(
-        "text-text-secondary ring-sidebar-ring flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium outline-hidden transition-[margin,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0", // Use text-text-secondary
+        "text-secondary-foreground ring-sidebar-ring flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium outline-hidden transition-[margin,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0", // Use text-text-secondary
         "group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0",
         className
       )}
@@ -480,9 +480,9 @@ const sidebarMenuButtonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-element-bg text-text-primary data-[active=true]:bg-accent-primary data-[active=true]:text-white", // Apply Neumorphic styles
+        default: "bg-element-bg text-primary-foreground data-[active=true]:bg-accent-primary data-[active=true]:text-white", // Apply Neumorphic styles
         outline:
-          "text-text-primary shadow-[0_0_0_1px_hsl(var(--border))] hover:shadow-[0_0_0_1px_hsl(var(--accent-primary))] hover:text-accent-primary", // Apply Neumorphic styles
+          "text-card-foreground shadow-[0_0_0_1px_hsl(var(--border))] hover:shadow-[0_0_0_1px_hsl(var(--accent-primary))] hover:text-accent-primary", // Apply Neumorphic styles
       },
       size: {
         default: "h-8 text-sm",
