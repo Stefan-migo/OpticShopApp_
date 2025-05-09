@@ -7,6 +7,7 @@
 
     /* Base Light Theme CSS Variables */
     --background: 0 0% 98%;
+    --background-color: 0 0% 98%;
     --foreground: 220 15% 12%;
     --card: 0 0% 100%;
     --card-foreground: 220 15% 12%;
@@ -161,7 +162,7 @@
 }
 
 /* Tailwind classes mapped to CSS variables */
-.bg-background { background-color: hsl(var(--background)); }
+.bg-element-bg { background-color: hsl(var(--background)); }
 .text-foreground { color: hsl(var(--foreground)); }
 .bg-card { background-color: hsl(var(--card)); }
 .text-card-foreground { color: hsl(var(--card-foreground)); }
@@ -180,7 +181,4 @@
 .rounded-md { border-radius: calc(var(--radius) - 4px); }
 .rounded-sm { border-radius: calc(var(--radius) - 8px); }
 
-select option {
-    background-color: hsl(var(--card));
-    color: hsl(var(--foreground));
-}
+

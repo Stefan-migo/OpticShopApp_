@@ -139,7 +139,7 @@ function SidebarProvider({
             } as React.CSSProperties
           }
           className={cn(
-            "group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar flex min-h-svh w-full",
+            "group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar flex min-h-svh w-full bg-element-bg",
             className
           )}
           {...props}
@@ -228,17 +228,19 @@ function Sidebar({
       />
       <div
         data-slot="sidebar-container"
-        className={cn(
-          "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex",
-          side === "left"
-            ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
-            : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
-          // Adjust the padding for floating and inset variants.
-          variant === "floating" || variant === "inset"
-            ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
-            : "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l",
-          className
-        )}
+      className={cn(
+        "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex",
+        side === "left"
+          ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
+          : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
+        // Adjust the padding for floating and inset variants.
+        variant === "floating" || variant === "inset"
+          ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
+          : "group-data-[collapsible=icon]:w-(--sidebar-width-icon)",
+        side === "left" && "border-r-[hsl(var(--shadow-dark))]", // Apply dark shadow color to right border for left sidebar
+        side === "right" && "border-l-[hsl(var(--shadow-dark))]", // Apply dark shadow color to left border for right sidebar
+        className
+      )}
         {...props}
       >
         <div
@@ -467,20 +469,20 @@ function SidebarMenuItem({ className, ...props }: React.ComponentProps<"li">) {
     <li
       data-slot="sidebar-menu-item"
       data-sidebar="menu-item"
-      className={cn("group/menu-item relative", className)}
+      className={cn("group/menu-item relative mt-1 ", className)}
       {...props}
     />
   )
 }
 
 const sidebarMenuButtonVariants = cva(
-  "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-hidden ring-sidebar-ring transition-[width,height,padding] focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0", // Remove default hover/active bg/text
+  "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-hidden ring-sidebar-ring transition-[width,height,padding] focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-4! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0", // Remove default hover/active bg/text
   {
     variants: {
       variant: {
-        default: "bg-element-bg text-text-primary shadow-neumorphic hover:shadow-neumorphic-sm active:shadow-neumorphic-inset data-[active=true]:bg-accent-primary data-[active=true]:text-white", // Apply Neumorphic styles
+        default: "bg-element-bg text-text-primary data-[active=true]:bg-accent-primary data-[active=true]:text-white", // Apply Neumorphic styles
         outline:
-          "bg-element-bg text-text-primary shadow-[0_0_0_1px_hsl(var(--border))] hover:shadow-[0_0_0_1px_hsl(var(--accent-primary))] hover:text-accent-primary", // Apply Neumorphic styles
+          "text-text-primary shadow-[0_0_0_1px_hsl(var(--border))] hover:shadow-[0_0_0_1px_hsl(var(--accent-primary))] hover:text-accent-primary", // Apply Neumorphic styles
       },
       size: {
         default: "h-8 text-sm",

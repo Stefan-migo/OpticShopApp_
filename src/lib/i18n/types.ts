@@ -286,6 +286,8 @@ export interface Dictionary {
     delete?: string;
     userNotFound?: string; // Added userNotFound key
     toggleNavigationMenu?: string; // Added toggleNavigationMenu key
+    mobileSidebarTitle?: string; // Added for mobile sidebar accessibility
+    mobileSidebarDescription?: string; // Added for mobile sidebar accessibility
     status: { // Added status object
       available?: string;
       sold?: string;

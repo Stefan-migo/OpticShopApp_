@@ -30,6 +30,8 @@
     "scheduling": "Programando...",
     "removeItem": "Eliminar artículo",
     "toggleNavigationMenu": "Alternar menú de navegación",
+    "mobileSidebarTitle": "Navegación móvil",
+    "mobileSidebarDescription": "Menú de navegación principal de la aplicación",
     "status": {
       "available": "Disponible",
       "sold": "Vendido",

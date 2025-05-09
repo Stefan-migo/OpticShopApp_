@@ -30,6 +30,8 @@
     "scheduling": "Scheduling...",
     "removeItem": "Remove Item",
     "toggleNavigationMenu": "Toggle navigation menu",
+    "mobileSidebarTitle": "Mobile Navigation",
+    "mobileSidebarDescription": "Main navigation menu for the application",
     "status": {
       "available": "Available",
       "sold": "Sold",

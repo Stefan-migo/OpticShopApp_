@@ -23,10 +23,10 @@ const ThemeSwitcher = () => {
   // Render the Select component from shadcn/ui for theme selection
   return (
     <Select onValueChange={setTheme} value={theme}>
-      <SelectTrigger className="w-[180px] bg-card text-card-foreground border border-border rounded-lg shadow-neumorphic-inset-sm transition-all duration-200 ease-in-out hover:shadow-neumorphic-inset"> {/* Added neumorphic styles */}
+      <SelectTrigger className="w-[180px]"> {/* Added neumorphic styles */}
         <SelectValue placeholder="Select theme" />
       </SelectTrigger>
-      <SelectContent className="bg-card text-card-foreground border border-border rounded-md shadow-neumorphic"> {/* Added neumorphic styles */}
+      <SelectContent> {/* Added neumorphic styles */}
         {/* Include the themes you want to offer */}
         {/* The 'system' option allows the theme to follow the user's OS preference */}
         <SelectItem value="system">System</SelectItem>
@@ -51,3 +51,4 @@ export default ThemeSwitcher;
 <html lang="es" className="dark" color-scheme="light;">
 
 </html>
+

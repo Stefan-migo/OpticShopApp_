@@ -29,6 +29,7 @@ export function UserNav({ userRole = "User" }: UserNavProps) {
   const router = useRouter();
   const supabase = createClient();
   const { toast } = useToast();
+  const params = useParams(); // Call useParams() here
   const [userEmail, setUserEmail] = React.useState<string | null>(null);
   const [userName, setUserName] = React.useState<string | null>("User"); // Keep placeholder for name for now
 
@@ -42,9 +43,11 @@ export function UserNav({ userRole = "User" }: UserNavProps) {
     fetchUser();
   }, [supabase]);
 
-  const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
+const handleLogout = async () => {
+  console.log("Attempting to log out..."); // Log start of logout
+  const { error } = await supabase.auth.signOut();
+  console.log("Supabase signOut result:", { error }); // Log result
+  if (error) {
       console.error("Error logging out:", error);
       toast({
         title: "Logout Error",
@@ -53,7 +56,7 @@ export function UserNav({ userRole = "User" }: UserNavProps) {
       });
     } else {
       // Redirect to login page with locale and refresh to clear server state
-      router.push(`/${useParams().lang}/login`);
+      router.push(`/${params.lang}/login`); // Use the params variable
       router.refresh();
       toast({ title: "Logged out successfully." });
     }
