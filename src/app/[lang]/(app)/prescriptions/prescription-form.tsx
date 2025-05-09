@@ -899,8 +899,6 @@ export function PrescriptionForm({ initialData, onSuccess, customerId: propCusto
           }
         </Button>
       </form>
-      {/* Temporarily render the test component for debugging */}
-      <TestNumberInputForm />
     </Form>
   );
 }

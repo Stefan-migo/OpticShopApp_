@@ -130,7 +130,7 @@
     }
   },
   "navigation": {
-    "dashboard": "Panel de control",
+    "dashboard": "Inicio",
     "customers": "Clientes",
     "inventory": "Inventario",
     "purchaseOrders": "Órdenes de compra",
@@ -139,7 +139,8 @@
     "sales": "Ventas",
     "reports": "Informes",
     "medicalActions": "Acciones médicas",
-    "userManagement": "Gestión de usuarios"
+    "userManagement": "Gestión de usuarios",
+    "settings": "Configuración"
   },
   "inventory": {
     "fetchProductsError": "Error al obtener productos",

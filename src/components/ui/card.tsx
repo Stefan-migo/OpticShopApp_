@@ -9,7 +9,7 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "rounded-2xl bg-card text-card-foreground shadow-neumorphic p-6", // Applied Neumorphic styles and padding
+      "rounded-2xl bg-element-bg text-card-foreground shadow-neumorphic p-6", // Applied Neumorphic styles and padding
       className
     )}
     {...props}

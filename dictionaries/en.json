@@ -139,7 +139,8 @@
     "sales": "Sales",
     "reports": "Reports",
     "medicalActions": "Medical Actions",
-    "userManagement": "User Management"
+    "userManagement": "User Management",
+    "settings": "Settings"
   },
   "inventory": {
     "fetchProductsError": "Error fetching products",

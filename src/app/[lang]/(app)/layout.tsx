@@ -91,7 +91,7 @@ export default async function AppLayout({
 
   // Conditionally add Admin link
   if (userRole === 'admin') {
-    navItems.push({ href: `/${lang}/admin/users`, label: dictionary.navigation.userManagement || '', icon: 'Users' });
+    navItems.push({ href: `/${lang}/users`, label: dictionary.navigation.userManagement || '', icon: 'Users' });
   }
 
   // AppLayout (Server Component) now passes all necessary data as props
