@@ -268,7 +268,7 @@ function SidebarTrigger({
       data-slot="sidebar-trigger"
       variant="ghost"
       size="icon"
-      className={cn("size-7 text-primary-foreground hover:text-accent-primary active:shadow-neumorphic-inset", className)} // Apply Neumorphic styles
+      className={cn("size-7 text-muted-foreground hover:text-accent-primary active:shadow-neumorphic-inset", className)} // Apply Neumorphic styles
       onClick={(event) => {
         onClick?.(event)
         toggleSidebar()
@@ -339,9 +339,9 @@ function SidebarHeader({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="sidebar-header"
       data-sidebar="header"
-      className={cn("flex flex-col gap-2 p-2 bg-muted", className)}
+      className={cn("flex flex-col gap-2 p-2 bg-muted text-muted-foreground", className)}
       {...props}
-    />
+    /> 
   )
 }
 
@@ -480,7 +480,7 @@ const sidebarMenuButtonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-element-bg text-primary-foreground data-[active=true]:bg-accent-primary data-[active=true]:text-white", // Apply Neumorphic styles
+        default: "bg-element-bg text-muted-foreground data-[active=true]:bg-accent-primary data-[active=true]:text-white", // Apply Neumorphic styles
         outline:
           "text-card-foreground shadow-[0_0_0_1px_hsl(var(--border))] hover:shadow-[0_0_0_1px_hsl(var(--accent-primary))] hover:text-accent-primary", // Apply Neumorphic styles
       },
@@ -563,7 +563,7 @@ function SidebarMenuAction({
       data-slot="sidebar-menu-action"
       data-sidebar="menu-action"
       className={cn(
-        "text-text-primary ring-sidebar-ring hover:text-accent-primary active:shadow-neumorphic-inset absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-md p-0 outline-hidden transition-transform focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0", // Apply Neumorphic styles
+        "text-muted-foreground ring-sidebar-ring hover:text-accent-primary active:shadow-neumorphic-inset absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-md p-0 outline-hidden transition-transform focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0", // Apply Neumorphic styles
         // Increases the hit area of the button on mobile.
         "after:absolute after:-inset-2 md:after:hidden",
         "peer-data-[size=sm]/menu-button:top-1",
@@ -588,7 +588,7 @@ function SidebarMenuBadge({
       data-slot="sidebar-menu-badge"
       data-sidebar="menu-badge"
       className={cn(
-        "text-text-primary pointer-events-none absolute right-1 flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-xs font-medium tabular-nums select-none", // Use text-text-primary
+        "text-muted-foreground pointer-events-none absolute right-1 flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-xs font-medium tabular-nums select-none", // Use text-text-primary
         "peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[active=true]/menu-button:text-sidebar-accent-foreground",
         "peer-data-[size=sm]/menu-button:top-1",
         "peer-data-[size=default]/menu-button:top-1.5",

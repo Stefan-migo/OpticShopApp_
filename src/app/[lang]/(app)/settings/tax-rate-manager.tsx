@@ -237,7 +237,7 @@ export function TaxRateManager() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="name" className="text-right">Name</Label>
+                <Label htmlFor="name" className="text-right text-muted-foreground">Name</Label>
                 <Input
                   id="name"
                   name="name"
@@ -248,7 +248,7 @@ export function TaxRateManager() {
                   disabled={isSubmitting}
                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
+              <div className="grid grid-cols-4 items-center gap-4 text-muted-foreground">
                 <Label htmlFor="rate" className="text-right">Rate (%)</Label>
                 <Input
                   id="rate"
@@ -263,7 +263,7 @@ export function TaxRateManager() {
                   disabled={isSubmitting}
                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
+              <div className="grid grid-cols-4 items-center gap-4 text-muted-foreground">
                  <Label htmlFor="is_default" className="text-right">Default</Label>
                  <div className="col-span-3 flex items-center">
                     <Checkbox

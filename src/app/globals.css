@@ -254,13 +254,13 @@
 
 /* Neumorphic shadow utilities */
 .shadow-neumorphic {
-    box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
+    box-shadow: 3px 3px 3px var(--shadow-dark), 0px 0px 8px var(--shadow-light);
 }
 .shadow-neumorphic-sm {
     box-shadow: 3px 3px 6px var(--shadow-dark), -3px -3px 6px var(--shadow-light);
 }
 .shadow-neumorphic-inset {
-    box-shadow: inset 5px 5px 10px var(--shadow-dark), inset -5px -5px 10px var(--shadow-light);
+    box-shadow: inset 0px 0px 50px var(--shadow-dark), inset 0px 0px 40px var(--shadow-light);
 }
 .shadow-neumorphic-inset-sm {
     box-shadow: inset 3px 3px 6px var(--shadow-dark), inset -3px -3px 6px var(--shadow-light);

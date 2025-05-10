@@ -69,7 +69,7 @@ const handleLogout = async () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+        <Button variant="ghost" className="relative h-8 w-8 rounded-full text-muted-foreground">
           <Avatar className="h-8 w-8 shadow-neumorphic-sm rounded-full"> {/* Applied Neumorphic shadow and rounded-full */}
             {/* Optional: Add user avatar image */}
             {/* <AvatarImage src="/avatars/01.png" alt="@shadcn" /> */}
