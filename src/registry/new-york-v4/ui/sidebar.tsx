@@ -335,13 +335,14 @@ function SidebarInput({
 }
 
 function SidebarHeader({ className, ...props }: React.ComponentProps<"div">) {
+  const { state } = useSidebar();
   return (
     <div
       data-slot="sidebar-header"
       data-sidebar="header"
-      className={cn("flex flex-col gap-2 p-2 bg-muted text-muted-foreground", className)}
+      className={cn("flex flex-col gap-2 p-4 bg-muted text-muted-foreground", state === "collapsed" && "items-center", className)}
       {...props}
-    /> 
+    />
   )
 }
 

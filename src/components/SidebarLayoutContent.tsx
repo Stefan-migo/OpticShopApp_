@@ -82,12 +82,12 @@ const SidebarLayoutContent: React.FC<SidebarLayoutContentProps> = ({
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[auto_1fr] lg:grid-cols-[auto_1fr]">
       <Sidebar side="left" collapsible="icon">
-        <SidebarHeader className={cn("flex flex-col gap-2 p-2", state === 'collapsed' && 'items-start p-1')}>
-          <Link href={`/${lang}/dashboard`} className="flex items-center gap-2 font-semibold">
-            <Package2 className="h-6 w-6" /> {/* Direct usage of imported icon */}
-            <span className={cn(state === 'collapsed' && 'hidden')}>{dictionary.app.name}</span> {/* Conditionally hide span */}
-          </Link>
-        </SidebarHeader>
+<SidebarHeader className={cn("flex flex-col gap-2 p-2", state === 'collapsed' && 'items-center p-1')}>
+  <Link href={`/${lang}/dashboard`} className="flex items-center gap-2 font-semibold">
+    <Package2 className="h-6 w-6" /> {/* Direct usage of imported icon */}
+    <span className={cn(state === 'collapsed' && 'hidden')}>{dictionary.app.name}</span> {/* Conditionally hide span */}
+  </Link>
+</SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
             {navItems.map((item) => {

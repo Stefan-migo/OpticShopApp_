@@ -40,3 +40,5 @@ export default async function DashboardPage({
     <DashboardContent userName={userName} dictionary={dictionary} lang={lang} />
   );
 }
+
+
