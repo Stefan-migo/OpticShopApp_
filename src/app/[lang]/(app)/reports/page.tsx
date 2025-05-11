@@ -7,7 +7,7 @@ import { subDays, format } from 'date-fns'; // For date calculations
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
-import { useSearchParams } from "next/navigation"; // Import useSearchParams
+import Cookies from 'js-cookie'; // Import js-cookie
 
 
 // TODO: Add more reports (inventory, appointments)
@@ -101,9 +101,6 @@ const detailedSalesColumns: ColumnDef<DetailedSalesData>[] = [
 
 export default function ReportsPage() {
   const supabase = createClient();
-  const searchParams = useSearchParams(); // Get search params from URL
-  const tenantId = searchParams.get('tenantId'); // Get tenantId from search params
-
   const [salesSummary, setSalesSummary] = React.useState<{ period: string; total: number } | null>(null);
   const [customerCount, setCustomerCount] = React.useState<number | null>(null);
   const [inventorySummary, setInventorySummary] = React.useState<Record<string, number> | null>(null); // State for inventory counts
@@ -121,29 +118,8 @@ export default function ReportsPage() {
   const [isLoadingLowStockItems, setIsLoadingLowStockItems] = React.useState(true); // Loading state for low stock items
   const [isLoadingDetailedSales, setIsLoadingDetailedSales] = React.useState(true); // Loading state for detailed sales
 
-  const [isSuperuser, setIsSuperuser] = React.useState(false);
-
 
   const [error, setError] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    async function checkSuperuser() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('is_superuser')
-          .eq('id', user.id)
-          .single();
-        if (profile) {
-          setIsSuperuser(profile.is_superuser);
-        }
-      }
-    }
-    checkSuperuser();
-  }, []);
-
 
   // Fetch report data
   React.useEffect(() => {
@@ -158,6 +134,10 @@ export default function ReportsPage() {
       setError(null);
 
       try {
+        // Read superuser and selected tenant cookies
+        const isSuperuser = Cookies.get('is_superuser') === 'true';
+        const selectedTenantId = Cookies.get('selected_tenant_id');
+
         // Fetch Sales Summary (Last 30 Days)
         const thirtyDaysAgo = format(subDays(new Date(), 30), 'yyyy-MM-dd');
         let salesSummaryQuery = supabase
@@ -166,14 +146,15 @@ export default function ReportsPage() {
           .gte('order_date', thirtyDaysAgo)
           .eq('status', 'completed');
 
-        if (isSuperuser && tenantId) {
-          salesSummaryQuery = salesSummaryQuery.eq('tenant_id', tenantId);
+        if (isSuperuser && selectedTenantId) {
+          salesSummaryQuery = salesSummaryQuery.eq('tenant_id', selectedTenantId);
         }
 
-        const { data: salesData, error: salesError } = await salesSummaryQuery;
+        const { data: salesData, error: salesError }: { data: any, error: any } = await salesSummaryQuery;
 
-        if (salesError) throw new Error(`Sales Summary Error: ${salesError.message}`);
-        const totalSales = salesData?.reduce((sum, order) => sum + (order.final_amount || 0), 0) || 0;
+        if (salesError instanceof Error) throw new Error(`Sales Summary Error: ${salesError.message}`);
+        if (salesError) throw new Error(`Sales Summary Error: An unknown error occurred.`);
+        const totalSales = salesData?.reduce((sum: number, order: { final_amount: number | null }) => sum + (order.final_amount || 0), 0) || 0;
         setSalesSummary({ period: "Last 30 Days", total: totalSales });
         setIsLoadingSales(false);
 
@@ -182,13 +163,14 @@ export default function ReportsPage() {
           .from('customers')
           .select('*', { count: 'exact', head: true }); // Only get the count
 
-        if (isSuperuser && tenantId) {
-          customerCountQuery = customerCountQuery.eq('tenant_id', tenantId);
+        if (isSuperuser && selectedTenantId) {
+          customerCountQuery = customerCountQuery.eq('tenant_id', selectedTenantId);
         }
 
-        const { count: custCount, error: customerError } = await customerCountQuery;
+        const { count: custCount, error: customerError }: { count: number | null, error: any } = await customerCountQuery;
 
-        if (customerError) throw new Error(`Customer Count Error: ${customerError.message}`);
+        if (customerError instanceof Error) throw new Error(`Customer Count Error: ${customerError.message}`);
+        if (customerError) throw new Error(`Customer Count Error: An unknown error occurred.`);
         setCustomerCount(custCount ?? 0);
         setIsLoadingCustomers(false);
 
@@ -200,15 +182,16 @@ export default function ReportsPage() {
         }
         let inventorySummaryQuery = supabase
           .from('inventory_items')
-          .select('status');
+          .select('status'); // Removed incorrect cast
 
-        if (isSuperuser && tenantId) {
-          inventorySummaryQuery = inventorySummaryQuery.eq('tenant_id', tenantId);
+        if (isSuperuser && selectedTenantId) {
+          inventorySummaryQuery = inventorySummaryQuery.eq('tenant_id', selectedTenantId);
         }
 
-        const { data: inventoryData, error: inventoryError } = await inventorySummaryQuery as { data: InventoryItemStatus[] | null, error: any }; // Keep cast for data type
+        const { data: inventoryData, error: inventoryError }: { data: InventoryItemStatus[] | null, error: any } = await inventorySummaryQuery; // Explicitly type here
 
-        if (inventoryError) throw new Error(`Inventory Summary Error: ${inventoryError.message}`);
+        if (inventoryError instanceof Error) throw new Error(`Inventory Summary Error: ${inventoryError.message}`);
+        if (inventoryError) throw new Error(`Inventory Summary Error: An unknown error occurred.`);
 
         const summary: Record<string, number> = {};
         inventoryData?.forEach(item => {
@@ -221,9 +204,9 @@ export default function ReportsPage() {
 
         // Fetch Sales Over Time data from API route
         const salesOverTimeApiUrl = new URL('/api/reports/sales-over-time', window.location.origin);
-        if (isSuperuser && tenantId) {
+        if (isSuperuser && selectedTenantId) {
           salesOverTimeApiUrl.searchParams.set('is_superuser', 'true');
-          salesOverTimeApiUrl.searchParams.set('selected_tenant_id', tenantId);
+          salesOverTimeApiUrl.searchParams.set('selected_tenant_id', selectedTenantId);
         }
         const salesOverTimeResponse = await fetch(salesOverTimeApiUrl.toString());
         if (!salesOverTimeResponse.ok) {
@@ -235,9 +218,9 @@ export default function ReportsPage() {
 
         // Fetch Sales by Product Category data from API route
         const salesByCategoryApiUrl = new URL('/api/reports/sales-by-category', window.location.origin);
-        if (isSuperuser && tenantId) {
+        if (isSuperuser && selectedTenantId) {
           salesByCategoryApiUrl.searchParams.set('is_superuser', 'true');
-          salesByCategoryApiUrl.searchParams.set('selected_tenant_id', tenantId);
+          salesByCategoryApiUrl.searchParams.set('selected_tenant_id', selectedTenantId);
         }
         const salesByCategoryResponse = await fetch(salesByCategoryApiUrl.toString());
         if (!salesByCategoryResponse.ok) {
@@ -249,9 +232,9 @@ export default function ReportsPage() {
 
         // Fetch Low Stock Items data from API route
         const lowStockItemsApiUrl = new URL('/api/reports/low-stock-items', window.location.origin);
-        if (isSuperuser && tenantId) {
+        if (isSuperuser && selectedTenantId) {
           lowStockItemsApiUrl.searchParams.set('is_superuser', 'true');
-          lowStockItemsApiUrl.searchParams.set('selected_tenant_id', tenantId);
+          lowStockItemsApiUrl.searchParams.set('selected_tenant_id', selectedTenantId);
         }
         const lowStockItemsResponse = await fetch(lowStockItemsApiUrl.toString());
         if (!lowStockItemsResponse.ok) {
@@ -263,9 +246,9 @@ export default function ReportsPage() {
 
         // Fetch Detailed Sales data from API route
         const detailedSalesApiUrl = new URL('/api/reports/detailed-sales', window.location.origin);
-        if (isSuperuser && tenantId) {
+        if (isSuperuser && selectedTenantId) {
           detailedSalesApiUrl.searchParams.set('is_superuser', 'true');
-          detailedSalesApiUrl.searchParams.set('selected_tenant_id', tenantId);
+          detailedSalesApiUrl.searchParams.set('selected_tenant_id', selectedTenantId);
         }
         const detailedSalesResponse = await fetch(detailedSalesApiUrl.toString());
         if (!detailedSalesResponse.ok) {
@@ -276,9 +259,13 @@ export default function ReportsPage() {
         setIsLoadingDetailedSales(false);
 
 
-      } catch (fetchError: any) { // Explicitly type fetchError as any
+      } catch (fetchError) {
          console.error("Error fetching report data:", fetchError);
-         setError(fetchError instanceof Error ? fetchError.message : "An unexpected error occurred.");
+         if (fetchError instanceof Error) {
+           setError(fetchError.message);
+         } else {
+           setError("Failed to load report data.");
+         }
          // Ensure all loading states are false even on error
          setIsLoadingSales(false);
          setIsLoadingCustomers(false);
@@ -297,11 +284,8 @@ export default function ReportsPage() {
       }
     };
 
-    // Fetch data only if isSuperuser status is determined
-    if (isSuperuser !== undefined) {
-      fetchData();
-    }
-  }, [supabase, isSuperuser, tenantId]); // Add supabase, isSuperuser and tenantId to dependency array
+    fetchData();
+  }, [supabase]);
 
   return (
     <div className="flex flex-col gap-4">

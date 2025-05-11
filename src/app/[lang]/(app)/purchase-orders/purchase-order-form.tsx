@@ -56,15 +56,13 @@ interface PurchaseOrderFormProps {
   initialData?: PurchaseOrder | null; // For editing existing purchase order
   onSubmit: (values: PurchaseOrderFormValues) => void;
   isLoading: boolean;
-  isSuperuser: boolean; // Add isSuperuser prop
-  tenantId: string | null; // Add tenantId prop
 }
 
 // Define simple types for fetched dropdown data
 type Supplier = { id: string; name: string };
 type Product = { id: string; name: string; base_price: number }; // Include base_price for item price default
 
-export function PurchaseOrderForm({ initialData, onSubmit, isLoading, isSuperuser, tenantId }: PurchaseOrderFormProps) {
+export function PurchaseOrderForm({ initialData, onSubmit, isLoading }: PurchaseOrderFormProps) {
   const { toast } = useToast();
   const supabase = createClient();
   const isEditing = !!initialData;
@@ -114,20 +112,8 @@ export function PurchaseOrderForm({ initialData, onSubmit, isLoading, isSuperuse
         quantity_ordered: item.quantity_ordered,
         unit_price: item.unit_price,
       })) || [{ product_id: '', quantity_ordered: 1, unit_price: 0 }], // Default initial item
-    },
-  });
-
-  // Modify onSubmit to include tenantId if applicable
-  const handleFormSubmit = (values: PurchaseOrderFormValues) => {
-    const dataToSubmit = { ...values };
-    if (isSuperuser && tenantId) {
-      // Add tenant_id to the main purchase order object
-      (dataToSubmit as any).tenant_id = tenantId;
-      // Add tenant_id to each item as well if needed by backend
-      // dataToSubmit.items = dataToSubmit.items.map(item => ({ ...item, tenant_id: tenantId }));
-    }
-    onSubmit(dataToSubmit);
-  };
+  },
+});
 
 const { fields, append, remove } = useFieldArray<PurchaseOrderFormValues>({ // Explicitly type useFieldArray
   control: form.control,
@@ -146,7 +132,7 @@ const { fields, append, remove } = useFieldArray<PurchaseOrderFormValues>({ // E
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}

@@ -7,8 +7,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { useParams, useSearchParams } from 'next/navigation'; // Import useParams and useSearchParams
-import { createClient } from "@/lib/supabase/client"; // Import createClient
+import { useParams } from 'next/navigation'; // Import useParams
 
 import { PurchaseOrderForm } from "../purchase-order-form"; // Import the form component
 
@@ -17,28 +16,7 @@ export default function NewPurchaseOrderPage() {
   const { toast } = useToast();
   const params = useParams(); // Get params from URL
   const lang = params.lang as string; // Extract locale
-  const searchParams = useSearchParams(); // Get search params from URL
-  const tenantId = searchParams.get('tenantId'); // Get tenantId from search params
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuperuser, setIsSuperuser] = useState(false);
-
-  React.useEffect(() => {
-    async function checkSuperuser() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('is_superuser')
-          .eq('id', user.id)
-          .single();
-        if (profile) {
-          setIsSuperuser(profile.is_superuser);
-        }
-      }
-    }
-    checkSuperuser();
-  }, []);
 
   // Placeholder for the form submission logic
   const handleSubmit = async (values: any) => {
@@ -79,14 +57,14 @@ export default function NewPurchaseOrderPage() {
     <div className="container mx-auto py-10">
       <div className="flex items-center gap-4 mb-6">
         <Button variant="outline" size="icon" asChild>
-          <Link href={`/${lang}/purchase-orders${tenantId ? `?tenantId=${tenantId}` : ''}`}>
+          <Link href={`/${lang}/purchase-orders`}>
             <ChevronLeft className="h-4 w-4" />
           </Link>
         </Button>
         <h1 className="text-2xl font-semibold">Add New Purchase Order</h1>
       </div>
 
-      <PurchaseOrderForm onSubmit={handleSubmit} isLoading={isSubmitting} isSuperuser={isSuperuser} tenantId={tenantId} />
+      <PurchaseOrderForm onSubmit={handleSubmit} isLoading={isSubmitting} />
     </div>
   );
 }

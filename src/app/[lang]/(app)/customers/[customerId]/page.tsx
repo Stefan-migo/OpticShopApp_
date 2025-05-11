@@ -143,7 +143,7 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
 }
 
 // Helper component to fetch and display past sales
-async function PastSales({ customerId, isSuperuser, selectedTenantId }: { customerId: string, isSuperuser: boolean, selectedTenantId: string | null }): Promise<JSX.Element> {
+async function PastSales({ customerId, isSuperuser, selectedTenantId }: { customerId: string, isSuperuser: boolean, selectedTenantId: string | null }): Promise<React.JSX.Element> {
   const supabase = createServerComponentClient();
 
   let query = supabase
@@ -193,7 +193,7 @@ async function PastSales({ customerId, isSuperuser, selectedTenantId }: { custom
 }
 
 // Helper component to fetch and display appointments
-async function AppointmentsHistory({ customerId, isSuperuser, selectedTenantId }: { customerId: string, isSuperuser: boolean, selectedTenantId: string | null }): Promise<JSX.Element> {
+async function AppointmentsHistory({ customerId, isSuperuser, selectedTenantId }: { customerId: string, isSuperuser: boolean, selectedTenantId: string | null }): Promise<React.JSX.Element> {
   const supabase = createServerComponentClient();
 
   let query = supabase
@@ -256,7 +256,7 @@ interface PrescriptionData {
 }
 
 // Helper component to fetch and display prescriptions
-async function PrescriptionsHistory({ customerId, isSuperuser, selectedTenantId }: { customerId: string, isSuperuser: boolean, selectedTenantId: string | null }): Promise<JSX.Element> {
+async function PrescriptionsHistory({ customerId, isSuperuser, selectedTenantId }: { customerId: string, isSuperuser: boolean, selectedTenantId: string | null }): Promise<React.JSX.Element> {
   const supabase = createServerComponentClient();
   // Select key fields for the summary table
   let query = supabase

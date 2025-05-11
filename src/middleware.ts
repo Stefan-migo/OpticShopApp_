@@ -54,11 +54,6 @@ export async function middleware(request: NextRequest) {
           return request.cookies.get(name)?.value;
         },
         set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({ // Modify request cookies as well for subsequent operations within the middleware if needed
-            name,
-            value,
-            ...options,
-          });
           response.cookies.set({ // Set on the response to send back to the client
             name,
             value,
@@ -66,7 +61,6 @@ export async function middleware(request: NextRequest) {
           });
         },
         remove(name: string, options: CookieOptions) {
-          request.cookies.delete(name); // Modify request cookies
           response.cookies.delete(name);  // Set on the response
         },
       },

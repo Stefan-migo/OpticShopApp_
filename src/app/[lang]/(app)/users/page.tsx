@@ -5,7 +5,8 @@ import { getUserManagementColumns, type UserProfile } from "./columns"; // Impor
 import { DataTable } from "@/components/ui/data-table";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { useRouter, useSearchParams } from "next/navigation"; // For redirecting non-admins and getting search params
+import { useRouter } from "next/navigation"; // For redirecting non-admins
+import Cookies from 'js-cookie'; // Import js-cookie
 
 // Define type for available roles
 type RoleOption = {
@@ -17,34 +18,10 @@ export default function AdminUsersPage() {
   const supabase = createClient();
   const { toast } = useToast();
   const router = useRouter();
-  const searchParams = useSearchParams(); // Get search params from URL
-  const tenantId = searchParams.get('tenantId'); // Get tenantId from search params
-
   const [data, setData] = React.useState<UserProfile[]>([]);
   const [roles, setRoles] = React.useState<RoleOption[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [isSuperuser, setIsSuperuser] = React.useState(false);
-
-
-  React.useEffect(() => {
-    async function checkSuperuser() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('is_superuser')
-          .eq('id', user.id)
-          .single();
-        if (profile) {
-          setIsSuperuser(profile.is_superuser);
-        }
-      }
-    }
-    checkSuperuser();
-  }, []);
-
 
   // Fetch user profiles and available roles
   const fetchData = React.useCallback(async () => {
@@ -52,6 +29,10 @@ export default function AdminUsersPage() {
     setError(null);
 
     try {
+        // Read superuser and selected tenant cookies
+        const isSuperuser = Cookies.get('is_superuser') === 'true';
+        const selectedTenantId = Cookies.get('selected_tenant_id');
+
         // Check current user's role first (client-side check, RLS is the main guard)
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error("User not authenticated");
@@ -94,8 +75,8 @@ export default function AdminUsersPage() {
             `); // Email needs to be fetched separately or via a view/function
 
         // Apply tenant filter if superuser and a tenant is selected
-        if (isSuperuser && tenantId) {
-            profilesQuery = profilesQuery.eq('tenant_id', tenantId);
+        if (isSuperuser && selectedTenantId) {
+            profilesQuery = profilesQuery.eq('tenant_id', selectedTenantId);
         }
         // Note: For non-superusers, RLS policies will automatically filter by their tenant_id
 
@@ -123,14 +104,11 @@ export default function AdminUsersPage() {
     } finally {
         setIsLoading(false);
     }
-  }, [supabase, toast, router, isSuperuser, tenantId]); // Add isSuperuser and tenantId to dependency array
+  }, [supabase, toast, router]);
 
   React.useEffect(() => {
-    // Fetch data only if isSuperuser status is determined
-    if (isSuperuser !== undefined) {
-      fetchData();
-    }
-  }, [fetchData, isSuperuser]); // Add isSuperuser to dependency array
+    fetchData();
+  }, [fetchData]);
 
   // Handler for changing user role
   const handleChangeRole = async (userId: string, newRoleId: string) => {

@@ -7,67 +7,42 @@ import { getColumns } from "./columns";
 import { DataTable } from "@/components/ui/data-table"; // Assuming a generic DataTable component exists
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { useRouter, useParams, useSearchParams } from "next/navigation"; // Import useRouter, useParams, and useSearchParams
+import { useRouter, useParams } from "next/navigation"; // Import useRouter and useParams
 import { useToast } from "@/components/ui/use-toast"; // Import useToast
-import { createClient } from "@/lib/supabase/client"; // Import createClient
+import Cookies from 'js-cookie'; // Import js-cookie
 
 export default function PurchaseOrdersPage() {
   const router = useRouter(); // Initialize useRouter
   const { toast } = useToast(); // Initialize useToast
   const params = useParams(); // Get params from URL
   const lang = params.lang as string; // Extract locale
-  const searchParams = useSearchParams(); // Get search params from URL
-  const tenantId = searchParams.get('tenantId'); // Get tenantId from search params
 
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isSuperuser, setIsSuperuser] = useState(false);
-
-  useEffect(() => {
-    async function checkSuperuser() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('is_superuser')
-          .eq('id', user.id)
-          .single();
-        if (profile) {
-          setIsSuperuser(profile.is_superuser);
-        }
-      }
-    }
-    checkSuperuser();
-  }, []);
-
 
   useEffect(() => {
     async function fetchPurchaseOrders() {
       try {
         setLoading(true);
-        setError(null); // Clear previous errors
 
-        const supabase = createClient();
-        let query = supabase.from('purchase_orders').select('*');
+        // Read superuser and selected tenant cookies
+        const isSuperuser = Cookies.get('is_superuser') === 'true';
+        const selectedTenantId = Cookies.get('selected_tenant_id');
 
-        if (isSuperuser && tenantId) {
-          query = query.eq('tenant_id', tenantId);
-        } else if (!isSuperuser) {
-           // Assuming non-superusers should only see their tenant's data
-           // This part might need adjustment based on how non-superusers are handled
-           // For now, assuming tenant_id is automatically handled by RLS for non-superusers
+        // Construct the API URL with query parameters for superusers
+        const apiUrl = new URL('/api/purchase-orders', window.location.origin);
+        if (isSuperuser && selectedTenantId) {
+          apiUrl.searchParams.set('is_superuser', 'true');
+          apiUrl.searchParams.set('selected_tenant_id', selectedTenantId);
         }
 
-
-        const { data, error } = await query;
-
-        if (error) {
-          throw new Error(error.message);
+        const response = await fetch(apiUrl.toString()); // Call the API route with parameters
+        if (!response.ok) {
+          throw new Error(`Error fetching purchase orders: ${response.statusText}`);
         }
-
-        setPurchaseOrders(data || []);
+        const data = await response.json();
+        setPurchaseOrders(data);
       } catch (err: any) {
         console.error("Failed to fetch purchase orders:", err);
         setError(err.message || "Failed to fetch purchase orders.");
@@ -75,11 +50,8 @@ export default function PurchaseOrdersPage() {
         setLoading(false);
       }
     }
-    // Fetch data only if isSuperuser status is determined
-    if (isSuperuser !== undefined) {
-      fetchPurchaseOrders();
-    }
-  }, [isSuperuser, tenantId]); // Add isSuperuser and tenantId to dependency array
+    fetchPurchaseOrders();
+  }, []);
 
 
   // Define handlers for actions (edit, delete) - will be passed to columns

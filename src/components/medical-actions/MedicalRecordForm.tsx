@@ -311,3 +311,4 @@ export function MedicalRecordForm({ customerId, initialData, onSuccess, dictiona
     </Form>
   );
 }
+

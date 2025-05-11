@@ -111,14 +111,14 @@ export default function MedicalActionsPage() {
       <div>
         <h2 className="text-xl font-semibold mb-4">{dictionary.medicalActions.selectCustomerTitle || "Select Customer"}</h2> {/* Use dictionary */}
         {/* Pass isSuperuser and tenantId to CustomerSelect if it needs them for filtering */}
-        <CustomerSelect onCustomerSelect={setSelectedCustomerId} dictionary={dictionary} isSuperuser={isSuperuser} tenantId={tenantId} /> {/* Integrate CustomerSelect, Pass dictionary, isSuperuser, tenantId */}
+        <CustomerSelect onCustomerSelect={setSelectedCustomerId} isSuperuser={isSuperuser} tenantId={tenantId} /> {/* Integrate CustomerSelect, Pass dictionary, isSuperuser, tenantId */}
       </div>
 
       {/* Medical History Display */}
        <div className="mt-8">
         <h2 className="text-xl font-semibold mb-4">{dictionary.medicalActions.medicalHistoryTitle || "Medical History"}</h2> {/* Use dictionary */}
         {/* Pass isSuperuser and tenantId to MedicalHistoryDisplay */}
-        <MedicalHistoryDisplay customerId={selectedCustomerId} dictionary={dictionary} isSuperuser={isSuperuser} tenantId={tenantId} /> {/* Integrate MedicalHistoryDisplay, Pass dictionary, isSuperuser, tenantId */}
+        <MedicalHistoryDisplay customerId={selectedCustomerId} isSuperuser={isSuperuser} tenantId={tenantId} /> {/* Integrate MedicalHistoryDisplay, Pass dictionary, isSuperuser, tenantId */}
       </div>
 
       {/* Medical Record Form (Add/Edit) */}

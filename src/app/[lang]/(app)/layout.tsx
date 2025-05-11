@@ -31,7 +31,7 @@ export const dynamic = 'force-dynamic'; // Force dynamic rendering
 import { cookies } from 'next/headers'; // Import cookies
 
 export default async function AppLayout(props: { children: React.ReactNode; params: { lang: Locale } }) { // Receive full props object
-  const { children, params } = await props; // Attempt to await destructured props
+  const { children, params } = props; // Attempt to await destructured props
   const lang = params.lang;
 
   const supabase = createServerComponentClient();

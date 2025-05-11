@@ -36,6 +36,7 @@ import { User } from "@supabase/supabase-js"; // Import User type
 
 // Client Component to handle UI interactions (dialogs, forms, delete)
 interface PrescriptionsPageClientProps {
+  initialData: any[] | [];
   dictionary: Dictionary;
   lang: Locale;
 }
