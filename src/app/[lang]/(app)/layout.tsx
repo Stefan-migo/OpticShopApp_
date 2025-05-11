@@ -2,32 +2,43 @@
 
 import React from 'react';
 import { redirect } from "next/navigation";
-import { Home, Package, ShoppingCart, Users, Contact, Calendar, Settings, Eye, LineChart, ClipboardPlus } from "lucide-react"; // Keep icons needed for navItems
 
 import { createServerComponentClient } from "@/lib/supabase/server-component-client";
 import { getDictionary } from "@/lib/i18n";
-import { Locale } from "@/lib/i18n/config";
+import { Locale, i18n } from "@/lib/i18n/config"; // Import i18n config
 import { DictionaryProvider } from "@/lib/i18n/dictionary-context";
-import SidebarLayoutContent from "@/components/SidebarLayoutContent"; // Ensure this path is correct
+import SidebarLayoutContent from "@/components/SidebarLayoutContent";
 import { SidebarProvider } from "@/registry/new-york-v4/ui/sidebar";
+import { headers } from 'next/headers'; // Import headers
 
-// It's good practice to define the props type for async components
 interface AppLayoutProps {
-  children: React.ReactNode; // This is the actual page content for the current route
+  children: React.ReactNode;
   params: { lang: Locale };
 }
 
-export default async function AppLayout({
-  children,
-  params: { lang },
-}: AppLayoutProps) {
+// Optional: Define a more precise type for your profile data
+interface UserProfile {
+  id: string;
+  role_id: string | null;
+  is_superuser: boolean | null;
+  tenant_id: string | null;
+  roles: { name: string | null } | null; // Supabase returns related record or null for to-one relations
+}
+
+
+export const dynamic = 'force-dynamic'; // Force dynamic rendering
+
+import { cookies } from 'next/headers'; // Import cookies
+
+export default async function AppLayout(props: { children: React.ReactNode; params: { lang: Locale } }) { // Receive full props object
+  const { children, params } = await props; // Attempt to await destructured props
+  const lang = params.lang;
+
   const supabase = createServerComponentClient();
   const dictionary = await getDictionary(lang);
 
   if (!dictionary) {
     console.error(`Failed to load dictionary for locale: ${lang}`);
-    // Render a minimal fallback UI or an error message
-    // This UI won't have access to the dictionary, so keep messages generic or hardcoded in English
     return (
       <html>
         <body>
@@ -41,41 +52,61 @@ export default async function AppLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
+  console.log("AppLayout - Fetched user:", user); // Log user object
+  if (user) {
+    console.log("AppLayout - User app_metadata:", user.app_metadata); // Log app_metadata
+    // You might need to decode the JWT to see all claims, but app_metadata should be here
+    // console.log("AppLayout - User JWT:", user.jwt); // JWT might not be directly accessible here or might be encoded
+  }
+
+
   if (!user) {
     return redirect(`/${lang}/login`);
   }
 
   // Fetch user profile and role
-  let userRole = 'N/A'; // Default role display
-  const { data: profileData, error: profileError } = await supabase
+  // `userProfileData` here will be of type `UserProfile | null`
+  // `profileFetchError` will be of type `PostgrestError | null`
+  const { data: userProfileData, error: profileFetchError } = await supabase
     .from('profiles')
     .select(`
       id,
       role_id,
+      is_superuser,
+      tenant_id,
       roles ( name )
-     `)
+    `)
     .eq('id', user.id)
-    .maybeSingle();
+    .maybeSingle<UserProfile>(); // Use the generic type if you defined UserProfile
 
-  if (profileError) {
-    console.error("Error fetching user profile/role:", profileError.message);
-    // Potentially handle this more gracefully, e.g., assign a default limited role
-    // or show an error message within the layout if crucial.
-    // For now, it defaults to 'N/A' or 'No Role Assigned' below.
+  // Initialize variables with defaults
+  let userRole = 'N/A';
+  let isSuperuser = false;
+  let userTenantId: string | null = null;
+
+  if (profileFetchError) {
+    console.error("Error fetching user profile/role:", profileFetchError.message);
+    // You might want to handle this error more gracefully,
+    // e.g., redirect to an error page or allow access with a default role.
+    // For now, userRole, isSuperuser, userTenantId will remain at their defaults.
+  } else if (userProfileData) { // Check if userProfileData (the actual profile object) exists
+    if (userProfileData.is_superuser !== null && userProfileData.is_superuser !== undefined) {
+      isSuperuser = userProfileData.is_superuser;
+    }
+    userTenantId = userProfileData.tenant_id;
+
+    if (userProfileData.roles && typeof userProfileData.roles === 'object') {
+      userRole = userProfileData.roles.name || 'Unknown Role';
+    } else {
+      console.warn("User profile role not found or invalid within profile for ID:", user.id);
+      userRole = 'No Role Assigned';
+    }
+  } else {
+    // No error, but also no profile data found (userProfileData is null)
+    console.warn("User profile data not found for ID (no fetch error):", user.id);
+    userRole = 'No Role Assigned'; // Or keep as 'N/A'
   }
 
-  if (profileData?.roles && typeof profileData.roles === 'object' && !Array.isArray(profileData.roles)) {
-    userRole = (profileData.roles as { name: string | null }).name || 'Unknown Role';
-  } else if (!profileError) { // Only log warning if no error occurred but role is still missing
-     console.warn("User profile or role not found/invalid for ID:", user.id);
-     userRole = 'No Role Assigned';
-  }
-
-
-  // Define navigation items using the fetched dictionary
-  // Define navigation items using the fetched dictionary
-  // Pass icon names as strings instead of components to avoid passing non-plain objects to Client Components
-  // Provide fallback for label in case dictionary lookup returns undefined
   const navItems = [
     { href: `/${lang}/dashboard`, label: dictionary.navigation.dashboard || '', icon: 'Home' },
     { href: `/${lang}/customers`, label: dictionary.navigation.customers || '', icon: 'Contact' },
@@ -83,30 +114,28 @@ export default async function AppLayout({
     { href: `/${lang}/purchase-orders`, label: dictionary.navigation.purchaseOrders || '', icon: 'ShoppingCart' },
     { href: `/${lang}/prescriptions`, label: dictionary.navigation.prescriptions || '', icon: 'Eye' },
     { href: `/${lang}/appointments`, label: dictionary.navigation.appointments || '', icon: 'Calendar' },
-    { href: `/${lang}/sales`, label: dictionary.navigation.sales || '', icon: 'ShoppingCart' }, // Consider a different icon for sales if needed
+    { href: `/${lang}/sales`, label: dictionary.navigation.sales || '', icon: 'ShoppingCart' },
     { href: `/${lang}/reports`, label: dictionary.navigation.reports || '', icon: 'LineChart' },
-    { href: `/${lang}/medical-actions`, label: dictionary.navigation.medicalActions || '', icon: 'ClipboardPlus' }, // Consider a more specific icon for medical actions
+    { href: `/${lang}/medical-actions`, label: dictionary.navigation.medicalActions || '', icon: 'ClipboardPlus' },
     { href: `/${lang}/settings`, label: dictionary.navigation.settings || '', icon: 'Settings' },
   ];
 
-  // Conditionally add Admin link
   if (userRole === 'admin') {
     navItems.push({ href: `/${lang}/users`, label: dictionary.navigation.userManagement || '', icon: 'Users' });
   }
 
-  // AppLayout (Server Component) now passes all necessary data as props
-  // to SidebarLayoutContent (Client Component).
-  // It does NOT call any React hooks directly.
   return (
     <DictionaryProvider dictionary={dictionary}>
       <SidebarProvider defaultOpen={true}>
         <SidebarLayoutContent
           lang={lang}
           userRole={userRole}
+          isSuperuser={isSuperuser}
+          userTenantId={userTenantId}
           navItems={navItems}
-          dictionary={dictionary} // Pass dictionary for SidebarLayoutContent to use if needed beyond navItems
+          dictionary={dictionary}
         >
-          {children} {/* This renders the actual page content */}
+          {children}
         </SidebarLayoutContent>
       </SidebarProvider>
     </DictionaryProvider>

@@ -110,10 +110,9 @@ export const getColumns = ({ onView, onEdit, onDelete, dictionary }: ProductColu
         </Button>
     ),
     cell: ({ row }) => {
-      const date = new Date(row.getValue("created_at"));
-      // TODO: Localize date formatting
-      const formatted = date.toLocaleDateString(); // Basic formatting
-      return <div className="font-medium">{formatted}</div>;
+      // Date is now pre-formatted on the server
+      const formattedDate = row.getValue("created_at") as string;
+      return <div className="font-medium">{formattedDate}</div>;
     },
   },
   {

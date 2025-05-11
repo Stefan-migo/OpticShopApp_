@@ -59,6 +59,8 @@ interface SidebarLayoutContentProps {
   children: React.ReactNode;
   lang: Locale;
   userRole: string;
+  isSuperuser: boolean; // Add isSuperuser prop to the interface
+  userTenantId: string | null; // Add userTenantId prop to the interface
   // navItems now expects 'icon' to be a string key for iconMap
   navItems: { href: string; label: string; icon: string }[];
   dictionary: Dictionary;
@@ -68,6 +70,8 @@ const SidebarLayoutContent: React.FC<SidebarLayoutContentProps> = ({
   children,
   lang,
   userRole,
+  isSuperuser, // Accept isSuperuser prop
+  userTenantId, // Accept userTenantId prop
   navItems,
   dictionary,
 }) => {
@@ -105,7 +109,7 @@ const SidebarLayoutContent: React.FC<SidebarLayoutContentProps> = ({
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
-           <UserNav userRole={userRole} />
+           <UserNav userRole={userRole} isSuperuser={isSuperuser} userTenantId={userTenantId} /> {/* Pass isSuperuser and userTenantId props */}
         </SidebarFooter>
       </Sidebar>
       <div className="flex flex-col">
@@ -199,6 +203,7 @@ const SidebarLayoutContent: React.FC<SidebarLayoutContentProps> = ({
           </div>
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+          {/* Children are now cloned with props above */}
           {children}
         </main>
       </div>

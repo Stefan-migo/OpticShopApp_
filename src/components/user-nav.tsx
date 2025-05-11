@@ -18,20 +18,27 @@ import { LogOut, Settings, User } from "lucide-react";
 import Link from "next/link"; // Import Link
 import { useRouter, useParams } from "next/navigation"; // Import useRouter and useParams
 import { useToast } from "./ui/use-toast";
+import TenantSwitcher from "./TenantSwitcher"; // Import TenantSwitcher component
+import Cookies from 'js-cookie'; // Import js-cookie for client-side cookie access
 
 // TODO: Add avatar component using shadcn-ui add
 
 interface UserNavProps {
   userRole?: string; // Make role optional for flexibility
+  isSuperuser: boolean; // Add isSuperuser prop
+  userTenantId: string | null; // Add userTenantId prop
 }
 
-export function UserNav({ userRole = "User" }: UserNavProps) {
+export function UserNav({ userRole = "User", isSuperuser, userTenantId }: UserNavProps) { // Accept isSuperuser and userTenantId props
+  console.log('UserNav - Received isSuperuser prop:', isSuperuser); // Debugging log
+  console.log('UserNav - Received userTenantId prop:', userTenantId); // Debugging log
   const router = useRouter();
   const supabase = createClient();
   const { toast } = useToast();
   const params = useParams(); // Call useParams() here
   const [userEmail, setUserEmail] = React.useState<string | null>(null);
   const [userName, setUserName] = React.useState<string | null>("User"); // Keep placeholder for name for now
+  // Remove isSuperuser state and cookie logic
 
   // Fetch user email on mount
   React.useEffect(() => {
@@ -44,9 +51,7 @@ export function UserNav({ userRole = "User" }: UserNavProps) {
   }, [supabase]);
 
 const handleLogout = async () => {
-  console.log("Attempting to log out..."); // Log start of logout
   const { error } = await supabase.auth.signOut();
-  console.log("Supabase signOut result:", { error }); // Log result
   if (error) {
       console.error("Error logging out:", error);
       toast({
@@ -96,6 +101,14 @@ const handleLogout = async () => {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        {/* Conditionally render TenantSwitcher for superusers */}
+        {isSuperuser && (
+          <DropdownMenuItem asChild>
+            <TenantSwitcher isSuperuser={isSuperuser} />
+          </DropdownMenuItem>
+        )}
+        {/* Conditionally render separator for superusers */}
+        {isSuperuser && <DropdownMenuSeparator />}
         <DropdownMenuGroup>
           {/* Wrap Profile item in Link */}
           <DropdownMenuItem asChild>

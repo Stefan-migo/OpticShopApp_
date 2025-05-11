@@ -7,6 +7,7 @@ import { subDays, format } from 'date-fns'; // For date calculations
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
+import { useSearchParams } from "next/navigation"; // Import useSearchParams
 
 
 // TODO: Add more reports (inventory, appointments)
@@ -100,6 +101,9 @@ const detailedSalesColumns: ColumnDef<DetailedSalesData>[] = [
 
 export default function ReportsPage() {
   const supabase = createClient();
+  const searchParams = useSearchParams(); // Get search params from URL
+  const tenantId = searchParams.get('tenantId'); // Get tenantId from search params
+
   const [salesSummary, setSalesSummary] = React.useState<{ period: string; total: number } | null>(null);
   const [customerCount, setCustomerCount] = React.useState<number | null>(null);
   const [inventorySummary, setInventorySummary] = React.useState<Record<string, number> | null>(null); // State for inventory counts
@@ -117,8 +121,29 @@ export default function ReportsPage() {
   const [isLoadingLowStockItems, setIsLoadingLowStockItems] = React.useState(true); // Loading state for low stock items
   const [isLoadingDetailedSales, setIsLoadingDetailedSales] = React.useState(true); // Loading state for detailed sales
 
+  const [isSuperuser, setIsSuperuser] = React.useState(false);
+
 
   const [error, setError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    async function checkSuperuser() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('is_superuser')
+          .eq('id', user.id)
+          .single();
+        if (profile) {
+          setIsSuperuser(profile.is_superuser);
+        }
+      }
+    }
+    checkSuperuser();
+  }, []);
+
 
   // Fetch report data
   React.useEffect(() => {
@@ -135,11 +160,17 @@ export default function ReportsPage() {
       try {
         // Fetch Sales Summary (Last 30 Days)
         const thirtyDaysAgo = format(subDays(new Date(), 30), 'yyyy-MM-dd');
-        const { data: salesData, error: salesError } = await supabase
+        let salesSummaryQuery = supabase
           .from('sales_orders')
           .select('final_amount')
           .gte('order_date', thirtyDaysAgo)
           .eq('status', 'completed');
+
+        if (isSuperuser && tenantId) {
+          salesSummaryQuery = salesSummaryQuery.eq('tenant_id', tenantId);
+        }
+
+        const { data: salesData, error: salesError } = await salesSummaryQuery;
 
         if (salesError) throw new Error(`Sales Summary Error: ${salesError.message}`);
         const totalSales = salesData?.reduce((sum, order) => sum + (order.final_amount || 0), 0) || 0;
@@ -147,9 +178,15 @@ export default function ReportsPage() {
         setIsLoadingSales(false);
 
         // Fetch Customer Count
-        const { count: custCount, error: customerError } = await supabase
+        let customerCountQuery = supabase
           .from('customers')
           .select('*', { count: 'exact', head: true }); // Only get the count
+
+        if (isSuperuser && tenantId) {
+          customerCountQuery = customerCountQuery.eq('tenant_id', tenantId);
+        }
+
+        const { count: custCount, error: customerError } = await customerCountQuery;
 
         if (customerError) throw new Error(`Customer Count Error: ${customerError.message}`);
         setCustomerCount(custCount ?? 0);
@@ -161,9 +198,15 @@ export default function ReportsPage() {
         interface InventoryItemStatus {
             status: string | null;
         }
-        const { data: inventoryData, error: inventoryError } = await supabase
+        let inventorySummaryQuery = supabase
           .from('inventory_items')
-          .select('status') as { data: InventoryItemStatus[] | null, error: any };
+          .select('status');
+
+        if (isSuperuser && tenantId) {
+          inventorySummaryQuery = inventorySummaryQuery.eq('tenant_id', tenantId);
+        }
+
+        const { data: inventoryData, error: inventoryError } = await inventorySummaryQuery as { data: InventoryItemStatus[] | null, error: any }; // Keep cast for data type
 
         if (inventoryError) throw new Error(`Inventory Summary Error: ${inventoryError.message}`);
 
@@ -177,7 +220,12 @@ export default function ReportsPage() {
         setIsLoadingInventory(false);
 
         // Fetch Sales Over Time data from API route
-        const salesOverTimeResponse = await fetch('/api/reports/sales-over-time');
+        const salesOverTimeApiUrl = new URL('/api/reports/sales-over-time', window.location.origin);
+        if (isSuperuser && tenantId) {
+          salesOverTimeApiUrl.searchParams.set('is_superuser', 'true');
+          salesOverTimeApiUrl.searchParams.set('selected_tenant_id', tenantId);
+        }
+        const salesOverTimeResponse = await fetch(salesOverTimeApiUrl.toString());
         if (!salesOverTimeResponse.ok) {
           throw new Error(`Error fetching sales over time data: ${salesOverTimeResponse.statusText}`);
         }
@@ -186,7 +234,12 @@ export default function ReportsPage() {
         setIsLoadingSalesOverTime(false);
 
         // Fetch Sales by Product Category data from API route
-        const salesByCategoryResponse = await fetch('/api/reports/sales-by-category');
+        const salesByCategoryApiUrl = new URL('/api/reports/sales-by-category', window.location.origin);
+        if (isSuperuser && tenantId) {
+          salesByCategoryApiUrl.searchParams.set('is_superuser', 'true');
+          salesByCategoryApiUrl.searchParams.set('selected_tenant_id', tenantId);
+        }
+        const salesByCategoryResponse = await fetch(salesByCategoryApiUrl.toString());
         if (!salesByCategoryResponse.ok) {
           throw new Error(`Error fetching sales by category data: ${salesByCategoryResponse.statusText}`);
         }
@@ -195,7 +248,12 @@ export default function ReportsPage() {
         setIsLoadingSalesByCategory(false);
 
         // Fetch Low Stock Items data from API route
-        const lowStockItemsResponse = await fetch('/api/reports/low-stock-items');
+        const lowStockItemsApiUrl = new URL('/api/reports/low-stock-items', window.location.origin);
+        if (isSuperuser && tenantId) {
+          lowStockItemsApiUrl.searchParams.set('is_superuser', 'true');
+          lowStockItemsApiUrl.searchParams.set('selected_tenant_id', tenantId);
+        }
+        const lowStockItemsResponse = await fetch(lowStockItemsApiUrl.toString());
         if (!lowStockItemsResponse.ok) {
           throw new Error(`Error fetching low stock items data: ${lowStockItemsResponse.statusText}`);
         }
@@ -204,7 +262,12 @@ export default function ReportsPage() {
         setIsLoadingLowStockItems(false);
 
         // Fetch Detailed Sales data from API route
-        const detailedSalesResponse = await fetch('/api/reports/detailed-sales');
+        const detailedSalesApiUrl = new URL('/api/reports/detailed-sales', window.location.origin);
+        if (isSuperuser && tenantId) {
+          detailedSalesApiUrl.searchParams.set('is_superuser', 'true');
+          detailedSalesApiUrl.searchParams.set('selected_tenant_id', tenantId);
+        }
+        const detailedSalesResponse = await fetch(detailedSalesApiUrl.toString());
         if (!detailedSalesResponse.ok) {
           throw new Error(`Error fetching detailed sales data: ${detailedSalesResponse.statusText}`);
         }
@@ -213,9 +276,9 @@ export default function ReportsPage() {
         setIsLoadingDetailedSales(false);
 
 
-      } catch (fetchError: any) {
+      } catch (fetchError: any) { // Explicitly type fetchError as any
          console.error("Error fetching report data:", fetchError);
-         setError(fetchError.message || "Failed to load report data.");
+         setError(fetchError instanceof Error ? fetchError.message : "An unexpected error occurred.");
          // Ensure all loading states are false even on error
          setIsLoadingSales(false);
          setIsLoadingCustomers(false);
@@ -234,8 +297,11 @@ export default function ReportsPage() {
       }
     };
 
-    fetchData();
-  }, [supabase]);
+    // Fetch data only if isSuperuser status is determined
+    if (isSuperuser !== undefined) {
+      fetchData();
+    }
+  }, [supabase, isSuperuser, tenantId]); // Add supabase, isSuperuser and tenantId to dependency array
 
   return (
     <div className="flex flex-col gap-4">

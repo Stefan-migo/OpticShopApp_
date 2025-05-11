@@ -141,9 +141,9 @@ export const getColumns = ({ onEdit, onDelete }: CustomerColumnsProps): ColumnDe
       );
     },
     cell: ({ row }) => {
-      const date = new Date(row.getValue("created_at"));
-      const formatted = date.toLocaleDateString(); // Basic formatting needs localization
-      return <div className="font-medium">{formatted}</div>;
+      // Date is now pre-formatted on the server
+      const formattedDate = row.getValue("created_at") as string;
+      return <div className="font-medium">{formattedDate}</div>;
     },
   },
   {

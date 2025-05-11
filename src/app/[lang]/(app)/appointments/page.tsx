@@ -30,7 +30,7 @@ import {
 import { AppointmentForm } from "./appointment-form";
 import { getDictionary } from '@/lib/i18n'; // Import getDictionary
 import { Locale } from '@/lib/i18n/config'; // Import Locale
-import { useParams } from 'next/navigation'; // Import useParams
+import { useParams, useSearchParams } from 'next/navigation'; // Import useParams and useSearchParams
 import { Dictionary } from '@/lib/i18n/types'; // Import shared Dictionary interface
 
 
@@ -92,8 +92,12 @@ export default function AppointmentsPage() {
   const [clinicSettings, setClinicSettings] = React.useState<any>(null); // State for clinic settings
   const [isLoadingSettings, setIsLoadingSettings] = React.useState(true); // Loading state for settings
   const [user, setUser] = React.useState<User | null>(null); // State for logged-in user
+  const [isSuperuser, setIsSuperuser] = React.useState(false); // State for isSuperuser flag
   const params = useParams(); // Get params from URL
   const lang = params.lang as Locale; // Extract locale
+  const searchParams = useSearchParams(); // Get search parameters
+  const tenantId = searchParams.get('tenantId'); // Get tenantId from search parameters
+
 
   // Fetch dictionary
   const [dictionary, setDictionary] = React.useState<Dictionary | null>(null); // Use Dictionary interface
@@ -106,7 +110,7 @@ export default function AppointmentsPage() {
   }, [lang]); // Refetch dictionary if locale changes
 
 
-  // Fetch logged-in user and clinic settings
+  // Fetch logged-in user, superuser status, and clinic settings
   React.useEffect(() => {
     const fetchData = async () => {
       setIsLoadingSettings(true);
@@ -116,6 +120,19 @@ export default function AppointmentsPage() {
         setUser(userData.user);
 
         if (userData.user) {
+           // Fetch superuser status
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('is_superuser')
+            .eq('id', userData.user.id)
+            .single();
+          if (profileData && profileData.is_superuser !== null) {
+            setIsSuperuser(profileData.is_superuser);
+          } else {
+            setIsSuperuser(false);
+          }
+
+
           const { data: settingsData, error: settingsError } = await supabase
             .from('clinic_settings')
             .select('working_hours, default_slot_duration_minutes')
@@ -135,10 +152,11 @@ export default function AppointmentsPage() {
           }
         } else {
           setClinicSettings(null); // No user, no settings
+          setIsSuperuser(false); // No user, not superuser
         }
 
       } catch (error: any) {
-        console.error("Error fetching clinic settings:", error);
+        console.error("Error fetching user, superuser status, or clinic settings:", error);
         toast({ title: dictionary?.appointments.loadSettingsErrorTitle || "Error loading settings", description: dictionary?.appointments.loadSettingsErrorDescription || "Could not load clinic settings.", variant: "destructive" }); // Use dictionary
       } finally {
         setIsLoadingSettings(false);
@@ -158,13 +176,22 @@ export default function AppointmentsPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const { data, error: fetchError } = await supabase
+      let query = supabase
         .from("appointments")
         .select(`
           id, customer_id, appointment_time, duration_minutes, type, status, provider_id, notes,
           customers ( first_name, last_name )
       `) // Corrected: removed provider_name, added provider_id if needed
         .order("appointment_time");
+
+       // Apply tenant filter if user is superuser AND tenantId search parameter is present
+      if (isSuperuser && tenantId) {
+        query = query.eq('tenant_id', tenantId);
+      }
+
+
+      const { data, error: fetchError } = await query;
+
 
       if (fetchError) {
         console.error("Error fetching appointments:", fetchError);
@@ -173,10 +200,11 @@ export default function AppointmentsPage() {
         setEvents([]);
       } else {
         // Transform Supabase data into react-big-calendar event format
-        const formattedEvents = data?.map((appt: AppointmentData) => { // Use AppointmentData type
+        const formattedEvents = data?.map((appt: any) => { // Use any type temporarily for mapping flexibility
           const startTime = new Date(appt.appointment_time);
           const endTime = new Date(startTime.getTime() + (appt.duration_minutes || 30) * 60000);
-          const customer = appt.customers; // Already typed correctly above
+          // Safely access customer data, handling potential array or null
+          const customer = Array.isArray(appt.customers) ? appt.customers[0] : appt.customers;
 
           const customerName = customer
             ? `${customer.last_name || ''}${customer.last_name && customer.first_name ? ', ' : ''}${customer.first_name || ''}`.trim() || (dictionary.common.unknownCustomer || 'Unknown Customer')
@@ -201,7 +229,7 @@ export default function AppointmentsPage() {
       setIsLoading(false);
     }
     // Pass dependency array as the second argument to useCallback
-  }, [supabase, dictionary]); // Dependency: supabase client, dictionary
+  }, [supabase, dictionary, isSuperuser, tenantId]); // Dependency: supabase client, dictionary, isSuperuser, tenantId
 
   // useEffect hook to *call* fetchAppointments when the component mounts
   // or when fetchAppointments itself changes (due to its dependencies changing)
@@ -364,6 +392,7 @@ export default function AppointmentsPage() {
                 <AppointmentForm
                   initialDateTime={selectedSlotStart ?? undefined}
                   onSuccess={handleFormSuccess}
+                  clinicSettings={clinicSettings} // Pass clinic settings to the form
                   dictionary={dictionary} // Pass dictionary
                 />
               </DialogContent>

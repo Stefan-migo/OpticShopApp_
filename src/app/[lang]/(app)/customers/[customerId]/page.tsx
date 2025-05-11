@@ -2,6 +2,7 @@ import React from 'react';
 import { createServerComponentClient } from "@/lib/supabase/server-component-client";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cookies } from 'next/headers'; // Import cookies helper
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -23,11 +24,23 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
   const supabase = createServerComponentClient();
   const { customerId } = params;
 
-  const { data: customer, error } = await supabase
+  // Read superuser and selected tenant cookies
+  const cookieStore = await cookies();
+  const isSuperuser = cookieStore.get('is_superuser')?.value === 'true';
+  const selectedTenantId = cookieStore.get('selected_tenant_id')?.value;
+
+  let query = supabase
     .from('customers')
     .select('*')
-    .eq('id', customerId)
-    .single();
+    .eq('id', customerId);
+
+  // Apply tenant filter if superuser and a tenant is selected
+  if (isSuperuser && selectedTenantId) {
+    query = query.eq('tenant_id', selectedTenantId);
+  }
+  // Note: For non-superusers, RLS policies will automatically filter by their tenant_id
+
+  const { data: customer, error } = await query.single();
 
   if (error || !customer) {
     console.error('Error fetching customer:', error);
@@ -89,7 +102,7 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
               <CardTitle>Past Sales</CardTitle>
             </CardHeader>
             <CardContent>
-              <PastSales customerId={customerId} />
+              <PastSales customerId={customerId} isSuperuser={isSuperuser} selectedTenantId={selectedTenantId ?? null} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -99,7 +112,7 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
               <CardTitle>Appointments</CardTitle>
             </CardHeader>
             <CardContent>
-              <AppointmentsHistory customerId={customerId} />
+              <AppointmentsHistory customerId={customerId} isSuperuser={isSuperuser} selectedTenantId={selectedTenantId ?? null} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -109,7 +122,7 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
               <CardTitle>Prescriptions</CardTitle>
             </CardHeader>
             <CardContent>
-              <PrescriptionsHistory customerId={customerId} />
+              <PrescriptionsHistory customerId={customerId} isSuperuser={isSuperuser} selectedTenantId={selectedTenantId ?? null} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -120,7 +133,7 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
             </CardHeader>
             <CardContent>
               {/* Render the CustomerNotes component */}
-              <CustomerNotes customerId={customerId} />
+              <CustomerNotes customerId={customerId} isSuperuser={isSuperuser} selectedTenantId={selectedTenantId ?? null} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -130,12 +143,20 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
 }
 
 // Helper component to fetch and display past sales
-async function PastSales({ customerId }: { customerId: string }): Promise<JSX.Element> {
+async function PastSales({ customerId, isSuperuser, selectedTenantId }: { customerId: string, isSuperuser: boolean, selectedTenantId: string | null }): Promise<JSX.Element> {
   const supabase = createServerComponentClient();
-  const { data: sales, error } = await supabase
+
+  let query = supabase
     .from("sales_orders")
     .select("id, created_at, total_amount, status") // Select relevant fields
-    .eq("customer_id", customerId)
+    .eq("customer_id", customerId);
+
+  // Apply tenant filter if superuser and a tenant is selected
+  if (isSuperuser && selectedTenantId) {
+    query = query.eq('tenant_id', selectedTenantId);
+  }
+
+  const { data: sales, error } = await query
     .order("created_at", { ascending: false }); // Show most recent first
 
   if (error) {
@@ -172,12 +193,20 @@ async function PastSales({ customerId }: { customerId: string }): Promise<JSX.El
 }
 
 // Helper component to fetch and display appointments
-async function AppointmentsHistory({ customerId }: { customerId: string }): Promise<JSX.Element> {
+async function AppointmentsHistory({ customerId, isSuperuser, selectedTenantId }: { customerId: string, isSuperuser: boolean, selectedTenantId: string | null }): Promise<JSX.Element> {
   const supabase = createServerComponentClient();
-  const { data: appointments, error } = await supabase
+
+  let query = supabase
     .from("appointments")
     .select("id, appointment_time, type, status") // Select relevant fields
-    .eq("customer_id", customerId)
+    .eq("customer_id", customerId);
+
+  // Apply tenant filter if superuser and a tenant is selected
+  if (isSuperuser && selectedTenantId) {
+    query = query.eq('tenant_id', selectedTenantId);
+  }
+
+  const { data: appointments, error } = await query
     .order("appointment_time", { ascending: false }); // Show most recent first
 
   if (error) {
@@ -213,15 +242,37 @@ async function AppointmentsHistory({ customerId }: { customerId: string }): Prom
   );
 }
 
+// Define the structure for fetched prescription data with extracted JSONB fields
+interface PrescriptionData {
+  id: string;
+  created_at: string;
+  expiry_date: string | null;
+  od_sphere: string | null;
+  od_cylinder: string | null;
+  od_add: string | null;
+  os_sphere: string | null;
+  os_cylinder: string | null;
+  os_add: string | null;
+}
+
 // Helper component to fetch and display prescriptions
-async function PrescriptionsHistory({ customerId }: { customerId: string }): Promise<JSX.Element> {
+async function PrescriptionsHistory({ customerId, isSuperuser, selectedTenantId }: { customerId: string, isSuperuser: boolean, selectedTenantId: string | null }): Promise<JSX.Element> {
   const supabase = createServerComponentClient();
   // Select key fields for the summary table
-  const { data: prescriptions, error } = await supabase
+  let query = supabase
     .from("prescriptions")
     .select("id, created_at, expiry_date, od_params->>'sphere' as od_sphere, od_params->>'cylinder' as od_cylinder, od_params->>'add' as od_add, os_params->>'sphere' as os_sphere, os_params->>'cylinder' as os_cylinder, os_params->>'add' as os_add")
-    .eq("customer_id", customerId)
+    .eq("customer_id", customerId);
+
+  // Apply tenant filter if superuser and a tenant is selected
+  if (isSuperuser && selectedTenantId) {
+    query = query.eq('tenant_id', selectedTenantId);
+  }
+
+  const { data, error } = await query
     .order("created_at", { ascending: false }); // Show most recent first
+
+  const prescriptions: PrescriptionData[] | null = data as PrescriptionData[] | null; // Explicitly type the data
 
   if (error) {
     console.error("Error fetching prescriptions:", error);
@@ -248,7 +299,7 @@ async function PrescriptionsHistory({ customerId }: { customerId: string }): Pro
         </TableRow>
       </TableHeader>
       <TableBody>
-        {prescriptions.map((rx) => (
+        {prescriptions.map((rx: PrescriptionData) => ( // Explicitly type rx
           <TableRow key={rx.id}>
             <TableCell>{new Date(rx.created_at).toLocaleDateString()}</TableCell>
             <TableCell>{rx.expiry_date ? new Date(rx.expiry_date).toLocaleDateString() : 'N/A'}</TableCell>

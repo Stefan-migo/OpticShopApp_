@@ -54,12 +54,15 @@ const formatCurrency = (amount: number | null | undefined, locale: string = 'en-
   }).format(amount);
 };
 
-// Helper function to format date
-const formatDate = (dateString: string | null | undefined, locale: string = 'en-US', dictionary: Dictionary) => { // Add locale param and dictionary
+// Helper function to format date consistently
+const formatDate = (dateString: string | null | undefined, dictionary: Dictionary) => { // Removed locale param as formatting is now consistent
     if (!dateString) return dictionary.common.notAvailable; // Use dictionary for placeholder
     try {
-        // TODO: Localize date formatting based on locale
-        return new Date(dateString).toLocaleDateString(locale);
+        const date = new Date(dateString);
+        const month = (date.getMonth() + 1).toString().padStart(2, '0'); // MM
+        const day = date.getDate().toString().padStart(2, '0'); // DD
+        const year = date.getFullYear(); // YYYY
+        return `${month}/${day}/${year}`; // MM/DD/YYYY format
     } catch (e) {
         return dictionary.common.invalidDate; // Use dictionary for "Invalid Date"
     }
@@ -170,7 +173,7 @@ export const getStockColumns = ({ onEdit, onDelete, dictionary }: InventoryItemC
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
       ),
-      cell: ({ row }) => <div>{formatDate(row.getValue("purchase_date"), 'en-US', dictionary)}</div>, // Use localized formatDate and pass dictionary
+      cell: ({ row }) => <div>{formatDate(row.getValue("purchase_date"), dictionary)}</div>, // Use formatDate and pass dictionary
     },
     {
       id: "actions",

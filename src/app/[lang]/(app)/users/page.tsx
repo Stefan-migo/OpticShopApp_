@@ -5,7 +5,7 @@ import { getUserManagementColumns, type UserProfile } from "./columns"; // Impor
 import { DataTable } from "@/components/ui/data-table";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { useRouter } from "next/navigation"; // For redirecting non-admins
+import { useRouter, useSearchParams } from "next/navigation"; // For redirecting non-admins and getting search params
 
 // Define type for available roles
 type RoleOption = {
@@ -17,10 +17,34 @@ export default function AdminUsersPage() {
   const supabase = createClient();
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams(); // Get search params from URL
+  const tenantId = searchParams.get('tenantId'); // Get tenantId from search params
+
   const [data, setData] = React.useState<UserProfile[]>([]);
   const [roles, setRoles] = React.useState<RoleOption[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [isSuperuser, setIsSuperuser] = React.useState(false);
+
+
+  React.useEffect(() => {
+    async function checkSuperuser() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('is_superuser')
+          .eq('id', user.id)
+          .single();
+        if (profile) {
+          setIsSuperuser(profile.is_superuser);
+        }
+      }
+    }
+    checkSuperuser();
+  }, []);
+
 
   // Fetch user profiles and available roles
   const fetchData = React.useCallback(async () => {
@@ -61,13 +85,21 @@ export default function AdminUsersPage() {
         // We also need the user's email from the auth.users table. This requires a more complex query or separate fetches.
         // For simplicity now, we fetch profiles+roles, but email will be missing.
         // A better approach might use an Edge Function with service_role key.
-        const { data: profilesData, error: usersError } = await supabase
+        let profilesQuery = supabase
             .from('profiles')
             .select(`
                 id,
                 role_id,
                 roles ( id, name )
             `); // Email needs to be fetched separately or via a view/function
+
+        // Apply tenant filter if superuser and a tenant is selected
+        if (isSuperuser && tenantId) {
+            profilesQuery = profilesQuery.eq('tenant_id', tenantId);
+        }
+        // Note: For non-superusers, RLS policies will automatically filter by their tenant_id
+
+        const { data: profilesData, error: usersError } = await profilesQuery;
 
         if (usersError) throw usersError;
 
@@ -91,11 +123,14 @@ export default function AdminUsersPage() {
     } finally {
         setIsLoading(false);
     }
-  }, [supabase, toast, router]);
+  }, [supabase, toast, router, isSuperuser, tenantId]); // Add isSuperuser and tenantId to dependency array
 
   React.useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    // Fetch data only if isSuperuser status is determined
+    if (isSuperuser !== undefined) {
+      fetchData();
+    }
+  }, [fetchData, isSuperuser]); // Add isSuperuser to dependency array
 
   // Handler for changing user role
   const handleChangeRole = async (userId: string, newRoleId: string) => {

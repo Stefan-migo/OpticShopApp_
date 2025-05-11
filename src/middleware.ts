@@ -26,8 +26,6 @@ export async function middleware(request: NextRequest) {
   if (pathnameIsMissingLocale) {
     const locale = getLocale(request);
 
-    // e.g. incoming request is /products
-    // The new URL is now /en/products
     return NextResponse.redirect(
       new URL(`/${locale}${pathname.startsWith('/') ? '' : '/'}${pathname}`, request.url)
     );
@@ -39,13 +37,10 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  // Ensure environment variables are defined
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    // Handle missing environment variables, maybe redirect to an error page
-    // or log the error. For now, just proceed without Supabase client.
     console.error("Supabase URL or Anon Key is missing in middleware.");
     return response;
   }
@@ -59,66 +54,81 @@ export async function middleware(request: NextRequest) {
           return request.cookies.get(name)?.value;
         },
         set(name: string, value: string, options: CookieOptions) {
-          // If the cookie is set, update the request cookies object
-          request.cookies.set({
+          request.cookies.set({ // Modify request cookies as well for subsequent operations within the middleware if needed
             name,
             value,
             ...options,
           });
-          // Also update the response cookies
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          });
-          response.cookies.set({
+          response.cookies.set({ // Set on the response to send back to the client
             name,
             value,
             ...options,
           });
         },
         remove(name: string, options: CookieOptions) {
-          // If the cookie is removed, update the request cookies object
-          request.cookies.set({
-            name,
-            value: '',
-            ...options,
-          });
-          // Also update the response cookies
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          });
-          response.cookies.set({
-            name,
-            value: '',
-            ...options,
-          });
+          request.cookies.delete(name); // Modify request cookies
+          response.cookies.delete(name);  // Set on the response
         },
       },
     }
   );
 
-  // Refresh session if expired - required for Server Components
-  // https://supabase.com/docs/guides/auth/auth-helpers/nextjs#managing-session-with-middleware
-  await supabase.auth.getUser();
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+
+  if (userData?.user) {
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('tenant_id, is_superuser')
+      .eq('id', userData.user.id)
+      .single();
+
+    if (profileData) {
+      // Read the selected_tenant_id cookie directly from the request
+      const selectedTenantId = request.cookies.get('selected_tenant_id')?.value;
+      console.log('Middleware - Read selected_tenant_id cookie:', selectedTenantId); // Debugging log
+
+      if (profileData.is_superuser && selectedTenantId) {
+        response.cookies.set('tenant_id', selectedTenantId);
+        console.log('Middleware - Setting tenant_id cookie to selectedTenantId:', selectedTenantId); // Debugging log
+      } else if (profileData.tenant_id) {
+        response.cookies.set('tenant_id', profileData.tenant_id);
+        console.log('Middleware - Setting tenant_id cookie to profile tenant_id:', profileData.tenant_id); // Debugging log
+      } else {
+        response.cookies.delete('tenant_id');
+        console.log('Middleware - Deleting tenant_id cookie.'); // Debugging log
+      }
+
+      if (profileData.is_superuser) {
+        response.cookies.set('is_superuser', 'true');
+        console.log('Middleware - Setting is_superuser cookie to true.'); // Debugging log
+      } else {
+        response.cookies.delete('is_superuser');
+        console.log('Middleware - Deleting is_superuser cookie.'); // Debugging log
+      }
+
+    } else if (profileError) {
+      console.error('Middleware - Error fetching profile in middleware:', profileError);
+    } else {
+      console.warn('Middleware - User found but profile data not found:', userData.user.id);
+      response.cookies.delete('tenant_id');
+      response.cookies.delete('is_superuser');
+    }
+  } else if (userError) {
+    console.error('Error getting user in middleware:', userError);
+    response.cookies.delete('tenant_id');
+    response.cookies.delete('is_superuser');
+  } else {
+    response.cookies.delete('tenant_id');
+    response.cookies.delete('is_superuser');
+  }
 
   return response;
 }
 
-// Ensure the middleware is only called for relevant paths.
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - api (API routes)
-     * - _next/webpack-hmr (webpack hot module replacement)
-     * - Any file with an extension (e.g. .svg, .png)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico|_next/webpack-hmr|.*\\..+).*)',
+    // Match paths starting with any defined locale followed by a slash,
+    // excluding specific directories and file types.
+    '/(' + locales.join('|') + ')/(?!api|_next/static|_next/image|favicon.ico|_next/webpack-hmr|.*\\..+)(.*)',
   ],
 };

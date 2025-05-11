@@ -19,9 +19,11 @@ type CustomerNote = {
 
 interface CustomerNotesProps {
   customerId: string;
+  isSuperuser: boolean; // Add isSuperuser prop
+  selectedTenantId: string | null; // Add selectedTenantId prop
 }
 
-export function CustomerNotes({ customerId }: CustomerNotesProps) {
+export function CustomerNotes({ customerId, isSuperuser, selectedTenantId }: CustomerNotesProps) {
   const supabase = createClient();
   const { toast } = useToast();
   const [notes, setNotes] = React.useState<CustomerNote[]>([]);
@@ -33,10 +35,18 @@ export function CustomerNotes({ customerId }: CustomerNotesProps) {
   const fetchNotes = React.useCallback(async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from("customer_notes")
         .select("id, note, created_at") // Fetch basic fields for now
-        .eq("customer_id", customerId)
+        .eq("customer_id", customerId);
+
+      // Apply tenant filter if superuser and a tenant is selected
+      if (isSuperuser && selectedTenantId) {
+        query = query.eq('tenant_id', selectedTenantId);
+      }
+      // Note: For non-superusers, RLS policies will automatically filter by their tenant_id
+
+      const { data, error } = await query
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -69,12 +79,21 @@ export function CustomerNotes({ customerId }: CustomerNotesProps) {
        const { data: { user } } = await supabase.auth.getUser();
        if (!user) throw new Error("User not authenticated.");
 
+       // Determine the tenant_id to use for the insert
+       // Prioritize selectedTenantId for superusers, otherwise use user's profile tenant_id
+       const tenantIdToUse = (isSuperuser && selectedTenantId) ? selectedTenantId : (await supabase.from('profiles').select('tenant_id').eq('id', user.id).single()).data?.tenant_id;
+
+       if (!tenantIdToUse) {
+           throw new Error("Could not determine tenant ID for the new note.");
+       }
+
       const { error } = await supabase
         .from("customer_notes")
         .insert([{
             customer_id: customerId,
             note: newNote.trim(),
-            user_id: user.id // Associate note with the logged-in user
+            user_id: user.id, // Associate note with the logged-in user
+            tenant_id: tenantIdToUse // Include the determined tenant_id
          }]);
 
       if (error) throw error;

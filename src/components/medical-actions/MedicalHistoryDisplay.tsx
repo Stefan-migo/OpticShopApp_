@@ -19,6 +19,7 @@ export type MedicalRecord = { // Export MedicalRecord
   treatment_plan: string | null;
   updated_at: string | null;
   profiles?: { full_name: string | null } | null; // Add profiles relationship type
+  tenant_id: string; // Add tenant_id
 };
 
 export type Prescription = { // Export Prescription
@@ -36,6 +37,7 @@ export type Prescription = { // Export Prescription
   type: 'glasses' | 'contact_lens'; // Manually define enum
   updated_at: string | null;
   profiles?: { full_name: string | null } | null; // Add profiles relationship type
+  tenant_id: string; // Add tenant_id
 };
 
 import { Dictionary } from '@/lib/i18n/types'; // Import shared Dictionary interface
@@ -43,11 +45,13 @@ import { useDictionary } from '@/lib/i18n/dictionary-context'; // Import useDict
 
 interface MedicalHistoryDisplayProps {
   customerId: string | null;
+  isSuperuser: boolean; // Add isSuperuser prop
+  tenantId: string | null; // Add tenantId prop
   // Remove dictionary prop as it will be accessed via context
   // dictionary: Dictionary | null | undefined;
 }
 
-export function MedicalHistoryDisplay({ customerId }: MedicalHistoryDisplayProps) { // Remove dictionary prop
+export function MedicalHistoryDisplay({ customerId, isSuperuser, tenantId }: MedicalHistoryDisplayProps) { // Add isSuperuser and tenantId props
   const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -67,21 +71,37 @@ export function MedicalHistoryDisplay({ customerId }: MedicalHistoryDisplayProps
       setIsLoading(true);
       try {
         // Fetch medical records for the customer
-        const { data: recordsData, error: recordsError } = await supabase
+        let recordsQuery = supabase
           .from("medical_records")
           .select("*, profiles(full_name)") // Select medical record fields and join with profiles to get professional name
           .eq("customer_id", customerId)
           .order("record_date", { ascending: false });
 
+        // Apply tenant filter if user is superuser AND tenantId search parameter is present
+        if (isSuperuser && tenantId) {
+          recordsQuery = recordsQuery.eq('tenant_id', tenantId);
+        }
+
+        const { data: recordsData, error: recordsError } = await recordsQuery;
+
+
         if (recordsError) throw recordsError;
         setMedicalRecords(recordsData || []);
 
         // Fetch prescriptions for the customer
-        const { data: prescriptionsData, error: prescriptionsError } = await supabase
+        let prescriptionsQuery = supabase
           .from("prescriptions")
           .select("*, profiles(full_name)") // Select prescription fields and join with profiles to get prescriber name
           .eq("customer_id", customerId)
           .order("prescription_date", { ascending: false });
+
+         // Apply tenant filter if user is superuser AND tenantId search parameter is present
+        if (isSuperuser && tenantId) {
+          prescriptionsQuery = prescriptionsQuery.eq('tenant_id', tenantId);
+        }
+
+        const { data: prescriptionsData, error: prescriptionsError } = await prescriptionsQuery;
+
 
         if (prescriptionsError) throw prescriptionsError;
         setPrescriptions(prescriptionsData || []);
@@ -104,7 +124,7 @@ export function MedicalHistoryDisplay({ customerId }: MedicalHistoryDisplayProps
 
     fetchData();
 
-  }, [customerId, supabase, dictionary]); // Add dictionary to dependencies
+  }, [customerId, supabase, dictionary, isSuperuser, tenantId]); // Add isSuperuser and tenantId to dependencies
 
   // --- CRITICAL CHECK (Guard Clause) ---
   // Ensure dictionary is loaded before rendering content that uses it

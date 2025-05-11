@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { cookies } from 'next/headers'; // Import cookies helper
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -33,6 +34,14 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   const supabase = createClient();
   const { id } = params;
   const updates = await request.json();
+
+  // Get the tenant_id from the cookie
+  const cookieStore = await cookies();
+  const tenantId = cookieStore.get('tenant_id')?.value;
+
+  if (!tenantId) {
+    return NextResponse.json({ error: 'Tenant ID not found in session.' }, { status: 400 });
+  }
 
   try {
     // Separate purchase order data from items (frontend sends 'items')
@@ -104,7 +113,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         const line_total = item.quantity_ordered * item.unit_price;
         const { error: updateItemError } = await supabase
           .from('purchase_order_items')
-          .update({ ...item, line_total, updated_at: new Date().toISOString() })
+          .update({ ...item, line_total, updated_at: new Date().toISOString(), tenant_id: tenantId }) // Include tenant_id in update
           .eq('id', item.id);
 
         if (updateItemError) {
@@ -117,7 +126,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         const line_total = item.quantity_ordered * item.unit_price;
         const { error: insertItemError } = await supabase
           .from('purchase_order_items')
-          .insert({ ...item, purchase_order_id: id, line_total }); // Ensure purchase_order_id and line_total are set
+          .insert({ ...item, purchase_order_id: id, line_total, tenant_id: tenantId }); // Ensure purchase_order_id, line_total, and tenant_id are set
 
         if (insertItemError) {
           console.error('Error inserting purchase order item:', insertItemError);

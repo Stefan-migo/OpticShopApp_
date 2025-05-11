@@ -168,7 +168,7 @@ export default function ProfilePage() {
                 )}
                 </CardContent>
                 {profile && !isLoading && (
-                    <CardFooter className="border-t px-6 py-4">
+                    <CardFooter className="px-6 py-4">
                         <Button type="submit" disabled={form.formState.isSubmitting || !form.formState.isDirty}>
                             {form.formState.isSubmitting ? "Saving..." : "Save Changes"}
                         </Button>

@@ -3,11 +3,10 @@
 import * as React from "react";
 import { useEffect, useState, useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, Controller, Control, useController } from "react-hook-form"; // Added Control, useController
+import { useForm, Controller, Control, useController } from "react-hook-form";
 import * as z from "zod";
 
-// Assuming this path is correct and the function/data is needed
-import { getRoleDisplayNames } from "../../../lib/roleConfig";
+import { getRoleDisplayNames } from "@/lib/roleConfig"; // Corrected import path
 import { Dictionary } from '@/lib/i18n/types';
 import { Button } from "@/components/ui/button";
 import {
@@ -34,7 +33,17 @@ import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { type Prescription } from "./columns";
 import { type Customer } from "../customers/columns";
-import { type Profile } from "../../../types/supabase";
+// import { type Database } from "@/lib/supabase/types/database.types"; // Import Database type
+
+// Manually define Profile type as a workaround
+type Profile = {
+  id: string;
+  full_name: string | null;
+  role_id: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
 import { TestNumberInputForm } from "@/components/TestNumberInputForm"; // Import the test component
 
 // Define simple type for fetched dropdown data
@@ -77,9 +86,11 @@ interface PrescriptionFormProps {
   onSuccess?: () => void;
   customerId?: string;
   dictionary: Dictionary | null | undefined;
+  isSuperuser: boolean; // Add isSuperuser prop
+  tenantId: string | null; // Add tenantId prop
 }
 
-export function PrescriptionForm({ initialData, onSuccess, customerId: propCustomerId, dictionary }: PrescriptionFormProps) {
+export function PrescriptionForm({ initialData, onSuccess, customerId: propCustomerId, dictionary, isSuperuser, tenantId }: PrescriptionFormProps) { // Add isSuperuser and tenantId props
   // Main Guard Clause
   if (!dictionary) {
     return <div>Loading language resources...</div>;
@@ -123,7 +134,7 @@ export function PrescriptionForm({ initialData, onSuccess, customerId: propCusto
       customer_id: initialData?.customer_id || propCustomerId || "",
       medical_record_id: initialData?.medical_record_id || null,
       prescriber_id: initialData?.prescriber_id || null,
-      // prescriber_name: initialData?.prescriber_name || "",
+      // prescriber_name: initialData?.prescriber_name || null, // Consider removing if always fetching from profile
       prescription_date: initialData?.prescription_date ? new Date(initialData.prescription_date).toISOString().split('T')[0] : "",
       expiry_date: initialData?.expiry_date ? new Date(initialData.expiry_date).toISOString().split('T')[0] : null,
       type: initialData?.type || 'glasses',
@@ -163,12 +174,18 @@ export function PrescriptionForm({ initialData, onSuccess, customerId: propCusto
           try {
             // Fetch customers only if propCustomerId is NOT provided
             if (!propCustomerId) {
-                customerRes = await supabase.from("customers").select("id, first_name, last_name").order("last_name");
+                let customerQuery = supabase.from("customers").select("id, first_name, last_name").order("last_name");
+                 // Apply tenant filter if user is superuser AND tenantId search parameter is present
+                if (isSuperuser && tenantId) {
+                  customerQuery = customerQuery.eq('tenant_id', tenantId);
+                }
+                customerRes = await customerQuery;
             } else {
                 customerRes = { data: [], error: null }; // Placeholder if customers aren't needed
             }
 
             // Fetch professionals by joining profiles directly with roles
+            // Assuming professionals are NOT tenant-specific, otherwise add tenant filter here
             professionalRes = await supabase.from("profiles")
                 .select("id, full_name, roles(name)") // Select profile id, full_name, and joined role name
                 .eq("roles.name", "professional") // Filter by role name 'professional'
@@ -209,7 +226,7 @@ export function PrescriptionForm({ initialData, onSuccess, customerId: propCusto
         };
         fetchData();
         return () => { isMounted = false; }; // Cleanup
-      }, [supabase, toast, propCustomerId, dictionary]);
+      }, [supabase, toast, propCustomerId, dictionary, isSuperuser, tenantId]); // Add isSuperuser and tenantId to dependencies
 
 
   // useEffect for Medical Records...
@@ -223,11 +240,19 @@ export function PrescriptionForm({ initialData, onSuccess, customerId: propCusto
       const fetchMedicalRecords = async () => {
           setIsLoadingMedicalRecords(true);
           try {
-              const { data, error } = await supabase
+              let query = supabase
                   .from("medical_records")
                   .select("id, record_date")
                   .eq("customer_id", actualCustomerId)
                   .order("record_date", { ascending: false });
+
+              // Apply tenant filter if user is superuser AND tenantId search parameter is present
+              if (isSuperuser && tenantId) {
+                query = query.eq('tenant_id', tenantId);
+              }
+
+              const { data, error } = await query;
+
 
               if (isMounted) {
                   if (error) throw error;
@@ -256,7 +281,7 @@ export function PrescriptionForm({ initialData, onSuccess, customerId: propCusto
       fetchMedicalRecords();
       return () => { isMounted = false; }; // Cleanup
 
-  }, [actualCustomerId, supabase, toast, dictionary]);
+  }, [actualCustomerId, supabase, toast, dictionary, isSuperuser, tenantId]); // Add isSuperuser and tenantId to dependencies
 
 
   // --- MODIFIED onSubmit Handler ---
@@ -301,6 +326,8 @@ export function PrescriptionForm({ initialData, onSuccess, customerId: propCusto
         od_params: cleanParams(odParams),
         os_params: cleanParams(osParams),
         updated_at: new Date().toISOString(),
+        // Include tenant_id for new records if user is superuser and tenantId is selected
+        ...(isEditing ? {} : (isSuperuser && tenantId ? { tenant_id: tenantId } : {})),
       };
 
       console.log({ values, prescriptionData }); // Added logging
@@ -902,3 +929,4 @@ export function PrescriptionForm({ initialData, onSuccess, customerId: propCusto
     </Form>
   );
 }
+

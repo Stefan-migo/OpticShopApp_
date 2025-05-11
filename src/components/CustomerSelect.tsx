@@ -28,13 +28,15 @@ import { useDictionary } from '@/lib/i18n/dictionary-context'; // Import useDict
 interface CustomerSelectProps {
   onCustomerSelect: (customerId: string | null) => void;
   initialCustomerId?: string | null;
+  isSuperuser: boolean; // Add isSuperuser prop
+  tenantId: string | null; // Add tenantId prop
   // Remove dictionary prop as it will be accessed via context
   // dictionary: Dictionary | null | undefined;
   // Add form control prop if integrating directly with react-hook-form
   // control: any;
 }
 
-export function CustomerSelect({ onCustomerSelect, initialCustomerId }: CustomerSelectProps) { // Remove dictionary prop
+export function CustomerSelect({ onCustomerSelect, initialCustomerId, isSuperuser, tenantId }: CustomerSelectProps) { // Add isSuperuser and tenantId props
   const [customers, setCustomers] = useState<DropdownOption[]>([]);
   const [searchQuery, setSearchQuery] = useState(""); // State for search query
   const [isLoading, setIsLoading] = useState(true);
@@ -48,10 +50,18 @@ export function CustomerSelect({ onCustomerSelect, initialCustomerId }: Customer
     const fetchCustomers = async () => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
+        let query = supabase
           .from("customers")
           .select("id, first_name, last_name")
           .order("last_name");
+
+        // Apply tenant filter if user is superuser AND tenantId search parameter is present
+        if (isSuperuser && tenantId) {
+          query = query.eq('tenant_id', tenantId);
+        }
+
+        const { data, error } = await query;
+
         if (error) throw error;
         setCustomers(data?.map(c => ({
             id: c.id,
@@ -71,7 +81,7 @@ export function CustomerSelect({ onCustomerSelect, initialCustomerId }: Customer
       }
     };
     fetchCustomers();
-  }, [supabase, toast, dictionary]); // Add dictionary to dependencies
+  }, [supabase, toast, dictionary, isSuperuser, tenantId]); // Add isSuperuser and tenantId to dependencies
 
   // Filter customers based on search query
   const filteredCustomers = customers.filter(customer => {

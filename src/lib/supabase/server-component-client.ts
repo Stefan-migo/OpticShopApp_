@@ -21,18 +21,21 @@ export function createServerComponentClient() {
     supabaseAnonKey,
     {
       cookies: {
-        get(name: string) {
-          // Get cookies within the function scope
-          const cookieStore = cookies()
+        // Make the get method async
+        async get(name: string) {
+          // Get cookies within the function scope and await it
+          const cookieStore = await cookies() // <-- Added await here
           return cookieStore.get(name)?.value
         },
         set(name: string, value: string, options: CookieOptions) {
           // No-op: Server Components cannot set cookies directly.
           // Rely on middleware or Server Actions.
+          // This is correct as Server Components are read-only for cookies.
         },
         remove(name: string, options: CookieOptions) {
           // No-op: Server Components cannot remove cookies directly.
           // Rely on middleware or Server Actions.
+          // This is correct as Server Components are read-only for cookies.
         },
       },
     }

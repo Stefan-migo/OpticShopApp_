@@ -51,9 +51,11 @@ interface MedicalRecordFormProps {
   initialData?: MedicalRecord | null; // For editing existing record
   onSuccess?: () => void; // Callback after successful submission
   dictionary: Dictionary | null | undefined; // Use the imported Dictionary interface and allow null/undefined
+  isSuperuser: boolean; // Add isSuperuser prop
+  tenantId: string | null; // Add tenantId prop
 }
 
-export function MedicalRecordForm({ customerId, initialData, onSuccess, dictionary }: MedicalRecordFormProps) {
+export function MedicalRecordForm({ customerId, initialData, onSuccess, dictionary, isSuperuser, tenantId }: MedicalRecordFormProps) { // Add isSuperuser and tenantId props
   // Add conditional rendering check for dictionary
   if (!dictionary) {
     // You can return a loading indicator or null here
@@ -151,6 +153,8 @@ export function MedicalRecordForm({ customerId, initialData, onSuccess, dictiona
         treatment_plan: values.treatment_plan || null,
         notes: values.notes || null,
         updated_at: new Date().toISOString(),
+        // Include tenant_id for new records if user is superuser and tenantId is selected
+        ...(isEditing ? {} : (isSuperuser && tenantId ? { tenant_id: tenantId } : {})),
       };
 
       if (isEditing && initialData?.id) {
