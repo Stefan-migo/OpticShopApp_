@@ -17,7 +17,18 @@ function getLocale(request: NextRequest): string {
 }
 
 export async function middleware(request: NextRequest) {
+  console.log('Middleware is running!');
   const pathname = request.nextUrl.pathname;
+  console.log('Middleware - Pathname:', pathname);
+
+  // Allow access to the landing page without authentication
+  const isLandingPage = locales.some((locale) => pathname.startsWith(`/${locale}/landing`));
+  console.log('Middleware - Is landing page:', isLandingPage);
+
+  if (isLandingPage) {
+    return NextResponse.next();
+  }
+
   const pathnameIsMissingLocale = locales.every(
     (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
   );
@@ -30,6 +41,8 @@ export async function middleware(request: NextRequest) {
       new URL(`/${locale}${pathname.startsWith('/') ? '' : '/'}${pathname}`, request.url)
     );
   }
+
+  console.log('Middleware - Pathname after locale check:', pathname);
 
   let response = NextResponse.next({
     request: {
@@ -121,8 +134,8 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Match paths starting with any defined locale followed by a slash,
-    // excluding specific directories and file types.
-    '/(' + locales.join('|') + ')/(?!api|_next/static|_next/image|favicon.ico|_next/webpack-hmr|.*\\..+)(.*)',
+    // Match all paths except those starting with /_next/ or the root path without a locale
+    '/((?!_next).*)',
+    '/', // Include the root path for locale detection
   ],
 };
