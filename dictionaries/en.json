@@ -524,5 +524,21 @@
     "ctaTitle": "Ready to Optimize Your Optic Shop?",
     "ctaButton": "Sign Up for Free",
     "footerText": "© 2023 Optic Shop Management. All rights reserved."
+  },
+  "loginPage": {
+    "title": "Login",
+    "description": "Enter your email below to login to your account.",
+    "emailLabel": "Email",
+    "emailPlaceholder": "m@example.com",
+    "passwordLabel": "Password",
+    "signInButton": "Sign in",
+    "signingInButton": "Signing in...",
+    "noAccountText": "Don't have an account?",
+    "signUpLink": "Sign up",
+    "toast": {
+      "loginErrorTitle": "Login Error",
+      "loginSuccessTitle": "Login Successful",
+      "loginSuccessDescription": "Redirecting to dashboard..."
+    }
   }
 }

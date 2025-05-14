@@ -7,16 +7,10 @@ import InventoryPageClient from "./inventory-client"; // Import the client compo
 
 export const dynamic = 'force-dynamic'; // Force dynamic rendering
 
-// Define props for the Server Component page, including searchParams
-interface InventoryPageProps {
-  params: { lang: Locale };
-  searchParams: { [key: string]: string | string[] | undefined }; // Add searchParams prop
-}
-
 // This is now an async Server Component
-export default async function InventoryPage(props: InventoryPageProps) { // Receive props object
-  const { params } = props;
-  const lang = params.lang;
+export default async function InventoryPage({ params, searchParams }: { params: { lang: Locale }, searchParams: { [key: string]: string | string[] | undefined } }) { // Receive params and searchParams directly
+  const awaitedParams = await params; // Explicitly await params
+  const lang = awaitedParams.lang;
   const dictionary = await getDictionary(lang); // Fetch dictionary on the server
 
   if (!dictionary) {

@@ -2,7 +2,8 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { match } from '@formatjs/intl-localematcher';
 import Negotiator from 'negotiator';
-import { i18n } from './lib/i18n/config';
+import { i18n, type Locale } from './lib/i18n/config'; // Import i18n and Locale type
+import { parse } from 'cookie'; // Import the parse function from the 'cookie' library
 
 let locales = i18n.locales;
 let defaultLocale = i18n.defaultLocale;
@@ -81,10 +82,35 @@ export async function middleware(request: NextRequest) {
   // redirect to the default locale path.
   // This handles cases like redirecting from /login to /dashboard after successful login.
   if (isAuthenticated && pathnameIsMissingLocale && pathname !== '/') {
-      const locale = defaultLocale; // Use the default locale directly
-      console.log('Middleware - Authenticated user, redirecting to default locale:', locale);
+      // Attempt to read the preferred locale from the cookie
+      const cookies = parse(request.headers.get('cookie') || '');
+      const preferredLocale = cookies.NEXT_LOCALE;
+      console.log('Middleware - Authenticated user, preferredLocale cookie:', preferredLocale); // Added logging
+
+      let localeToUse: Locale = defaultLocale; // Default fallback, explicitly type as Locale
+      console.log('Middleware - Initial localeToUse (default):', localeToUse); // Added logging
+
+      if (preferredLocale && locales.includes(preferredLocale as Locale)) { // Check if preferredLocale is a valid locale
+          localeToUse = preferredLocale as Locale; // Use preferred locale from cookie if valid, cast to Locale
+          console.log('Middleware - Using preferred locale from cookie:', localeToUse); // Added logging
+      } else {
+          console.log('Middleware - Preferred locale cookie not set or invalid.'); // Added logging
+          // If cookie not set or invalid, fall back to detecting from browser headers
+          const detectedLocale = getLocale(request);
+          console.log('Middleware - Detected locale from browser headers:', detectedLocale); // Added logging
+
+          if (locales.includes(detectedLocale as Locale)) { // Check if detectedLocale is a valid locale
+              localeToUse = detectedLocale as Locale;
+              console.log('Middleware - Using detected locale from browser headers:', localeToUse); // Added logging
+          } else {
+              console.log('Middleware - Detected locale not in supported locales. Falling back to default locale:', localeToUse); // Added logging
+          }
+      }
+
+      console.log('Middleware - Final localeToUse before redirect:', localeToUse); // Added logging
+
        return NextResponse.redirect(
-        new URL(`/${locale}${pathname.startsWith('/') ? '' : '/'}${pathname}`, request.url)
+        new URL(`/${localeToUse}${pathname.startsWith('/') ? '' : '/'}${pathname}`, request.url)
       );
   }
 

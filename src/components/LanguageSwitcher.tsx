@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useRouter, useParams, usePathname, useSearchParams } from 'next/navigation'; // Import usePathname and useSearchParams
+import Cookies from 'js-cookie'; // Import js-cookie
 import {
   Select,
   SelectContent,
@@ -40,6 +41,9 @@ export default function LanguageSwitcher({ dictionary }: LanguageSwitcherProps) 
 
     // Preserve existing query parameters
     const newUrl = `${newPathname}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
+
+    // Set the cookie with the selected locale
+    Cookies.set('NEXT_LOCALE', newLocale, { expires: 365 }); // Cookie expires in 365 days
 
     router.push(newUrl);
   };

@@ -8,18 +8,11 @@ import PrescriptionsPageClient from "./prescriptions-client"; // Import the clie
 
 export const dynamic = 'force-dynamic'; // Force dynamic rendering
 
-// Define props for the Server Component page, including searchParams
-interface PrescriptionsPageProps {
-  params: { lang: Locale };
-  searchParams: { [key: string]: string | string[] | undefined }; // Add searchParams prop
-}
-
 // This is now an async Server Component
-export default async function PrescriptionsPage(props: PrescriptionsPageProps) { // Receive props object
-  const { params, searchParams } = props; // Destructure params and searchParams
-  // Attempt to await params as suggested by error message (though likely not needed with correct prop access)
-  const awaitedParams = await params;
+export default async function PrescriptionsPage({ params, searchParams }: { params: { lang: Locale }, searchParams: { [key: string]: string | string[] | undefined } }) { // Receive params and searchParams directly
+  const awaitedParams = await params; // Explicitly await params
   const lang = awaitedParams.lang;
+  const awaitedSearchParams = await searchParams; // Explicitly await searchParams
   const dictionary = await getDictionary(lang); // Fetch dictionary on the server
 
   if (!dictionary) {
@@ -45,7 +38,7 @@ export default async function PrescriptionsPage(props: PrescriptionsPageProps) {
   }
 
   // Get tenantId from search parameters
-  const selectedTenantId = searchParams.tenantId; // Access tenantId from searchParams prop
+  const selectedTenantId = awaitedSearchParams.tenantId; // Access tenantId from awaited searchParams
 
   // Fetch prescriptions data on the server.
   let prescriptionsQuery = supabase

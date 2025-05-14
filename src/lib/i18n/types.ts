@@ -641,4 +641,20 @@ export interface Dictionary {
     ctaButton?: string;
     footerText?: string;
   };
+  loginPage: {
+    title?: string;
+    description?: string;
+    emailLabel?: string;
+    emailPlaceholder?: string;
+    passwordLabel?: string;
+    signInButton?: string;
+    signingInButton?: string;
+    noAccountText?: string;
+    signUpLink?: string;
+    toast: { // Add toast property
+      loginErrorTitle?: string;
+      loginSuccessTitle?: string;
+      loginSuccessDescription?: string;
+    };
+  };
 }

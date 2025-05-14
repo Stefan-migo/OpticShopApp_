@@ -513,6 +513,22 @@
     "testimonial2Quote": "Intuitivo y fácil de usar, incluso para personal no técnico.",
     "ctaTitle": "¿Listo para optimizar su óptica?",
     "ctaButton": "Registrarse gratis",
-    "footerText": "Gestión de Óptica. Todos los derechos reservados."
+    "footerText": "© 2023 Gestión de Óptica. Todos los derechos reservados."
+  },
+  "loginPage": {
+    "title": "Iniciar sesión",
+    "description": "Introduzca su correo electrónico a continuación para iniciar sesión en su cuenta.",
+    "emailLabel": "Correo electrónico",
+    "emailPlaceholder": "m@ejemplo.com",
+    "passwordLabel": "Contraseña",
+    "signInButton": "Iniciar sesión",
+    "signingInButton": "Iniciando sesión...",
+    "noAccountText": "¿No tiene una cuenta?",
+    "signUpLink": "Registrarse",
+    "toast": {
+      "loginErrorTitle": "Error de inicio de sesión",
+      "loginSuccessTitle": "Inicio de sesión correcto",
+      "loginSuccessDescription": "Redirigiendo al Inicio..."
+    }
   }
 }
