@@ -77,7 +77,7 @@ export default async function PrescriptionsPage(props: PrescriptionsPageProps) {
   if (fetchError) {
     console.error("Error fetching prescriptions:", fetchError);
     // Handle error - pass error message to the client component or show error UI
-    return <div>{dictionary?.prescriptions?.fetchError || "Failed to load prescription data"}: {fetchError.message}</div>;
+    return <div>{"Failed to load prescription data"}: {fetchError.message}</div>;
   }
 
   // Format date strings on the server to prevent hydration mismatches
@@ -105,5 +105,3 @@ export default async function PrescriptionsPage(props: PrescriptionsPageProps) {
     />
   );
 }
-
-

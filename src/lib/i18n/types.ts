@@ -10,7 +10,15 @@ export interface Dictionary {
     noInventoryData?: string;
     upcomingAppointments?: string;
     noUpcomingAppointments?: string;
-    greetingFallback?: string; // Added greetingFallback key
+    greetingFallback?: string;
+    greetingWithTenant?: string;
+    newSaleButton?: string;
+    scheduleAppointmentButton?: string;
+    salesThisWeek?: string;
+    salesLastWeek?: string;
+    appointmentsThisWeek?: string;
+    lowStockItemsCount?: string;
+    salesChangePercentage?: string;
   };
   customers: {
     form: {
@@ -26,12 +34,14 @@ export interface Dictionary {
       phonePlaceholder?: string;
       notesLabel?: string;
       notesPlaceholder?: string;
-      firstNameRequired?: string; // Added firstNameRequired key
-      lastNameRequired?: string; // Added lastNameRequired key
-      invalidEmail?: string; // Added invalidEmail key
-      createdAtLabel?: string; // Added createdAtLabel key
+      firstNameRequired?: string;
+      lastNameRequired?: string;
+      invalidEmail?: string;
+      createdAtLabel?: string;
+      userFetchError?: string;
+      tenantFetchError?: string;
     };
-    tableActions?: { // Added tableActions object
+    tableActions?: {
       copyId?: string;
       viewDetails?: string;
       editCustomer?: string;
@@ -78,9 +88,9 @@ export interface Dictionary {
     deleteProductConfirmDescription?: string;
     productDeleteSuccess?: string;
     productDeleteErrorTitle?: string;
-    deleteProductButton?: string; // Moved from stockColumns
-    deleteStockItemButton?: string; // Moved from stockColumns
-    productDetailsDialog: { // Added productDetailsDialog object
+    deleteProductButton?: string;
+    deleteStockItemButton?: string;
+    productDetailsDialog: {
       title?: string;
       description?: string;
       nameLabel?: string;
@@ -130,9 +140,9 @@ export interface Dictionary {
       statusSold?: string;
       damaged?: string;
       returned?: string;
-      productRequired?: string; // Added productRequired key
-      quantityMin?: string; // Added quantityMin key
-      costNonNegative?: string; // Added costNonNegative key
+      productRequired?: string;
+      quantityMin?: string;
+      costNonNegative?: string;
     };
     productForm: {
       loadErrorTitle?: string;
@@ -156,14 +166,14 @@ export interface Dictionary {
       reorderLevelDescription?: string;
       basePriceLabel?: string;
       basePricePlaceholder?: string;
-      nameRequired?: string; // Added nameRequired key
-      invalidCategory?: string; // Added invalidCategory key
-      invalidSupplier?: string; // Added invalidSupplier key
-      priceNonNegative?: string; // Added priceNonNegative key
-      reorderLevelNonNegativeInteger?: string; // Added reorderLevelNonNegativeInteger key
+      nameRequired?: string;
+      invalidCategory?: string;
+      invalidSupplier?: string;
+      priceNonNegative?: string;
+      reorderLevelNonNegativeInteger?: string;
     };
   };
-  prescriptions: { // Added prescriptions object
+  prescriptions: {
     detailsDialog: {
       title?: string;
       description?: string;
@@ -186,7 +196,7 @@ export interface Dictionary {
       osLabel?: string;
       notesTitle?: string;
     };
-    form: { // <<< ADD THIS 'form' OBJECT >>>
+    form: {
       customerRequired?: string;
       invalidMedicalRecord?: string;
       invalidPrescriber?: string;
@@ -213,7 +223,7 @@ export interface Dictionary {
       osTitle?: string;
       notesLabel?: string;
       notesPlaceholder?: string;
-      paramLabels: { // Added paramLabels object
+      paramLabels: {
         sphLabel?: string;
         cylLabel?: string;
         axisLabel?: string;
@@ -223,7 +233,7 @@ export interface Dictionary {
         diaLabel?: string;
         brandLabel?: string;
       };
-      paramPlaceholders: { // Added paramPlaceholders object
+      paramPlaceholders: {
         sphPlaceholder?: string;
         cylPlaceholder?: string;
         axisPlaceholder?: string;
@@ -233,22 +243,8 @@ export interface Dictionary {
         diaPlaceholder?: string;
         brandPlaceholder?: string;
       };
-    },
-    fetchError?: string; // Moved properties
-    deleteSuccess?: string;
-    deleteErrorTitle?: string;
-    title?: string;
-    addPrescriptionButton?: string;
-    addNewPrescriptionTitle?: string;
-    addNewPrescriptionDescription?: string;
-    loading?: string;
-    filterPlaceholder?: string;
-    editPrescriptionTitle?: string;
-    editPrescriptionDescription?: string;
-    deleteConfirmTitle?: string;
-    deleteConfirmDescription?: string;
-    deleteButton?: string;
-    columns: { // Added columns object
+    };
+    columns: {
       customerNameHeader?: string;
       prescriptionDateHeader?: string;
       expiryDateHeader?: string;
@@ -257,8 +253,20 @@ export interface Dictionary {
       viewDetails?: string;
       editPrescription?: string;
       deletePrescription?: string;
-    }
-  },
+    };
+    deleteSuccess?: string;
+    deleteErrorTitle?: string;
+    title?: string;
+    addPrescriptionButton?: string;
+    addNewPrescriptionTitle?: string;
+    addNewPrescriptionDescription?: string;
+    filterPlaceholder?: string;
+    editPrescriptionTitle?: string;
+    editPrescriptionDescription?: string;
+    deleteConfirmTitle?: string;
+    deleteConfirmDescription?: string;
+    deleteButton?: string;
+  };
   common: {
     loading?: string;
     failedToLoadData?: string;
@@ -282,20 +290,22 @@ export interface Dictionary {
     unknownCustomer?: string;
     close?: string;
     scheduling?: string;
-    removeItem?: string; // Added removeItem key
+    removeItem?: string;
     delete?: string;
-    userNotFound?: string; // Added userNotFound key
-    toggleNavigationMenu?: string; // Added toggleNavigationMenu key
-    mobileSidebarTitle?: string; // Added for mobile sidebar accessibility
-    mobileSidebarDescription?: string; // Added for mobile sidebar accessibility
-    status: { // Added status object
+    userNotFound?: string;
+    toggleNavigationMenu?: string;
+    mobileSidebarTitle?: string;
+    mobileSidebarDescription?: string;
+    status: {
       available?: string;
       sold?: string;
       damaged?: string;
       returned?: string;
-      pending?: string; // Added pending key
-      cancelled?: string; // Added cancelled key
-      completed?: string; // Added completed key
+      pending?: string;
+      cancelled?: string;
+      completed?: string;
+      in_stock?: string;
+      out_of_stock?: string;
     };
   };
   roles: {
@@ -411,14 +421,14 @@ export interface Dictionary {
       notesLabel?: string;
       notesPlaceholder?: string;
       scheduleButton?: string;
-      customerRequired?: string; // Added customerRequired key
-      invalidDateTime?: string; // Added invalidDateTime key
-      durationMin?: string; // Added durationMin key
-      invalidType?: string; // Added invalidType key
-      invalidProvider?: string; // Added invalidProvider key
+      customerRequired?: string;
+      invalidDateTime?: string;
+      durationMin?: string;
+      invalidType?: string;
+      invalidProvider?: string;
     };
   };
-  sales: { // Added sales object
+  sales: {
     taxWarningTitle?: string;
     taxWarningDescription?: string;
     taxInfoTitle?: string;
@@ -456,19 +466,19 @@ export interface Dictionary {
     totalLabel?: string;
     recordingSaleButton?: string;
     processPaymentButton?: string;
-    history: { // Added history object
+    history: {
       fetchError?: string;
       loading?: string;
       filterPlaceholder?: string;
       title?: string;
       backToPosButton?: string;
-      orderNumberHeader?: string; // Added missing keys
-      dateHeader?: string; // Added missing keys
-      customerHeader?: string; // Added missing keys
-      statusHeader?: string; // Added missing keys
-      totalAmountHeader?: string; // Added missing keys
-      viewDetailsAction?: string; // Added missing keys
-      detailsDialog: { // Added detailsDialog object
+      orderNumberHeader?: string;
+      dateHeader?: string;
+      customerHeader?: string;
+      statusHeader?: string;
+      totalAmountHeader?: string;
+      viewDetailsAction?: string;
+      detailsDialog: {
         title?: string;
         description?: string;
         customerLabel?: string;
@@ -497,7 +507,27 @@ export interface Dictionary {
       };
     };
   };
-  app: { // Added app object
+  userManagement: {
+    title?: string;
+    accessDeniedTitle?: string;
+    accessDeniedDescription?: string;
+    loadingUsers?: string;
+    failedToLoadData?: string;
+    roleUpdateSuccess?: string;
+    roleUpdateErrorTitle?: string;
+    unexpectedError?: string;
+    filterEmailPlaceholder?: string;
+    columns: {
+      nameHeader?: string;
+      emailHeader?: string;
+      roleHeader?: string;
+      noRole?: string;
+      openMenu?: string;
+      actions?: string;
+      changeRole?: string;
+    };
+  };
+  app: {
     name?: string;
   };
   navigation: {
@@ -512,6 +542,9 @@ export interface Dictionary {
     medicalActions?: string;
     userManagement?: string;
     settings?: string;
+    profile?: string;
+    history?: string;
+    new?: string;
   };
   settings: {
     title?: string;
@@ -542,7 +575,6 @@ export interface Dictionary {
     en?: string;
     es?: string;
   };
-  // Add other top-level keys as needed
   landing?: {
     appName?: string;
     navFeatures?: string;

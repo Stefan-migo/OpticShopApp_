@@ -25,14 +25,21 @@ interface UserProfile {
   roles: { name: string | null } | null; // Supabase returns related record or null for to-one relations
 }
 
+// Optional: Define a type for tenant data
+interface Tenant {
+  id: string;
+  name: string;
+}
+
 
 export const dynamic = 'force-dynamic'; // Force dynamic rendering
 
 import { cookies } from 'next/headers'; // Import cookies
 
 export default async function AppLayout(props: { children: React.ReactNode; params: { lang: Locale } }) { // Receive full props object
-  const { children, params } = props; // Attempt to await destructured props
-  const lang = params.lang;
+  const { children, params } = props;
+  const awaitedParams = await params; // Await params
+  const lang = awaitedParams.lang;
 
   const supabase = createServerComponentClient();
   const dictionary = await getDictionary(lang);
@@ -51,14 +58,6 @@ export default async function AppLayout(props: { children: React.ReactNode; para
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  console.log("AppLayout - Fetched user:", user); // Log user object
-  if (user) {
-    console.log("AppLayout - User app_metadata:", user.app_metadata); // Log app_metadata
-    // You might need to decode the JWT to see all claims, but app_metadata should be here
-    // console.log("AppLayout - User JWT:", user.jwt); // JWT might not be directly accessible here or might be encoded
-  }
-
 
   if (!user) {
     return redirect(`/${lang}/login`);
@@ -107,6 +106,23 @@ export default async function AppLayout(props: { children: React.ReactNode; para
     userRole = 'No Role Assigned'; // Or keep as 'N/A'
   }
 
+  // Fetch tenant name if userTenantId exists
+  let tenantName: string | null = null;
+  if (userTenantId) {
+    const { data: tenantData, error: tenantError } = await supabase
+      .from('tenants')
+      .select('name')
+      .eq('id', userTenantId)
+      .single<Tenant>(); // Use the Tenant type
+
+    if (tenantError) {
+      console.error("Error fetching tenant name:", tenantError.message);
+    } else {
+      tenantName = tenantData?.name ?? null;
+    }
+  }
+
+
   const navItems = [
     { href: `/${lang}/dashboard`, label: dictionary.navigation.dashboard || '', icon: 'Home' },
     { href: `/${lang}/customers`, label: dictionary.navigation.customers || '', icon: 'Contact' },
@@ -124,6 +140,15 @@ export default async function AppLayout(props: { children: React.ReactNode; para
     navItems.push({ href: `/${lang}/users`, label: dictionary.navigation.userManagement || '', icon: 'Users' });
   }
 
+  // Clone children to pass tenantName prop
+  const childrenWithTenantName = React.Children.map(children, child => {
+    if (React.isValidElement(child)) {
+      // Cast child to any to allow adding tenantName prop
+      return React.cloneElement(child as any, { tenantName });
+    }
+    return child;
+  });
+
   return (
     <DictionaryProvider dictionary={dictionary}>
       <SidebarProvider defaultOpen={true}>
@@ -132,10 +157,11 @@ export default async function AppLayout(props: { children: React.ReactNode; para
           userRole={userRole}
           isSuperuser={isSuperuser}
           userTenantId={userTenantId}
+          tenantName={tenantName} // Pass tenantName here
           navItems={navItems}
           dictionary={dictionary}
         >
-          {children}
+          {childrenWithTenantName} {/* Use cloned children */}
         </SidebarLayoutContent>
       </SidebarProvider>
     </DictionaryProvider>

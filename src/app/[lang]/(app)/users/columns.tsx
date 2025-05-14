@@ -11,7 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DropdownMenuTrigger, // Added DropdownMenuTrigger
   DropdownMenuSub, // For nested role change
   DropdownMenuSubTrigger,
   DropdownMenuPortal,
@@ -20,29 +20,41 @@ import {
   DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
 import * as React from "react"; // Need React for state in actions
+import { useDictionary } from "@/lib/i18n/dictionary-context"; // Import useDictionary
 
 // Define the shape of our user data (joining profiles and roles)
 export type UserProfile = {
   id: string; // Corresponds to auth.users.id
-  email?: string; // From auth.users table (might need separate fetch or join)
+  email: string | null; // From profiles table
+  full_name?: string | null; // Assuming 'full_name' column in profiles
   role_id: string | null;
   // Joined data
   roles?: {
     id: string;
     name: string;
   } | null;
-  // Add other profile fields like full_name if they exist
 };
+
+// Define props for the columns function
+import { type Dictionary } from "@/lib/i18n/types"; // Import Dictionary type
 
 // Define props for the columns function
 interface UserManagementColumnsProps {
   availableRoles: { id: string; name: string }[]; // Pass available roles for dropdown
   onChangeRole: (userId: string, newRoleId: string) => void; // Callback to handle role change
+  dictionary: Dictionary; // Add dictionary prop
   // Add other actions if needed, e.g., disable/delete user
 }
 
 // Export a function that generates the columns array
-export const getUserManagementColumns = ({ availableRoles, onChangeRole }: UserManagementColumnsProps): ColumnDef<UserProfile>[] => [
+export const getUserManagementColumns = ({ availableRoles, onChangeRole, dictionary }: UserManagementColumnsProps): ColumnDef<UserProfile>[] => {
+
+  return [
+  {
+    accessorKey: "full_name",
+    header: dictionary.userManagement.columns.nameHeader,
+    cell: ({ row }) => <div>{row.original.full_name || dictionary.common.notAvailable}</div>,
+  },
   {
     accessorKey: "email", // Need to fetch email separately or adjust query
     header: ({ column }) => (
@@ -50,18 +62,18 @@ export const getUserManagementColumns = ({ availableRoles, onChangeRole }: UserM
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
-        Email
+        {dictionary.userManagement.columns.emailHeader}
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => <div className="lowercase">{row.original.email || 'N/A'}</div>, // Display placeholder if email not fetched
+    cell: ({ row }) => <div className="lowercase">{row.original.email || dictionary.common.notAvailable}</div>, // Display placeholder if email not fetched
   },
   {
     accessorKey: "roles.name", // Access nested role name
-    header: "Role",
+    header: dictionary.userManagement.columns.roleHeader,
     cell: ({ row }) => {
         const roleName = row.original.roles?.name;
-        return <Badge variant={roleName === 'admin' ? 'destructive' : 'secondary'} className="capitalize">{roleName || 'No Role'}</Badge>;
+        return <Badge variant={roleName === 'admin' ? 'destructive' : 'secondary'} className="capitalize">{roleName || dictionary.userManagement.columns.noRole}</Badge>;
     },
      filterFn: (row, id, value) => {
         const roleName = row.original.roles?.name || '';
@@ -80,15 +92,15 @@ export const getUserManagementColumns = ({ availableRoles, onChangeRole }: UserM
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
+              <span className="sr-only">{dictionary.userManagement.columns.openMenu}</span>
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuLabel>{dictionary.userManagement.columns.actions}</DropdownMenuLabel>
             <DropdownMenuSub>
                 <DropdownMenuSubTrigger>
-                    <span>Change Role</span>
+                    <span>{dictionary.userManagement.columns.changeRole}</span>
                 </DropdownMenuSubTrigger>
                 <DropdownMenuPortal>
                     <DropdownMenuSubContent>
@@ -120,3 +132,4 @@ export const getUserManagementColumns = ({ availableRoles, onChangeRole }: UserM
     },
   },
 ];
+};

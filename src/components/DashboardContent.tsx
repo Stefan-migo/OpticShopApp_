@@ -3,6 +3,7 @@
 import * as React from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button"; // Import Button
 import { subDays, format } from 'date-fns';
 import Link from 'next/link'; // Import Link
 import { Dictionary } from '@/lib/i18n/types'; // Import shared Dictionary interface
@@ -12,233 +13,111 @@ interface DashboardContentProps {
   userName: string | null;
   dictionary: Dictionary; // Use the imported Dictionary interface
   lang: Locale; // Add lang prop
+  isSuperuser: boolean; // Add isSuperuser prop
+  userTenantId: string | null; // Add userTenantId prop
+  selectedTenantId?: string; // Add selectedTenantId prop for superusers
+  tenantName?: string | null; // Add tenantName prop
+  currentWeekSales: number;
+  lastWeekSales: number;
+  appointmentsThisWeek: number;
+  lowStockItemsCount: number;
 }
 
-export default function DashboardContent({ userName, dictionary, lang }: DashboardContentProps) {
+export default function DashboardContent({ userName, dictionary, lang, isSuperuser, userTenantId, selectedTenantId, tenantName, currentWeekSales, lastWeekSales, appointmentsThisWeek, lowStockItemsCount }: DashboardContentProps) {
   const supabase = createClient();
-  const [salesSummary, setSalesSummary] = React.useState<{ period: string; total: number } | null>(null);
-  const [customerCount, setCustomerCount] = React.useState<number | null>(null);
-  const [inventorySummary, setInventorySummary] = React.useState<Record<string, number> | null>(null);
-  const [upcomingAppointments, setUpcomingAppointments] = React.useState<any[] | null>(null); // TODO: Define proper type
-  const [isLoadingSales, setIsLoadingSales] = React.useState(true);
-  const [isLoadingCustomers, setIsLoadingCustomers] = React.useState(true);
-  const [isLoadingInventory, setIsLoadingInventory] = React.useState(true);
-  const [isLoadingAppointments, setIsLoadingAppointments] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-
-  // Fetch report data
-  React.useEffect(() => {
-    const fetchData = async () => {
-      setIsLoadingSales(true);
-      setIsLoadingCustomers(true);
-      setIsLoadingInventory(true);
-      setIsLoadingAppointments(true); // Set loading for appointments
-      setError(null);
-
-      try {
-        // Fetch Sales Summary (Last 30 Days)
-        const thirtyDaysAgo = format(subDays(new Date(), 30), 'yyyy-MM-dd');
-        const { data: salesData, error: salesError } = await supabase
-          .from('sales_orders')
-          .select('final_amount')
-          .gte('order_date', thirtyDaysAgo)
-          .eq('status', 'completed');
-
-        if (salesError) throw new Error(`Sales Summary Error: ${salesError.message}`);
-        const totalSales = salesData?.reduce((sum, order) => sum + (order.final_amount || 0), 0) || 0;
-        setSalesSummary({ period: dictionary.dashboard.last30DaysPeriod || "Last 30 Days", total: totalSales }); // Use dictionary
-        setIsLoadingSales(false);
-
-        // Fetch Customer Count
-        const { count: custCount, error: customerError } = await supabase
-          .from('customers')
-          .select('*', { count: 'exact', head: true });
-
-        if (customerError) throw new Error(`Customer Count Error: ${customerError.message}`);
-        setCustomerCount(custCount ?? 0);
-        setIsLoadingCustomers(false);
-
-        // Fetch Inventory Summary (Grouped by Status)
-        const { data: inventoryData, error: inventoryError } = await supabase
-          .from('inventory_items')
-          .select('status');
-
-        if (inventoryError) throw new Error(`Inventory Summary Error: ${inventoryError.message}`);
-
-        const summary: Record<string, number> = {};
-        inventoryData?.forEach(item => {
-            if (item.status) {
-                summary[item.status] = (summary[item.status] || 0) + 1;
-            }
-        });
-        setInventorySummary(summary);
-        setIsLoadingInventory(false);
-
-        // Fetch Upcoming Appointments (Today and Tomorrow)
-        const today = format(new Date(), 'yyyy-MM-dd');
-        const tomorrow = format(subDays(new Date(), -1), 'yyyy-MM-dd'); // Use subDays with negative for future date
-
-        const { data: appointmentsData, error: appointmentsError } = await supabase
-          .from('appointments')
-          .select('*, customers(first_name, last_name)') // Select appointment fields and customer first_name, last_name
-          .gte('appointment_time', today)
-          .lt('appointment_time', tomorrow) // Fetch appointments for today
-          .order('appointment_time', { ascending: true });
-
-        if (appointmentsError) throw new Error(`Upcoming Appointments Error: ${appointmentsError.message}`);
-        setUpcomingAppointments(appointmentsData);
-        setIsLoadingAppointments(false);
-
-
-      } catch (fetchError: any) {
-         console.error("Error fetching dashboard data:", fetchError);
-         setError(fetchError.message || dictionary.common.failedToLoadData || "Failed to load dashboard data."); // Use dictionary
-         setIsLoadingSales(false);
-         setIsLoadingCustomers(false);
-         setIsLoadingInventory(false);
-         setIsLoadingAppointments(false);
-         setSalesSummary(null);
-         setCustomerCount(null);
-         setInventorySummary(null);
-         setUpcomingAppointments(null);
-      }
-    };
-
-    fetchData();
-  }, [supabase, dictionary]); // Add dictionary to dependency array
 
   return (
     // Apply background and text color to the main container
     // min-h-screen is important to ensure the background covers the full viewport height
     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 bg-background text-foreground min-h-screen transition-colors duration-300">
-        {userName && (
-            // Apply text color to the greeting
-            <h1 className="text-2xl font-semibold text-foreground">
-              {dictionary.dashboard.greeting?.replace('{{name}}', userName) || dictionary.dashboard.greetingFallback?.replace('{{name}}', userName) || `Good morning, ${userName}!`}
-            </h1>
+        {/* Tenant Logo Placeholder */}
+        {tenantName && (
+          <div className="flex items-center gap-4">
+            {/* Replace with actual logo when implemented */}
+            <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
+              {tenantName.charAt(0).toUpperCase()}
+            </div>
+            {userName && (
+                // Apply text color to the greeting
+                <h1 className="text-2xl font-semibold text-foreground">
+                  {tenantName
+                    ? (dictionary.dashboard.greetingWithTenant?.replace('{{name}}', userName).replace('{{tenantName}}', tenantName) || `Welcome, ${userName} to ${tenantName}!`)
+                    : (dictionary.dashboard.greeting?.replace('{{name}}', userName) || dictionary.dashboard.greetingFallback?.replace('{{name}}', userName) || `Good morning, ${userName}!`)
+                  }
+                </h1>
+            )}
+          </div>
         )}
+         {!tenantName && userName && (
+             <h1 className="text-2xl font-semibold text-foreground">
+               {dictionary.dashboard.greeting?.replace('{{name}}', userName) || dictionary.dashboard.greetingFallback?.replace('{{name}}', userName) || `Good morning, ${userName}!`}
+             </h1>
+         )}
+        {/* Quick Action Buttons */}
+        <div className="flex gap-4">
+          <Link href={`/${lang}/sales`}>
+            <Button>{dictionary.dashboard.newSaleButton || "New Sale"}</Button>
+          </Link>
+          <Link href={`/${lang}/appointments`}>
+            <Button>{dictionary.dashboard.scheduleAppointmentButton || "Schedule Appointment"}</Button>
+          </Link>
+        </div>
         {/* Apply background and gap to the grid container */}
         <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-              {/* Sales Summary Card - Apply neumorphic styles */}
-              {/* Assuming Card component from shadcn/ui is already styled with bg-card, text-card-foreground etc. */}
-              {/* We add the neumorphic shadow and rounded corners here */}
+              {/* Sales This Week Card */}
               <Card className="rounded-xl shadow-neumorphic">
-                 {/* Card Header - Apply text color to title */}
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-foreground text-sm font-medium"> {/* Use text-foreground for title */}
-                    {dictionary.dashboard.totalSales || "Total Sales"} {/* Use dictionary */}
-                    </CardTitle>
-                    {/* Icon - Use text-muted-foreground for icon color */}
-                    {/* <DollarSign className="h-4 w-4 text-muted-foreground" /> */}
+                  <CardTitle className="text-foreground text-sm font-medium">
+                    {dictionary.dashboard.salesThisWeek || "Sales This Week"}
+                  </CardTitle>
                 </CardHeader>
-                 {/* Card Content - Apply text colors */}
                 <CardContent>
-                    {isLoadingSales ? (
-                        <p className="text-xs text-muted-foreground">{dictionary.common.loading || "Loading..."}</p> // Use text-muted-foreground
-                    ) : salesSummary ? (
-                        <>
-                            {/* Apply text-foreground to the main value */}
-                            <div className="text-2xl font-bold text-foreground">
-                                {salesSummary.total.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} {/* Currency formatting needs localization */}
-                            </div>
-                            {/* Apply text-muted-foreground to the period text */}
-                            <p className="text-xs text-muted-foreground">
-                                {salesSummary.period}
-                            </p>
-                        </>
-                    ) : (
-                        <p className="text-xs text-muted-foreground">{dictionary.dashboard.noSalesData || "No sales data."}</p> // Use text-muted-foreground
-                    )}
+                  <div className="text-2xl font-bold text-foreground">
+                    {currentWeekSales.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                  </div>
+                  {lastWeekSales > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      {((currentWeekSales - lastWeekSales) / lastWeekSales * 100).toFixed(2)}% {dictionary.dashboard.salesChangePercentage || "vs. Last Week"}
+                    </p>
+                  )}
+                   {lastWeekSales === 0 && currentWeekSales > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      +100% {dictionary.dashboard.salesChangePercentage || "vs. Last Week"}
+                    </p>
+                  )}
+                   {lastWeekSales === 0 && currentWeekSales === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      0% {dictionary.dashboard.salesChangePercentage || "vs. Last Week"}
+                    </p>
+                  )}
                 </CardContent>
               </Card>
 
-              {/* Customer Count Card - Apply neumorphic styles */}
+              {/* Appointments This Week Card */}
               <Card className="rounded-xl shadow-neumorphic">
-                 {/* Card Header - Apply text color to title */}
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-foreground text-sm font-medium"> {/* Use text-foreground for title */}
-                    {dictionary.dashboard.totalCustomers || "Total Customers"} {/* Use dictionary */}
-                    </CardTitle>
-                    {/* Icon - Use text-muted-foreground for icon color */}
-                    {/* <Users className="h-4 w-4 text-muted-foreground" /> */}
+                  <CardTitle className="text-foreground text-sm font-medium">
+                    {dictionary.dashboard.appointmentsThisWeek || "Appointments This Week"}
+                  </CardTitle>
                 </CardHeader>
-                 {/* Card Content - Apply text colors */}
                 <CardContent>
-                    {isLoadingCustomers ? (
-                        <p className="text-xs text-muted-foreground">{dictionary.common.loading || "Loading..."}</p> // Use text-muted-foreground
-                    ) : customerCount !== null ? (
-                        <>
-                            {/* Apply text-foreground to the main value */}
-                            <div className="text-2xl font-bold text-foreground">{customerCount}</div>
-                            {/* <p className="text-xs text-muted-foreground">All time</p> */} {/* Use text-muted-foreground */}
-                        </>
-                    ) : (
-                        <p className="text-xs text-muted-foreground">{dictionary.dashboard.noCustomerData || "No customer data."}</p> // Use text-muted-foreground
-                    )}
+                  <div className="text-2xl font-bold text-foreground">
+                    {appointmentsThisWeek}
+                  </div>
                 </CardContent>
               </Card>
 
-              {/* Inventory Summary Card - Apply neumorphic styles */}
+              {/* Low Stock Items Card */}
               <Card className="rounded-xl shadow-neumorphic">
-                 {/* Card Header - Apply text color to title */}
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-foreground text-sm font-medium"> {/* Use text-foreground for title */}
-                    {dictionary.dashboard.inventoryStatus || "Inventory Status"} {/* Use dictionary */}
-                    </CardTitle>
-                    {/* Icon - Use text-muted-foreground for icon color */}
-                    {/* <Package className="h-4 w-4 text-muted-foreground" /> */}
+                  <CardTitle className="text-foreground text-sm font-medium">
+                    {dictionary.dashboard.lowStockItemsCount || "Low Stock Items"}
+                  </CardTitle>
                 </CardHeader>
-                 {/* Card Content - Apply text colors */}
                 <CardContent>
-                    {isLoadingInventory ? (
-                        <p className="text-xs text-muted-foreground">{dictionary.common.loading || "Loading..."}</p> // Use text-muted-foreground
-                    ) : inventorySummary ? (
-                        <div className="text-xs space-y-1">
-                        {Object.entries(inventorySummary).map(([status, count]) => (
-                            <div key={status} className="flex justify-between">
-                                {/* Apply text-muted-foreground to status labels */}
-                                <span className="capitalize text-muted-foreground">{dictionary.common.status[status as keyof typeof dictionary.common.status] || status}:</span>
-                                {/* Apply text-foreground to counts */}
-                                <span className="text-foreground">{count}</span>
-                            </div>
-                        ))}
-                        </div>
-                    ) : (
-                        <p className="text-xs text-muted-foreground">{dictionary.dashboard.noInventoryData || "No inventory data."}</p> // Use text-muted-foreground
-                    )}
-                </CardContent>
-              </Card>
-
-              {/* Upcoming Appointments Card - Apply neumorphic styles */}
-              <Card className="rounded-xl shadow-neumorphic">
-                 {/* Card Header - Apply text color to title */}
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-foreground text-sm font-medium">{dictionary.dashboard.upcomingAppointments || "Upcoming Appointments"}</CardTitle> {/* Use text-foreground and dictionary */}
-                    {/* Icon - Use text-muted-foreground for icon color */}
-                    {/* <Calendar className="h-4 w-4 text-muted-foreground" /> */}
-                </CardHeader>
-                 {/* Card Content - Apply text colors */}
-                <CardContent>
-                    {isLoadingAppointments ? (
-                        <p className="text-xs text-muted-foreground">{dictionary.common.loading || "Loading..."}</p> // Use text-muted-foreground
-                    ) : upcomingAppointments && upcomingAppointments.length > 0 ? (
-                        <div className="text-xs space-y-1">
-                            {upcomingAppointments.map(appointment => (
-                                <div key={appointment.id} className="flex justify-between">
-                                    {/* Apply text-muted-foreground to time */}
-                                    <span className="text-muted-foreground">{format(new Date(appointment.appointment_time), 'p')}:</span>
-                                    {/* Apply text-foreground to customer name */}
-                                    <span className="text-foreground">{`${appointment.customers?.first_name || ''} ${appointment.customers?.last_name || ''}`.trim() || dictionary.common.notAvailable}</span> {/* Use text-foreground and dictionary */}
-                                </div>
-                            ))}
-                            {/* Apply text-primary to the link */}
-                            <div className="mt-2 text-right">
-                                <Link href={`/${lang}/appointments`} className="text-primary hover:underline">{dictionary.common.viewAll || "View All"}</Link> {/* Use text-primary, dictionary, and lang prop */}
-                            </div>
-                        </div>
-                    ) : (
-                        <p className="text-xs text-muted-foreground">{dictionary.dashboard.noUpcomingAppointments || "No upcoming appointments."}</p> // Use text-muted-foreground and dictionary
-                    )}
+                  <div className="text-2xl font-bold text-foreground">
+                    {lowStockItemsCount}
+                  </div>
                 </CardContent>
               </Card>
         </div>

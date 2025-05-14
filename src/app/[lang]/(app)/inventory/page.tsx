@@ -30,23 +30,29 @@ export default async function InventoryPage(props: InventoryPageProps) { // Rece
   // Fetch user and check if superuser
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   let isSuperuser = false;
+  let userTenantId: string | null = null; // Initialize userTenantId
+
   if (user) {
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
-      .select('is_superuser')
+      .select('is_superuser, tenant_id') // Select tenant_id as well
       .eq('id', user.id)
       .single();
-    if (profileData && profileData.is_superuser !== null) {
-      isSuperuser = profileData.is_superuser;
+    if (profileData) {
+      if (profileData.is_superuser !== null) {
+        isSuperuser = profileData.is_superuser;
+      }
+      userTenantId = profileData.tenant_id; // Assign fetched tenant_id
     }
   }
 
-  // Render the client component and pass the dictionary and isSuperuser flag
+  // Render the client component and pass the dictionary, isSuperuser flag, and userTenantId
   return (
     <InventoryPageClient
       dictionary={dictionary}
       lang={lang} // Pass lang if needed by client components
       isSuperuser={isSuperuser} // Pass isSuperuser flag
+      userTenantId={userTenantId} // Pass userTenantId
     />
   );
 }

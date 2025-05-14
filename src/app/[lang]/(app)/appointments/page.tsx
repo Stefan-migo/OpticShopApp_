@@ -75,7 +75,12 @@ interface CalendarEvent extends Event {
 // Define a type for the possible view values based on the Views object keys
 type ViewType = (typeof Views)[keyof typeof Views];
 
-export default function AppointmentsPage() {
+interface AppointmentsPageProps {
+  isSuperuser: boolean; // Add isSuperuser prop
+  userTenantId: string | null; // Add userTenantId prop
+}
+
+export default function AppointmentsPage({ isSuperuser, userTenantId }: AppointmentsPageProps) {
   const supabase = createClient();
   const { toast } = useToast();
   const [events, setEvents] = React.useState<CalendarEvent[]>([]);
@@ -91,8 +96,9 @@ export default function AppointmentsPage() {
   const [selectedSlotStart, setSelectedSlotStart] = React.useState<Date | null>(null); // State for selected slot
   const [clinicSettings, setClinicSettings] = React.useState<any>(null); // State for clinic settings
   const [isLoadingSettings, setIsLoadingSettings] = React.useState(true); // Loading state for settings
-  const [user, setUser] = React.useState<User | null>(null); // State for logged-in user
-  const [isSuperuser, setIsSuperuser] = React.useState(false); // State for isSuperuser flag
+  // Remove client-side user and isSuperuser state
+  // const [user, setUser] = React.useState<User | null>(null); // State for logged-in user
+  // const [isSuperuser, setIsSuperuser] = React.useState(false); // State for isSuperuser flag
   const params = useParams(); // Get params from URL
   const lang = params.lang as Locale; // Extract locale
   const searchParams = useSearchParams(); // Get search parameters
@@ -110,67 +116,90 @@ export default function AppointmentsPage() {
   }, [lang]); // Refetch dictionary if locale changes
 
 
-  // Fetch logged-in user, superuser status, and clinic settings
+  // Fetch clinic settings (now relies on userTenantId from props)
   React.useEffect(() => {
     const fetchData = async () => {
+      // Only fetch if userTenantId is available for non-superusers,
+      // or if user is superuser (allowing existing logic to handle tenantId param)
+      if (!isSuperuser && !userTenantId) {
+        console.warn("AppointmentsPage: Skipping settings fetch - No userTenantId and not superuser.");
+        setIsLoadingSettings(false);
+        return;
+      }
+
       setIsLoadingSettings(true);
       try {
-        const { data: userData, error: userError } = await supabase.auth.getUser();
-        if (userError) throw userError;
-        setUser(userData.user);
-
-        if (userData.user) {
-           // Fetch superuser status
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('is_superuser')
-            .eq('id', userData.user.id)
-            .single();
-          if (profileData && profileData.is_superuser !== null) {
-            setIsSuperuser(profileData.is_superuser);
-          } else {
-            setIsSuperuser(false);
-          }
-
-
-          const { data: settingsData, error: settingsError } = await supabase
+        // Fetch clinic settings - assuming clinic settings are also tenant-specific
+        // and linked by tenant_id, or there's a default if userTenantId is null (superuser)
+        let settingsQuery = supabase
             .from('clinic_settings')
-            .select('working_hours, default_slot_duration_minutes')
-            .eq('clinic_id', userData.user.id) // Filter by user's profile ID
-            .maybeSingle(); // Use maybeSingle()
+            .select('working_hours, default_slot_duration_minutes');
 
-          if (settingsError && settingsError.code !== 'PGRST116') { // PGRST116 means no rows found
-            throw settingsError;
-          }
-
-          if (settingsData) {
-            setClinicSettings(settingsData);
-          } else {
-            // Handle case where no settings are found for the user's clinic
-            console.warn("No clinic settings found for this user.");
-            setClinicSettings(null); // Explicitly set to null or a default structure
-          }
+        if (!isSuperuser && userTenantId) {
+             settingsQuery = settingsQuery.eq('tenant_id', userTenantId);
+        } else if (isSuperuser && tenantId) {
+             // Superuser viewing a specific tenant's settings
+             settingsQuery = settingsQuery.eq('tenant_id', tenantId);
+        } else if (isSuperuser && !tenantId) {
+             // Superuser viewing all settings (or default if applicable) - might need a different approach
+             // For now, let's assume superusers see all or a default if superuser and no tenantId
+             console.warn("Superuser viewing clinic settings without specific tenantId. Fetching all or default.");
+             // Fetch all or a default - depending on schema
+             // For now, let's fetch the first one found if superuser and no tenantId
+             settingsQuery = settingsQuery.limit(1);
         } else {
-          setClinicSettings(null); // No user, no settings
-          setIsSuperuser(false); // No user, not superuser
+             // This case should now be caught by the initial check
+             console.error("AppointmentsPage: Unexpected state - No userTenantId and not superuser reached else block.");
+             setClinicSettings(null);
+             setIsLoadingSettings(false);
+             return;
         }
 
+
+        const { data: settingsData, error: settingsError } = await settingsQuery.maybeSingle(); // Use maybeSingle()
+
+        if (settingsError && settingsError.code !== 'PGRST116') { // PGRST116 means no rows found
+          throw settingsError;
+        }
+
+        if (settingsData) {
+          setClinicSettings(settingsData);
+        } else {
+          // Handle case where no settings are found for the user's clinic/tenant
+          console.warn("No clinic settings found for this user/tenant.");
+          setClinicSettings(null); // Explicitly set to null or a default structure
+        }
+
+
       } catch (error: any) {
-        console.error("Error fetching user, superuser status, or clinic settings:", error);
-        toast({ title: dictionary?.appointments.loadSettingsErrorTitle || "Error loading settings", description: dictionary?.appointments.loadSettingsErrorDescription || "Could not load clinic settings.", variant: "destructive" }); // Use dictionary
+        console.error("Error fetching clinic settings:", error);
+        toast({ title: dictionary?.appointments.loadSettingsErrorTitle || "Error loading settings", description: error.message || dictionary?.appointments.loadSettingsErrorDescription || "Could not load clinic settings.", variant: "destructive" }); // Use dictionary
       } finally {
         setIsLoadingSettings(false);
       }
     };
+    // Fetch settings when userTenantId or isSuperuser changes
     fetchData();
-  }, [supabase, toast, dictionary]); // Add dictionary to dependencies
+  }, [supabase, toast, dictionary, isSuperuser, userTenantId, tenantId]); // Add dependencies
+
 
   // Fetch appointments (memoized function definition)
   const fetchAppointments = React.useCallback(async () => {
+     // Only fetch if userTenantId is available for non-superusers,
+     // or if user is superuser (allowing existing logic to handle tenantId param)
+     if (!isSuperuser && !userTenantId) {
+        console.warn("fetchAppointments called without necessary tenant context.");
+        setIsLoading(false); // Ensure loading state is turned off
+        setEvents([]); // Clear events or set to empty
+        return;
+     }
+
     // Make sure dictionary check is still relevant if needed here
     // (Though outer check + dependency array handles it)
     if (!dictionary) {
       console.warn("fetchAppointments called before dictionary loaded.");
+      setIsLoading(false); // Ensure loading state is turned off
+      setEvents([]); // Clear events or set to empty
       return;
     }
     setIsLoading(true);
@@ -184,9 +213,12 @@ export default function AppointmentsPage() {
       `) // Corrected: removed provider_name, added provider_id if needed
         .order("appointment_time");
 
-       // Apply tenant filter if user is superuser AND tenantId search parameter is present
+       // Apply tenant filter if user is superuser AND tenantId search parameter is present,
+       // OR if user is NOT a superuser and userTenantId is available
       if (isSuperuser && tenantId) {
         query = query.eq('tenant_id', tenantId);
+      } else if (!isSuperuser && userTenantId) {
+         query = query.eq('tenant_id', userTenantId);
       }
 
 
@@ -229,7 +261,7 @@ export default function AppointmentsPage() {
       setIsLoading(false);
     }
     // Pass dependency array as the second argument to useCallback
-  }, [supabase, dictionary, isSuperuser, tenantId]); // Dependency: supabase client, dictionary, isSuperuser, tenantId
+  }, [supabase, dictionary, isSuperuser, tenantId, userTenantId]); // Dependency: supabase client, dictionary, isSuperuser, tenantId, userTenantId
 
   // useEffect hook to *call* fetchAppointments when the component mounts
   // or when fetchAppointments itself changes (due to its dependencies changing)
@@ -285,7 +317,7 @@ export default function AppointmentsPage() {
   // Handler for selecting an empty slot on the calendar
   const handleSelectSlot = React.useCallback((slotInfo: { start: Date; end: Date; slots: Date[] | string[]; action: 'select' | 'click' | 'doubleClick' }) => {
     // Only allow slot selection in Day or Week view
-    if (currentView === Views.DAY || currentView === Views.WEEK) {
+    if (currentView === Views.DAY || currentView === Views.WEEK) { // Corrected: Changed second Views.DAY to Views.WEEK
       // Check if it's a single click/drag selection, not clicking an existing event
       if (slotInfo.action === 'select' || slotInfo.action === 'click') {
         setSelectedSlotStart(slotInfo.start);
@@ -384,10 +416,10 @@ export default function AppointmentsPage() {
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                   <DialogTitle>{dictionary.appointments.scheduleNewTitle || "Schedule New Appointment"}</DialogTitle> {/* Use dictionary */}
-                  <DialogDescription>
-                    {dictionary.appointments.scheduleNewDescription || "Fill in the details to schedule a new appointment."} {/* Use dictionary */}
-                  </DialogDescription>
                 </DialogHeader>
+                <DialogDescription>
+                  {dictionary.appointments.scheduleNewDescription || "Fill in the details to schedule a new appointment."} {/* Use dictionary */}
+                </DialogDescription>
                 {/* Pass selected slot time to the form */}
                 <AppointmentForm
                   initialDateTime={selectedSlotStart ?? undefined}
@@ -455,8 +487,8 @@ export default function AppointmentsPage() {
                 <DialogTitle>{dictionary.appointments.editTitle || "Edit Appointment"}</DialogTitle> {/* Use dictionary */}
                 <DialogDescription>
                   {dictionary.appointments.editDescription || "Update the appointment details."} {/* Use dictionary */}
-                </DialogDescription>
-              </DialogHeader>
+                </DialogDescription>{/* Corrected closing tag */}
+              </DialogHeader>{/* Corrected closing tag */}
               {/* Pass initialData for editing */}
               <AppointmentForm
                 initialData={editingAppointment}

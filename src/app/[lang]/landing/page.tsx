@@ -2,9 +2,10 @@
 
 import { use } from 'react';
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CheckCircle, Rocket, Zap, LayoutDashboard, Settings, Menu } from "lucide-react";
+import { ArrowRight, CheckCircle, Rocket, Zap, LayoutDashboard, Settings, Menu, Sun, Moon } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useTheme } from 'next-themes';
 import {
     Sheet,
     SheetContent,
@@ -51,6 +52,40 @@ const TestimonialCard = ({ name, title, quote, image }: { name: string; title: s
         <p className="text-card-foreground italic">"{quote}"</p>
     </motion.div>
 );
+
+const ThemeSwitcherButton = () => {
+    const [mounted, setMounted] = useState(false);
+    const { theme, setTheme } = useTheme();
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    if (!mounted) {
+        return null;
+    }
+
+    const toggleTheme = () => {
+        if (theme === 'light') {
+            setTheme('dark');
+        } else if (theme === 'dark') {
+            setTheme('system');
+        } else {
+            setTheme('light');
+        }
+    };
+
+    return (
+        <Button variant="ghost" size="icon" onClick={toggleTheme}>
+            {theme === 'dark' ? (
+                <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+            ) : (
+                <Moon className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+            )}
+            <span className="sr-only">Toggle theme</span>
+        </Button>
+    );
+};
 
 // Pricing Card Component
 const PricingCard = ({ title, price, description, features, isPro }: { title: string; price: string; description: string; features: string[]; isPro?: boolean }) => (
@@ -119,9 +154,9 @@ const SaaSProductLandingPage = ({ params }: { params: Promise<{ lang: Locale }> 
     const landingDict = dictionary.landing || {}; // Use a default empty object if landing key is missing
 
     return (
-        <div className="bg-element-bg min-h-screen flex flex-col">
+        <div className="bg-gradient-background min-h-screen flex flex-col">
             {/* Navbar */}
-            <nav className="py-4 px-4 sm:px-6 lg:px-8 bg-muted backdrop-blur-md sticky top-0 z-50 border-b border-border">
+            <nav className="py-4 px-4 sm:px-6 lg:px-8 bg-gradient-muted backdrop-blur-md sticky top-0 z-50 border-b border-border">
                 <div className="flex items-center justify-between max-w-6xl mx-auto">
                     {/* Logo */}
                     <a href="#" className="text-2xl font-bold text-card-foreground">
@@ -134,7 +169,7 @@ const SaaSProductLandingPage = ({ params }: { params: Promise<{ lang: Locale }> 
                         <a href="#about-us" className="text-card-foreground hover:text-muted-foreground transition-colors">{landingDict.navAboutUs || "About Us"}</a>
                         <a href="#pricing" className="text-card-foreground hover:text-muted-foreground transition-colors">{landingDict.navPricing || "Pricing"}</a>
                         <a href="#feedback" className="text-card-foreground hover:text-muted-foreground transition-colors">{landingDict.navFeedback || "Feedback"}</a>
-                        <a href={`/${lang}/login`}>
+                        <a href={`/login`}>
                             <Button
                                 variant="outline"
                                 className="text-text-primary hover:bg-element-bg/10 hover:text-text-primary border-border"
@@ -142,17 +177,19 @@ const SaaSProductLandingPage = ({ params }: { params: Promise<{ lang: Locale }> 
                                 {landingDict.navLogin || "Login"}
                             </Button>
                         </a>
-                        <a href={`/${lang}/signup`}>
+                        <a href={`/signup`}>
                             <Button
-                                className="bg-accent-primary text-primary-foreground px-6 py-2 rounded-full shadow-neumorphic-sm hover:shadow-neumorphic transition-all duration-300"
+                                className="bg-muted text-muted-foreground px-6 py-2 rounded-full shadow-neumorphic-sm hover:shadow-neumorphic transition-all duration-300"
                             >
                                 {landingDict.navSignUp || "Sign Up"}
                             </Button>
                         </a>
+                        <ThemeSwitcherButton /> {/* Add the theme switcher button here */}
                     </div>
 
                     {/* Mobile Navigation */}
                     <div className="md:hidden">
+                        <ThemeSwitcherButton /> {/* Add the theme switcher button here */}
                         <Sheet>
                             <SheetTrigger asChild>
                                 <Button variant="ghost" className="text-text-primary hover:bg-element-bg/10">

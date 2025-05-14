@@ -17,7 +17,7 @@ import {
 import {
   AlertDialog,
   AlertDialogAction,
-  AlertDialogCancel,
+AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -39,9 +39,10 @@ interface InventoryPageClientProps {
   dictionary: Dictionary;
   lang: Locale;
   isSuperuser: boolean; // Add isSuperuser prop
+  userTenantId: string | null; // Add userTenantId prop
 }
 
-function InventoryPageClient({ dictionary, lang, isSuperuser }: InventoryPageClientProps) {
+function InventoryPageClient({ dictionary, lang, isSuperuser, userTenantId }: InventoryPageClientProps) {
   const [productData, setProductData] = React.useState<Product[]>([]); // Initialize state as empty array
   const [stockData, setStockData] = React.useState<InventoryItem[]>([]); // Initialize state as empty array
   const [loading, setLoading] = React.useState(true); // Add loading state
@@ -76,9 +77,12 @@ function InventoryPageClient({ dictionary, lang, isSuperuser }: InventoryPageCli
         product_categories ( name ), suppliers ( name )
       `);
 
-    // Apply tenant filter to products if user is superuser AND tenantId search parameter is present
+    // Apply tenant filter to products if user is superuser AND tenantId search parameter is present,
+    // OR if user is NOT a superuser and userTenantId is available
     if (isSuperuser && tenantId) {
       productsQuery = productsQuery.eq('tenant_id', tenantId);
+    } else if (!isSuperuser && userTenantId) {
+       productsQuery = productsQuery.eq('tenant_id', userTenantId);
     }
 
     const { data: products, error: productsFetchError } = await productsQuery
@@ -111,9 +115,12 @@ function InventoryPageClient({ dictionary, lang, isSuperuser }: InventoryPageCli
         products ( name, brand, model )
       `);
 
-    // Apply tenant filter to stock items if user is superuser AND tenantId search parameter is present
+    // Apply tenant filter to stock items if user is superuser AND tenantId search parameter is present,
+    // OR if user is NOT a superuser and userTenantId is available
     if (isSuperuser && tenantId) {
       stockItemsQuery = stockItemsQuery.eq('tenant_id', tenantId);
+    } else if (!isSuperuser && userTenantId) {
+       stockItemsQuery = stockItemsQuery.eq('tenant_id', userTenantId);
     }
 
     const { data: stockItems, error: stockItemsFetchError } = await stockItemsQuery
@@ -144,10 +151,10 @@ function InventoryPageClient({ dictionary, lang, isSuperuser }: InventoryPageCli
     setLoading(false);
   };
 
-  // Effect to fetch data when tenantId or isSuperuser changes
+  // Effect to fetch data when tenantId, isSuperuser, or userTenantId changes
   React.useEffect(() => {
     fetchData();
-  }, [tenantId, isSuperuser]); // Dependencies: tenantId and isSuperuser
+  }, [tenantId, isSuperuser, userTenantId]); // Dependencies: tenantId, isSuperuser, and userTenantId
 
   // Function to refresh data after mutations (now calls client-side fetch)
   const refreshData = async () => {

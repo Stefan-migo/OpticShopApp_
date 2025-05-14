@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers'; // Import cookies helper
 
 export async function POST(request: Request) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { supplier_id, order_date, expected_delivery_date, status, items } = await request.json(); // Include status
 
   // Get the tenant_id from the cookie
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
 }
 
 export async function GET(request: Request) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   try {
     const { searchParams } = new URL(request.url);

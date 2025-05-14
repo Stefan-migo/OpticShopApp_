@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 
 // This client is intended for Route Handlers and Server Actions
 // where setting/removing cookies might be necessary.
-export function createClient() {
+export async function createClient() {
   const cookieStore = cookies()
 
   // Ensure environment variables are defined
@@ -22,21 +22,21 @@ export function createClient() {
     supabaseAnonKey,
     {
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
+        async get(name: string) {
+          return (await cookies()).get(name)?.value
         },
-        set(name: string, value: string, options: CookieOptions) {
+        async set(name: string, value: string, options: CookieOptions) {
           try {
-            cookieStore.set({ name, value, ...options })
+            (await cookies()).set({ name, value, ...options })
           } catch (error) {
             // The `set` method was called from a context where cookies
             // cannot be set, such as a Server Component.
             // This can be ignored if middleware handles cookie updates.
           }
         },
-        remove(name: string, options: CookieOptions) {
+        async remove(name: string, options: CookieOptions) {
           try {
-            cookieStore.set({ name, value: '', ...options })
+            (await cookies()).set({ name, value: '', ...options })
           } catch (error) {
             // The `delete` method was called from a context where cookies
             // cannot be set, such as a Server Component.

@@ -10,10 +10,14 @@ let defaultLocale = i18n.defaultLocale;
 function getLocale(request: NextRequest): string {
   const negotiatorHeaders: Record<string, string> = {};
   request.headers.forEach((value, key) => (negotiatorHeaders[key] = value));
+  console.log('getLocale - Negotiator Headers:', negotiatorHeaders); // Added logging
 
   const languages = new Negotiator({ headers: negotiatorHeaders }).languages();
+  console.log('getLocale - Languages:', languages); // Added logging
 
-  return match(languages, locales, defaultLocale);
+  const matchedLocale = match(languages, locales, defaultLocale);
+  console.log('getLocale - Matched Locale:', matchedLocale); // Added logging
+  return matchedLocale;
 }
 
 export async function middleware(request: NextRequest) {
@@ -28,21 +32,6 @@ export async function middleware(request: NextRequest) {
   if (isLandingPage) {
     return NextResponse.next();
   }
-
-  const pathnameIsMissingLocale = locales.every(
-    (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
-  );
-
-  // Redirect if there is no locale
-  if (pathnameIsMissingLocale) {
-    const locale = getLocale(request);
-
-    return NextResponse.redirect(
-      new URL(`/${locale}${pathname.startsWith('/') ? '' : '/'}${pathname}`, request.url)
-    );
-  }
-
-  console.log('Middleware - Pathname after locale check:', pathname);
 
   let response = NextResponse.next({
     request: {
@@ -81,6 +70,37 @@ export async function middleware(request: NextRequest) {
   );
 
   const { data: userData, error: userError } = await supabase.auth.getUser();
+  const isAuthenticated = !!userData.user;
+
+
+  const pathnameIsMissingLocale = locales.every(
+    (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
+  );
+
+  // If authenticated and pathname is missing locale (and not the root path itself),
+  // redirect to the default locale path.
+  // This handles cases like redirecting from /login to /dashboard after successful login.
+  if (isAuthenticated && pathnameIsMissingLocale && pathname !== '/') {
+      const locale = defaultLocale; // Use the default locale directly
+      console.log('Middleware - Authenticated user, redirecting to default locale:', locale);
+       return NextResponse.redirect(
+        new URL(`/${locale}${pathname.startsWith('/') ? '' : '/'}${pathname}`, request.url)
+      );
+  }
+
+
+  // Redirect if there is no locale (for non-authenticated users or root path)
+  if (pathnameIsMissingLocale) {
+    const locale = getLocale(request);
+    console.log('Middleware - Redirecting with locale:', locale); // Added logging
+
+    return NextResponse.redirect(
+      new URL(`/${locale}${pathname.startsWith('/') ? '' : '/'}${pathname}`, request.url)
+    );
+  }
+
+  console.log('Middleware - Pathname after locale check:', pathname);
+
 
   if (userData?.user) {
     const { data: profileData, error: profileError } = await supabase

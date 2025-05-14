@@ -20,15 +20,15 @@ function createClientWithServiceRole() {
     {
       cookies: {
         async get(name: string) {
-          const cookieStore = cookies();
+          const cookieStore = await cookies();
           return cookieStore.get(name)?.value;
         },
         async set(name: string, value: string, options: any) {
-          const cookieStore = cookies();
+          const cookieStore = await cookies();
           cookieStore.set({ name, value, ...options });
         },
         async remove(name: string, options: any) {
-          const cookieStore = cookies();
+          const cookieStore = await cookies();
           cookieStore.set({ name, value: '', ...options });
         },
       },

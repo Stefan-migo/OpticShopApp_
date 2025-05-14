@@ -61,6 +61,7 @@ interface SidebarLayoutContentProps {
   userRole: string;
   isSuperuser: boolean; // Add isSuperuser prop to the interface
   userTenantId: string | null; // Add userTenantId prop to the interface
+  tenantName: string | null; // Add tenantName prop
   // navItems now expects 'icon' to be a string key for iconMap
   navItems: { href: string; label: string; icon: string }[];
   dictionary: Dictionary;
@@ -72,6 +73,7 @@ const SidebarLayoutContent: React.FC<SidebarLayoutContentProps> = ({
   userRole,
   isSuperuser, // Accept isSuperuser prop
   userTenantId, // Accept userTenantId prop
+  tenantName, // Accept tenantName prop
   navItems,
   dictionary,
 }) => {
@@ -166,11 +168,11 @@ const SidebarLayoutContent: React.FC<SidebarLayoutContentProps> = ({
             {/* Breadcrumb */}
             <Breadcrumb>
               <BreadcrumbList>
-                {/* Home link */}
+                {/* Home link - Use tenantName if available, otherwise fallback to Dashboard */}
                 <BreadcrumbItem>
                   <BreadcrumbLink asChild>
                     <Link href={`/${lang}/dashboard`}>
-                      {dictionary.navigation.dashboard || 'Dashboard'} {/* Use dictionary for Home link */}
+                      {tenantName || dictionary.navigation.dashboard || 'Dashboard'} {/* Use tenantName here */}
                     </Link>
                   </BreadcrumbLink>
                 </BreadcrumbItem>
@@ -178,7 +180,8 @@ const SidebarLayoutContent: React.FC<SidebarLayoutContentProps> = ({
                 {usePathname().split('/').filter(segment => segment !== lang && segment !== '(app)' && segment !== '').map((segment: string, index: number, segments: string[]) => {
                   const isLastSegment = index === segments.length - 1;
                   const href = `/${lang}/${segments.slice(0, index + 1).join('/')}`; // Construct href for intermediate links
-                  const segmentText = segment.replace(/-/g, ' '); // Replace hyphens with spaces for readability
+                  // Attempt to get translation, fallback to segment text with spaces
+                  const segmentText = dictionary.navigation?.[segment as keyof typeof dictionary.navigation] || segment.replace(/-/g, ' ');
 
                   return (
                     <React.Fragment key={segment}>

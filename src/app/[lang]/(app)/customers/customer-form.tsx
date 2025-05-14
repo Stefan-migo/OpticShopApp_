@@ -69,6 +69,27 @@ export function CustomerForm({ initialData, onSuccess, dictionary }: CustomerFor
   async function onSubmit(values: CustomerFormValues) {
     try {
       let error = null;
+
+      // Fetch the current user and their tenant_id
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        throw new Error(dictionary.customers.form.userFetchError || "Could not fetch user information."); // Use dictionary
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('tenant_id')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError || !profile?.tenant_id) {
+         throw new Error(dictionary.customers.form.tenantFetchError || "Could not fetch user's tenant information."); // Use dictionary
+      }
+
+      const userTenantId = profile.tenant_id;
+
+
       if (isEditing) {
         // Update logic
         const { error: updateError } = await supabase
@@ -95,6 +116,7 @@ export function CustomerForm({ initialData, onSuccess, dictionary }: CustomerFor
               email: values.email || null,
               phone: values.phone || null,
               notes: values.notes || null,
+              tenant_id: userTenantId, // Include the user's tenant_id
               // Add address fields if using them
             },
           ]);

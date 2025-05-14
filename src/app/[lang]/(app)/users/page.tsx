@@ -1,132 +1,78 @@
 "use client"; // Needs client-side hooks
 
-import * as React from "react";
-import { getUserManagementColumns, type UserProfile } from "./columns"; // Import columns and type
-import { DataTable } from "@/components/ui/data-table";
-import { createClient } from "@/lib/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
-import { useRouter } from "next/navigation"; // For redirecting non-admins
-import Cookies from 'js-cookie'; // Import js-cookie
+"use client";
 
-// Define type for available roles
+import * as React from "react";
+import { getUserManagementColumns, type UserProfile } from "./columns";
+import { DataTable } from "@/components/ui/data-table";
+import { useToast } from "@/components/ui/use-toast";
+import { useRouter } from "next/navigation";
+import { useDictionary } from "@/lib/i18n/dictionary-context";
+import { fetchUsersForAdmin, updateUserRole, type FetchUsersResult } from "@/app/actions/users"; // Import Server Actions and types
+
+// Define type for available roles (matches the type returned by fetchUsersForAdmin)
 type RoleOption = {
     id: string;
     name: string;
 };
 
-export default function AdminUsersPage() {
-  const supabase = createClient();
+// Define props for the page component to receive searchParams
+interface AdminUsersPageProps {
+    searchParams?: { [key: string]: string | string[] | undefined };
+}
+
+export default function AdminUsersPage({ searchParams }: AdminUsersPageProps) {
   const { toast } = useToast();
   const router = useRouter();
+  const dictionary = useDictionary();
   const [data, setData] = React.useState<UserProfile[]>([]);
   const [roles, setRoles] = React.useState<RoleOption[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
-  // Fetch user profiles and available roles
+  // Fetch user profiles and available roles using the Server Action
   const fetchData = React.useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-        // Read superuser and selected tenant cookies
-        const isSuperuser = Cookies.get('is_superuser') === 'true';
-        const selectedTenantId = Cookies.get('selected_tenant_id');
-
-        // Check current user's role first (client-side check, RLS is the main guard)
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error("User not authenticated");
-
-        const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('roles ( name )')
-            .eq('id', user.id)
-            .maybeSingle(); // Use maybeSingle for robustness
-
-        // Explicitly check the shape of profileData and profileData.roles
-        const userRoleName = (profileData?.roles && typeof profileData.roles === 'object' && !Array.isArray(profileData.roles))
-            ? (profileData.roles as { name: string | null }).name
-            : null;
-
-        if (profileError || userRoleName !== 'admin') {
-             toast({ title: "Access Denied", description: "You must be an admin to view this page.", variant: "destructive" });
-             router.push('/dashboard');
-             return;
-        }
-
-        // Fetch all roles
-        const { data: rolesData, error: rolesError } = await supabase
-            .from('roles')
-            .select('id, name');
-        if (rolesError) throw rolesError;
-        setRoles(rolesData || []);
-
-        // Fetch all profiles with their roles
-        // NOTE: This requires admin privileges or specific RLS allowing admins to read all profiles/roles
-        // We also need the user's email from the auth.users table. This requires a more complex query or separate fetches.
-        // For simplicity now, we fetch profiles+roles, but email will be missing.
-        // A better approach might use an Edge Function with service_role key.
-        let profilesQuery = supabase
-            .from('profiles')
-            .select(`
-                id,
-                role_id,
-                roles ( id, name )
-            `); // Email needs to be fetched separately or via a view/function
-
-        // Apply tenant filter if superuser and a tenant is selected
-        if (isSuperuser && selectedTenantId) {
-            profilesQuery = profilesQuery.eq('tenant_id', selectedTenantId);
-        }
-        // Note: For non-superusers, RLS policies will automatically filter by their tenant_id
-
-        const { data: profilesData, error: usersError } = await profilesQuery;
-
-        if (usersError) throw usersError;
-
-        // TODO: Fetch emails from auth.users separately and merge (requires admin API)
-        // For now, email will be missing in the table
-        // Also apply type checking for roles join here
-         const typedProfilesData = profilesData?.map(profile => ({
-            ...profile,
-            roles: (profile.roles && typeof profile.roles === 'object' && !Array.isArray(profile.roles))
-                ? profile.roles as { id: string; name: string }
-                : null,
-        })) || [];
-        setData(typedProfilesData as UserProfile[]);
-
+        // Fetch users and roles using the Server Action, passing searchParams
+        const result: FetchUsersResult = await fetchUsersForAdmin(searchParams);
+        setData(result.users);
+        setRoles(result.roles);
 
     } catch (err: any) {
         console.error("Error loading user management data:", err);
-        setError(err.message || "Failed to load data.");
-        setData([]);
-        setRoles([]);
+        // Check if the error is due to unauthorized access from the Server Action
+        if (err.message === "Unauthorized access. User is not an admin or superuser.") {
+             toast({ title: dictionary.userManagement.accessDeniedTitle, description: dictionary.userManagement.accessDeniedDescription, variant: "destructive" });
+             router.push('/dashboard');
+        } else {
+            setError(err.message || dictionary.userManagement.failedToLoadData);
+            setData([]);
+            setRoles([]);
+        }
     } finally {
         setIsLoading(false);
     }
-  }, [supabase, toast, router]);
+  }, [toast, router, dictionary, searchParams]); // Add searchParams to dependencies
 
   React.useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  // Handler for changing user role
+  // Handler for changing user role using the Server Action
   const handleChangeRole = async (userId: string, newRoleId: string) => {
      try {
-        const { error } = await supabase
-            .from('profiles')
-            .update({ role_id: newRoleId })
-            .eq('id', userId);
+        await updateUserRole(userId, newRoleId); // Call the Server Action
 
-        if (error) throw error;
-
-        toast({ title: "User role updated successfully." });
+        toast({ title: dictionary.userManagement.roleUpdateSuccess });
         fetchData(); // Refresh data
      } catch (err: any) {
          console.error("Error updating role:", err);
          toast({
-            title: "Error updating role",
-            description: err.message || "An unexpected error occurred.",
+            title: dictionary.userManagement.roleUpdateErrorTitle,
+            description: err.message || dictionary.userManagement.unexpectedError,
             variant: "destructive",
          });
      }
@@ -134,17 +80,17 @@ export default function AdminUsersPage() {
 
   // Generate columns
   const columns = React.useMemo(
-    () => getUserManagementColumns({ availableRoles: roles, onChangeRole: handleChangeRole }),
-    [roles] // Re-generate columns if roles change (unlikely but good practice)
+    () => getUserManagementColumns({ availableRoles: roles, onChangeRole: handleChangeRole, dictionary }),
+    [roles, dictionary]
   );
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold">User Management</h1>
+      <h1 className="text-2xl font-semibold">{dictionary.userManagement.title}</h1>
       {/* TODO: Add Invite User button/dialog */}
        {isLoading ? (
         <div className="border shadow-sm rounded-lg p-4 text-center text-muted-foreground">
-          Loading users...
+          {dictionary.userManagement.loadingUsers}
         </div>
       ) : error ? (
         <div className="border shadow-sm rounded-lg p-4 text-center text-red-600">
@@ -154,8 +100,8 @@ export default function AdminUsersPage() {
         <DataTable
           columns={columns}
           data={data}
-          filterColumnKey="email" // Filtering might not work well without email fetched
-          filterPlaceholder="Filter by email..."
+          filterColumnKey="email"
+          filterPlaceholder={dictionary.userManagement.filterEmailPlaceholder}
         />
       )}
     </div>

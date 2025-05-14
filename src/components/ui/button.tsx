@@ -16,14 +16,14 @@ const buttonVariants = cva(
           "border-border bg-card text-muted-foreground hover:bg-accent hover:text-accent-foreground", // Adjusted border and background
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80", // Adjusted background and text
-        ghost: "hover:bg-accent hover:text-accent-foreground", // Keep ghost as is for now
+        ghost: "text-card-foreground hover:bg-accent hover:text-accent-foreground", // Added default text color
         link: "text-primary underline-offset-4 hover:underline", // Keep link as is for now
       },
       size: {
         default: "h-10 px-4 py-2",
         sm: "h-9 rounded-md px-3", // Keep rounded-md for smaller size
         lg: "h-11 rounded-md px-8", // Keep rounded-md for larger size
-        icon: "h-10 w-10 rounded-full", // Added rounded-full for icon size
+        icon: "h-10 w-10 rounded-full text-muted-foreground", // Added rounded-full for icon size
       },
     },
     defaultVariants: {

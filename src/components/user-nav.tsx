@@ -30,8 +30,6 @@ interface UserNavProps {
 }
 
 export function UserNav({ userRole = "User", isSuperuser, userTenantId }: UserNavProps) { // Accept isSuperuser and userTenantId props
-  console.log('UserNav - Received isSuperuser prop:', isSuperuser); // Debugging log
-  console.log('UserNav - Received userTenantId prop:', userTenantId); // Debugging log
   const router = useRouter();
   const supabase = createClient();
   const { toast } = useToast();
@@ -61,7 +59,7 @@ const handleLogout = async () => {
       });
     } else {
       // Redirect to login page with locale and refresh to clear server state
-      router.push(`/${params.lang}/login`); // Use the params variable
+      router.push(`/${params.lang}/landing`); // Use the params variable
       router.refresh();
       toast({ title: "Logged out successfully." });
     }

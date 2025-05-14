@@ -6,26 +6,42 @@
     --radius: 0.75rem;
 
     /* Base Light Theme CSS Variables */
-    --background: 0 0% 98%;
-    --background-color: 0 0% 98%; /* Added for clarity if used directly */
+    --background-solid: 0 0% 98%;
+    --background: linear-gradient(to bottom right, hsl(0 0% 98%), hsl(0 0% 95%));
     --foreground: 220 15% 12%;
-    --card: 0 0% 100%;
+
+    --card-solid: 0 0% 100%;
+    --card: linear-gradient(to bottom right, hsl(0 0% 100%), hsl(0 0% 97%));
     --card-foreground: 220 15% 12%;
-    --popover: 0 0% 100%;
+
+    --popover-solid: 0 0% 100%;
+    --popover: linear-gradient(to bottom right, hsl(0 0% 100%), hsl(0 0% 97%));
     --popover-foreground: 220 15% 12%;
-    --primary: 210 80% 50%;
+
+    --primary-solid: 210 80% 50%;
+    --primary: linear-gradient(to right, hsl(210 80% 50%), hsl(210 80% 45%));
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 10% 90%;
+
+    --secondary-solid: 210 10% 90%;
+    --secondary: linear-gradient(to right, hsl(210 10% 90%), hsl(210 10% 87%));
     --secondary-foreground: 220 15% 12%;
-    --muted: 210 40% 96%;
+
+    --muted-solid: 210 40% 96%;
+    --muted: linear-gradient(to bottom right, hsl(210 40% 96%), hsl(210 40% 93%));
     --muted-foreground: 210 30% 45%;
-    --accent: 200 80% 65%;
+
+    --accent-solid: 200 80% 65%;
+    --accent: linear-gradient(to right, hsl(200 80% 65%), hsl(200 80% 60%));
     --accent-foreground: 220 15% 12%;
-    --destructive: 0 80% 50%;
+
+    --destructive-solid: 0 80% 50%;
+    --destructive: linear-gradient(to right, hsl(0 80% 50%), hsl(0 80% 45%));
     --destructive-foreground: 0 0% 98%;
-    --border: 210 40% 90%;
-    --input: 210 40% 96%;
-    --ring: 210 80% 50%;
+
+    --border: 210 40% 90%; /* Stays solid */
+    --input-solid: 210 40% 96%; /* Stays solid, or very subtle gradient if desired */
+    --input: hsl(var(--input-solid)); /* Default to solid for inputs for simplicity */
+    --ring: 210 80% 50%; /* Stays solid, used for outlines */
 
     /* Neumorphic Shadow Variables (Light Theme) */
     --shadow-light: hsl(0 0% 100% / 1);
@@ -35,24 +51,41 @@
 
 .dark {
     /* Dark Theme CSS Variables */
-    --background: 220 15% 12%;
+    --background-solid: 220 15% 12%;
+    --background: linear-gradient(to bottom right, hsl(220 15% 12%), hsl(220 15% 10%));
     --foreground: 0 0% 95%;
-    --card: 220 15% 18%;
+
+    --card-solid: 220 15% 18%;
+    --card: linear-gradient(to bottom right, hsl(220 15% 18%), hsl(220 15% 16%));
     --card-foreground: 0 0% 95%;
-    --popover: 220 15% 18%;
+
+    --popover-solid: 220 15% 18%;
+    --popover: linear-gradient(to bottom right, hsl(220 15% 18%), hsl(220 15% 16%));
     --popover-foreground: 0 0% 95%;
-    --primary: 210 90% 55%;
+
+    --primary-solid: 210 90% 55%;
+    --primary: linear-gradient(to right, hsl(210 90% 55%), hsl(210 90% 50%));
     --primary-foreground: 220 15% 12%;
-    --secondary: 220 10% 30%;
+
+    --secondary-solid: 220 10% 30%;
+    --secondary: linear-gradient(to right, hsl(220 10% 30%), hsl(220 10% 27%));
     --secondary-foreground: 0 0% 85%;
-    --muted: 220 10% 25%;
+
+    --muted-solid: 220 10% 25%;
+    --muted: linear-gradient(to bottom right, hsl(220 10% 25%), hsl(220 10% 22%));
     --muted-foreground: 210 30% 55%;
-    --accent: 200 80% 55%;
+
+    --accent-solid: 200 80% 55%;
+    --accent: linear-gradient(to right, hsl(200 80% 55%), hsl(200 80% 50%));
     --accent-foreground: 0 0% 98%;
-    --destructive: 0 70% 55%;
+
+    --destructive-solid: 0 70% 55%;
+    --destructive: linear-gradient(to right, hsl(0 70% 55%), hsl(0 70% 50%));
     --destructive-foreground: 0 0% 95%;
+
     --border: 220 15% 30%;
-    --input: 220 15% 25%;
+    --input-solid: 220 15% 25%;
+    --input: hsl(var(--input-solid));
     --ring: 210 90% 55%;
 
     /* Neumorphic Shadow Variables (Dark Theme) */
@@ -64,56 +97,70 @@
 /* --- Existing Custom Themes --- */
 
 .forest {
-    /* Forest Theme CSS Variables (Example HSL values) */
-    --background: 120 30% 95%; /* Light green background */
-    --foreground: 140 40% 20%; /* Dark green text */
-    --card: 120 30% 98%; /* Slightly lighter card background */
+    --background-solid: 120 30% 95%;
+    --background: linear-gradient(to bottom right, hsl(120 30% 95%), hsl(120 30% 92%));
+    --foreground: 140 40% 20%;
+    --card-solid: 120 30% 98%;
+    --card: linear-gradient(to bottom right, hsl(120 30% 98%), hsl(120 30% 95%));
     --card-foreground: 140 40% 20%;
-    --popover: 120 30% 98%;
+    --popover-solid: 120 30% 98%;
+    --popover: linear-gradient(to bottom right, hsl(120 30% 98%), hsl(120 30% 95%));
     --popover-foreground: 140 40% 20%;
-    --primary: 140 60% 40%; /* Forest green accent */
+    --primary-solid: 140 60% 40%;
+    --primary: linear-gradient(to right, hsl(140 60% 40%), hsl(140 60% 35%));
     --primary-foreground: 0 0% 100%;
-    --secondary: 130 20% 85%;
+    --secondary-solid: 130 20% 85%;
+    --secondary: linear-gradient(to right, hsl(130 20% 85%), hsl(130 20% 82%));
     --secondary-foreground: 140 40% 20%;
-    --muted: 120 20% 90%;
+    --muted-solid: 120 20% 90%;
+    --muted: linear-gradient(to bottom right, hsl(120 20% 90%), hsl(120 20% 87%));
     --muted-foreground: 140 30% 40%;
-    --accent: 150 50% 50%;
+    --accent-solid: 150 50% 50%;
+    --accent: linear-gradient(to right, hsl(150 50% 50%), hsl(150 50% 45%));
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 80% 50%;
+    --destructive-solid: 0 80% 50%;
+    --destructive: linear-gradient(to right, hsl(0 80% 50%), hsl(0 80% 45%));
     --destructive-foreground: 0 0% 98%;
     --border: 130 20% 80%;
-    --input: 120 20% 90%;
+    --input-solid: 120 20% 90%;
+    --input: hsl(var(--input-solid));
     --ring: 140 60% 40%;
 
-    /* Neumorphic Shadow Variables (Forest Theme) */
     --shadow-light: hsl(120 30% 100% / 0.9);
     --shadow-dark: hsl(140 20% 60% / 0.3);
     color-scheme: light;
 }
 
 .earthy-teal {
-    /* Earthy Teal Theme CSS Variables (Example HSL values) */
-    --background: 40 20% 95%; /* Light earthy background */
-    --foreground: 180 30% 20%; /* Dark teal text */
-    --card: 40 20% 98%;
+    --background-solid: 40 20% 95%;
+    --background: linear-gradient(to bottom right, hsl(40 20% 95%), hsl(40 20% 92%));
+    --foreground: 180 30% 20%;
+    --card-solid: 40 20% 98%;
+    --card: linear-gradient(to bottom right, hsl(40 20% 98%), hsl(40 20% 95%));
     --card-foreground: 180 30% 20%;
-    --popover: 40 20% 98%;
+    --popover-solid: 40 20% 98%;
+    --popover: linear-gradient(to bottom right, hsl(40 20% 98%), hsl(40 20% 95%));
     --popover-foreground: 180 30% 20%;
-    --primary: 180 60% 40%; /* Teal accent */
+    --primary-solid: 180 60% 40%;
+    --primary: linear-gradient(to right, hsl(180 60% 40%), hsl(180 60% 35%));
     --primary-foreground: 0 0% 100%;
-    --secondary: 30 20% 85%; /* Muted earthy secondary */
+    --secondary-solid: 30 20% 85%;
+    --secondary: linear-gradient(to right, hsl(30 20% 85%), hsl(30 20% 80%));
     --secondary-foreground: 180 30% 20%;
-    --muted: 40 10% 90%;
+    --muted-solid: 40 10% 90%;
+    --muted: linear-gradient(to bottom right, hsl(40 10% 90%), hsl(40 10% 87%));
     --muted-foreground: 180 30% 40%;
-    --accent: 50 50% 50%; /* Earthy accent */
+    --accent-solid: 50 50% 50%;
+    --accent: linear-gradient(to right, hsl(50 50% 50%), hsl(50 50% 45%));
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 80% 50%;
+    --destructive-solid: 0 80% 50%;
+    --destructive: linear-gradient(to right, hsl(0 80% 50%), hsl(0 80% 45%));
     --destructive-foreground: 0 0% 98%;
     --border: 30 20% 80%;
-    --input: 40 10% 90%;
+    --input-solid: 40 10% 90%;
+    --input: hsl(var(--input-solid));
     --ring: 180 60% 40%;
 
-    /* Neumorphic Shadow Variables (Earthy Teal Theme) */
     --shadow-light: hsl(40 20% 100% / 0.9);
     --shadow-dark: hsl(180 20% 60% / 0.3);
     color-scheme: light;
@@ -122,51 +169,69 @@
 /* --- New Custom Themes Based on Provided Palettes --- */
 
 .cool-neutrals { /* Palette 1: 30393E, 988F88, F8E5D7, D5C1B6, FAEFEB, F8BD97 */
-    --background: 210 33% 96%; /* FAEFEB */
+    --background-solid: 210 33% 96%; /* FAEFEB */
+    --background: linear-gradient(to bottom right, hsl(210 33% 96%), hsl(210 30% 93%));
     --foreground: 210 11% 22%; /* 30393E */
-    --card: 30 56% 91%;       /* F8E5D7 */
+    --card-solid: 30 56% 91%;       /* F8E5D7 */
+    --card: linear-gradient(to bottom right, hsl(30 56% 91%), hsl(30 50% 88%));
     --card-foreground: 210 11% 22%; /* 30393E */
-    --popover: 30 56% 91%;      /* F8E5D7 */
+    --popover-solid: 30 56% 91%;      /* F8E5D7 */
+    --popover: linear-gradient(to bottom right, hsl(30 56% 91%), hsl(30 50% 88%));
     --popover-foreground: 210 11% 22%; /* 30393E */
-    --primary: 27 83% 81%;      /* F8BD97 */
+    --primary-solid: 27 83% 81%;      /* F8BD97 */
+    --primary: linear-gradient(to right, hsl(27 83% 81%), hsl(27 80% 76%));
     --primary-foreground: 210 11% 22%; /* 30393E for contrast on light orange */
-    --secondary: 26 25% 77%;    /* D5C1B6 */
+    --secondary-solid: 26 25% 77%;    /* D5C1B6 */
+    --secondary: linear-gradient(to right, hsl(26 25% 77%), hsl(26 22% 72%));
     --secondary-foreground: 210 11% 22%; /* 30393E */
-    --muted: 31 7% 56%;        /* 988F88 */
+    --muted-solid: 31 7% 56%;        /* 988F88 */
+    --muted: linear-gradient(to bottom right, hsl(31 7% 56%), hsl(31 5% 53%));
     --muted-foreground: 210 11% 35%; /* Slightly lighter than main foreground */
-    --accent: 27 83% 81%;       /* F8BD97 */
+    --accent-solid: 27 83% 81%;       /* F8BD97 */
+    --accent: linear-gradient(to right, hsl(27 83% 81%), hsl(27 80% 76%));
     --accent-foreground: 210 11% 22%; /* 30393E */
-    --destructive: 0 80% 50%; /* Reusing default light theme destructive */
+    --destructive-solid: 0 80% 50%;
+    --destructive: linear-gradient(to right, hsl(0 80% 50%), hsl(0 80% 45%));
     --destructive-foreground: 0 0% 98%;
-    --border: 26 25% 85%;    /* Lighter D5C1B6 */
-    --input: 30 56% 93%;       /* Lighter F8E5D7 */
-    --ring: 27 83% 70%;       /* Darker F8BD97 */
+    --border: 26 25% 85%;
+    --input-solid: 30 56% 93%;
+    --input: hsl(var(--input-solid));
+    --ring: 27 83% 70%;
 
-    --shadow-light: hsl(210 33% 100% / 0.9); /* Lighter than background */
-    --shadow-dark: hsl(210 15% 75% / 0.25);  /* Darker, muted version of background base */
+    --shadow-light: hsl(210 33% 100% / 0.9);
+    --shadow-dark: hsl(210 15% 75% / 0.25);
     color-scheme: light;
 }
 
 .terracotta-sun { /* Palette 2: 022D33, 24413F, B9654B, 914C2F, D3A687, FADEC6 */
-    --background: 30 75% 88%;  /* FADEC6 */
+    --background-solid: 30 75% 88%;  /* FADEC6 */
+    --background: linear-gradient(to bottom right, hsl(30 75% 88%), hsl(30 70% 85%));
     --foreground: 190 93% 11%; /* 022D33 */
-    --card: 30 75% 92%;       /* Lighter FADEC6 */
+    --card-solid: 30 75% 92%;       /* Lighter FADEC6 */
+    --card: linear-gradient(to bottom right, hsl(30 75% 92%), hsl(30 70% 89%));
     --card-foreground: 190 93% 11%; /* 022D33 */
-    --popover: 30 75% 92%;      /* Lighter FADEC6 */
+    --popover-solid: 30 75% 92%;      /* Lighter FADEC6 */
+    --popover: linear-gradient(to bottom right, hsl(30 75% 92%), hsl(30 70% 89%));
     --popover-foreground: 190 93% 11%; /* 022D33 */
-    --primary: 15 46% 51%;      /* B9654B */
+    --primary-solid: 15 46% 51%;      /* B9654B */
+    --primary: linear-gradient(to right, hsl(15 46% 51%), hsl(15 46% 46%));
     --primary-foreground: 30 75% 95%; /* Very light for contrast on terracotta */
-    --secondary: 16 50% 37%;    /* 914C2F */
+    --secondary-solid: 16 50% 37%;    /* 914C2F */
+    --secondary: linear-gradient(to right, hsl(16 50% 37%), hsl(16 50% 32%));
     --secondary-foreground: 30 75% 95%; /* Very light */
-    --muted: 29 43% 65%;       /* D3A687 */
+    --muted-solid: 29 43% 65%;       /* D3A687 */
+    --muted: linear-gradient(to bottom right, hsl(29 43% 65%), hsl(29 40% 62%));
     --muted-foreground: 174 30% 20%; /* 24413F */
-    --accent: 29 43% 55%;       /* Darker D3A687 */
+    --accent-solid: 29 43% 55%;       /* Darker D3A687 */
+    --accent: linear-gradient(to right, hsl(29 43% 55%), hsl(29 40% 50%));
     --accent-foreground: 190 93% 11%; /* 022D33 */
-    --destructive: 0 80% 50%;
+    --destructive-solid: 0 80% 50%;
+    --destructive: linear-gradient(to right, hsl(0 80% 50%), hsl(0 80% 45%));
     --destructive-foreground: 0 0% 98%;
-    --border: 29 43% 75%;    /* Lighter D3A687 */
-    --input: 30 75% 90%;      /* Slightly darker FADEC6 */
-    --ring: 15 46% 45%;       /* Darker B9654B */
+    --border: 29 43% 75%;
+    --input-solid: 30 75% 90%;
+    --input: hsl(var(--input-solid));
+    --ring: 15 46% 45%;
 
     --shadow-light: hsl(30 75% 98% / 0.9);
     --shadow-dark: hsl(30 30% 70% / 0.25);
@@ -174,80 +239,107 @@
 }
 
 .twilight-indigo { /* Palette 3: 1033EA (assuming), 3D4D55, A79E9C, D3C3B9, B58863, 161616 */
-    --background: 0 0% 8%;      /* 161616 */
+    --background-solid: 0 0% 8%;      /* 161616 */
+    --background: linear-gradient(to bottom right, hsl(0 0% 8%), hsl(0 0% 6%));
     --foreground: 26 25% 83%;    /* D3C3B9 */
-    --card: 208 16% 29%;     /* 3D4D55 */
+    --card-solid: 208 16% 29%;     /* 3D4D55 */
+    --card: linear-gradient(to bottom right, hsl(208 16% 29%), hsl(208 16% 26%));
     --card-foreground: 26 25% 83%; /* D3C3B9 */
-    --popover: 208 16% 29%;    /* 3D4D55 */
+    --popover-solid: 208 16% 29%;    /* 3D4D55 */
+    --popover: linear-gradient(to bottom right, hsl(208 16% 29%), hsl(208 16% 26%));
     --popover-foreground: 26 25% 83%; /* D3C3B9 */
-    --primary: 230 82% 48%;    /* 1033EA (approx HSL for a vibrant blue like image) */
+    --primary-solid: 230 82% 48%;    /* 1033EA (approx HSL for a vibrant blue like image) */
+    --primary: linear-gradient(to right, hsl(230 82% 48%), hsl(230 82% 43%));
     --primary-foreground: 0 0% 95%; /* White/vlight gray for contrast */
-    --secondary: 27 36% 55%;   /* B58863 */
+    --secondary-solid: 27 36% 55%;   /* B58863 */
+    --secondary: linear-gradient(to right, hsl(27 36% 55%), hsl(27 36% 50%));
     --secondary-foreground: 0 0% 8%; /* 161616 for contrast on beige */
-    --muted: 15 6% 43%;       /* Darker A79E9C for muted bg elements */
+    --muted-solid: 15 6% 43%;       /* Darker A79E9C for muted bg elements */
+    --muted: linear-gradient(to bottom right, hsl(15 6% 43%), hsl(15 6% 40%));
     --muted-foreground: 15 6% 73%;    /* Lighter A79E9C for text on muted */
-    --accent: 27 36% 55%;      /* B58863 */
+    --accent-solid: 27 36% 55%;      /* B58863 */
+    --accent: linear-gradient(to right, hsl(27 36% 55%), hsl(27 36% 50%));
     --accent-foreground: 0 0% 8%;  /* 161616 */
-    --destructive: 0 70% 55%; /* Reusing default dark theme destructive */
+    --destructive-solid: 0 70% 55%;
+    --destructive: linear-gradient(to right, hsl(0 70% 55%), hsl(0 70% 50%));
     --destructive-foreground: 0 0% 95%;
-    --border: 208 16% 20%;    /* Darker 3D4D55 */
-    --input: 208 16% 25%;     /* Slightly lighter 3D4D55 for input fields */
-    --ring: 230 82% 55%;      /* Brighter 1033EA */
+    --border: 208 16% 20%;
+    --input-solid: 208 16% 25%;
+    --input: hsl(var(--input-solid));
+    --ring: 230 82% 55%;
 
-    --shadow-light: hsl(208 16% 35% / 0.8); /* Lighter version of card bg */
-    --shadow-dark: hsl(0 0% 3% / 0.6);    /* Very dark, almost black */
+    --shadow-light: hsl(208 16% 35% / 0.8);
+    --shadow-dark: hsl(0 0% 3% / 0.6);
     color-scheme: dark;
 }
 
 .vibrant-green { /* Palette 4: 032820, 80A416, C5C764, 08652C, AD9F3C, 5E7343 */
-    --background: 162 87% 8%;  /* 032820 */
+    --background-solid: 162 87% 8%;  /* 032820 */
+    --background: linear-gradient(to bottom right, hsl(162 87% 8%), hsl(162 87% 6%));
     --foreground: 61 40% 58%;   /* C5C764 */
-    --card: 148 86% 21%;     /* 08652C */
+    --card-solid: 148 86% 21%;     /* 08652C */
+    --card: linear-gradient(to bottom right, hsl(148 86% 21%), hsl(148 86% 18%));
     --card-foreground: 61 40% 58%; /* C5C764 */
-    --popover: 148 86% 21%;    /* 08652C */
+    --popover-solid: 148 86% 21%;    /* 08652C */
+    --popover: linear-gradient(to bottom right, hsl(148 86% 21%), hsl(148 86% 18%));
     --popover-foreground: 61 40% 58%; /* C5C764 */
-    --primary: 74 77% 36%;     /* 80A416 */
+    --primary-solid: 74 77% 36%;     /* 80A416 */
+    --primary: linear-gradient(to right, hsl(74 77% 36%), hsl(74 77% 31%));
     --primary-foreground: 162 87% 90%; /* Very light green/white for contrast */
-    --secondary: 52 49% 45%;   /* AD9F3C */
+    --secondary-solid: 52 49% 45%;   /* AD9F3C */
+    --secondary: linear-gradient(to right, hsl(52 49% 45%), hsl(52 49% 40%));
     --secondary-foreground: 162 87% 8%; /* 032820 for contrast on mustard */
-    --muted: 80 25% 36%;      /* 5E7343 */
+    --muted-solid: 80 25% 36%;      /* 5E7343 */
+    --muted: linear-gradient(to bottom right, hsl(80 25% 36%), hsl(80 25% 33%));
     --muted-foreground: 61 40% 70%; /* Lighter C5C764 for text on muted */
-    --accent: 52 49% 45%;      /* AD9F3C */
+    --accent-solid: 52 49% 45%;      /* AD9F3C */
+    --accent: linear-gradient(to right, hsl(52 49% 45%), hsl(52 49% 40%));
     --accent-foreground: 162 87% 8%; /* 032820 */
-    --destructive: 0 70% 55%;
+    --destructive-solid: 0 70% 55%;
+    --destructive: linear-gradient(to right, hsl(0 70% 55%), hsl(0 70% 50%));
     --destructive-foreground: 0 0% 95%;
-    --border: 80 25% 25%;     /* Darker 5E7343 */
-    --input: 148 86% 15%;      /* Darker 08652C */
-    --ring: 74 77% 40%;        /* Brighter 80A416 */
+    --border: 80 25% 25%;
+    --input-solid: 148 86% 15%;
+    --input: hsl(var(--input-solid));
+    --ring: 74 77% 40%;
 
-    --shadow-light: hsl(148 70% 30% / 0.8); /* Lighter green shadow */
-    --shadow-dark: hsl(162 90% 3% / 0.6);  /* Very dark green shadow */
+    --shadow-light: hsl(148 70% 30% / 0.8);
+    --shadow-dark: hsl(162 90% 3% / 0.6);
     color-scheme: dark;
 }
 
 .crimson-steel { /* Palette 5: E22227, C7080C, 6C0102, 440101, 222B31, 55666E */
-    --background: 212 17% 16%; /* 222B31 */
+    --background-solid: 212 17% 16%; /* 222B31 */
+    --background: linear-gradient(to bottom right, hsl(212 17% 16%), hsl(212 17% 13%));
     --foreground: 0 0% 85%;    /* A light gray for general text */
-    --card: 206 13% 38%;     /* 55666E */
+    --card-solid: 206 13% 38%;     /* 55666E */
+    --card: linear-gradient(to bottom right, hsl(206 13% 38%), hsl(206 13% 35%));
     --card-foreground: 0 0% 90%; /* Lighter gray */
-    --popover: 206 13% 38%;    /* 55666E */
+    --popover-solid: 206 13% 38%;    /* 55666E */
+    --popover: linear-gradient(to bottom right, hsl(206 13% 38%), hsl(206 13% 35%));
     --popover-foreground: 0 0% 90%;
-    --primary: 358 77% 51%;    /* E22227 */
+    --primary-solid: 358 77% 51%;    /* E22227 */
+    --primary: linear-gradient(to right, hsl(358 77% 51%), hsl(358 77% 46%));
     --primary-foreground: 0 0% 95%; /* White/vlight gray */
-    --secondary: 358 94% 40%;  /* C7080C */
+    --secondary-solid: 358 94% 40%;  /* C7080C */
+    --secondary: linear-gradient(to right, hsl(358 94% 40%), hsl(358 94% 35%));
     --secondary-foreground: 0 0% 95%;
-    --muted: 359 97% 21%;     /* 6C0102 - very dark red */
+    --muted-solid: 359 97% 21%;     /* 6C0102 - very dark red */
+    --muted: linear-gradient(to bottom right, hsl(359 97% 21%), hsl(359 97% 18%));
     --muted-foreground: 206 13% 65%; /* Lighter version of card for muted text */
-    --accent: 358 94% 40%;     /* C7080C */
+    --accent-solid: 358 94% 40%;     /* C7080C */
+    --accent: linear-gradient(to right, hsl(358 94% 40%), hsl(358 94% 35%));
     --accent-foreground: 0 0% 95%;
-    --destructive: 358 77% 51%; /* E22227 - perfect destructive */
+    --destructive-solid: 358 77% 51%; /* E22227 - perfect destructive */
+    --destructive: linear-gradient(to right, hsl(358 77% 51%), hsl(358 77% 46%));
     --destructive-foreground: 0 0% 95%;
-    --border: 206 13% 25%;    /* Darker 55666E */
-    --input: 206 13% 30%;     /* Slightly darker than card for input */
-    --ring: 358 77% 55%;       /* Brighter E22227 */
+    --border: 206 13% 25%;
+    --input-solid: 206 13% 30%;
+    --input: hsl(var(--input-solid));
+    --ring: 358 77% 55%;
 
-    --shadow-light: hsl(206 15% 48% / 0.8); /* Lighter version of card bg */
-    --shadow-dark: hsl(212 20% 8% / 0.6);  /* Darker, almost black */
+    --shadow-light: hsl(206 15% 48% / 0.8);
+    --shadow-dark: hsl(212 20% 8% / 0.6);
     color-scheme: dark;
 }
 
@@ -266,28 +358,39 @@
     box-shadow: inset 3px 3px 6px var(--shadow-dark), inset -3px -3px 6px var(--shadow-light);
 }
 
-/* Tailwind classes mapped to CSS variables */
-/* These should be handled by tailwind.config.js color mapping, but can be direct fallbacks or overrides if needed */
-/* It's generally better to rely on the tailwind.config.js setup for these */
-.bg-element-bg { background-color: hsl(var(--background)); }
+/* Custom utility classes mapping to CSS variables */
+/* Note: It's generally better to rely on tailwind.config.js for these if possible */
+.bg-element-bg { background-color: hsl(var(--background-solid)); } /* Renamed to match --background-solid */
 .text-foreground { color: hsl(var(--foreground)); }
-.bg-card { background-color: hsl(var(--card)); }
+.bg-card { background-color: hsl(var(--card-solid)); }
 .text-card-foreground { color: hsl(var(--card-foreground)); }
-.bg-primary { background-color: hsl(var(--primary)); }
+.bg-primary { background-color: hsl(var(--primary-solid)); }
 .text-primary-foreground { color: hsl(var(--primary-foreground)); }
-.bg-secondary { background-color: hsl(var(--secondary)); }
+.bg-secondary { background-color: hsl(var(--secondary-solid)); }
 .text-secondary-foreground { color: hsl(var(--secondary-foreground)); }
 .text-muted-foreground { color: hsl(var(--muted-foreground)); }
-.bg-muted { background-color: hsl(var(--muted)); }
+.bg-muted { background-color: hsl(var(--muted-solid)); }
 .border-border { border-color: hsl(var(--border)); }
-.bg-input { background-color: hsl(var(--input)); }
-.ring-ring { --tw-ring-color: hsl(var(--ring)); }
-.bg-popover { background-color: hsl(var(--popover)); }
+.bg-input { background-color: hsl(var(--input-solid)); } /* Using --input-solid */
+.ring-ring { --tw-ring-color: hsl(var(--ring)); } /* This one is a bit special for Tailwind's ring utilities */
+.bg-popover { background-color: hsl(var(--popover-solid)); }
 .text-popover-foreground { color: hsl(var(--popover-foreground)); }
-.bg-accent { background-color: hsl(var(--accent)); }
+.bg-accent { background-color: hsl(var(--accent-solid)); }
 .text-accent-foreground { color: hsl(var(--accent-foreground)); }
-.bg-destructive { background-color: hsl(var(--destructive)); }
+.bg-destructive { background-color: hsl(var(--destructive-solid)); }
 .text-destructive-foreground { color: hsl(var(--destructive-foreground)); }
+
+/* For gradient backgrounds using custom classes (if needed alongside Tailwind's bg-gradient-*) */
+.bg-gradient-background { background: var(--background); }
+.bg-gradient-card { background: var(--card); }
+.bg-gradient-popover { background: var(--popover); }
+.bg-gradient-primary { background: var(--primary); }
+.bg-gradient-secondary { background: var(--secondary); }
+.bg-gradient-muted { background: var(--muted); }
+.bg-gradient-accent { background: var(--accent); }
+.bg-gradient-destructive { background: var(--destructive); }
+/* .bg-gradient-input { background: var(--input); } */ /* Uncomment if --input becomes a gradient */
+
 
 .rounded-xl { border-radius: var(--radius); }
 .rounded-lg { border-radius: var(--radius); } /* Assuming lg is same as xl for consistency with var(--radius) */

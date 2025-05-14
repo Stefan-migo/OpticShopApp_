@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers'; // Import cookies helper
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { id } = params;
 
   try {
@@ -31,7 +31,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
 }
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { id } = params;
   const updates = await request.json();
 
@@ -169,7 +169,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 }
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { id } = params;
 
   try {
