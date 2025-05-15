@@ -1,6 +1,6 @@
 'use client';
 
-import { use } from 'react';
+import { use } from 'react'; // Keep use for dictionary
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle, Rocket, Zap, LayoutDashboard, Settings, Menu, Sun, Moon } from "lucide-react";
 import { motion } from "framer-motion";
@@ -17,9 +17,10 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { getDictionary } from "@/lib/i18n";
 import { Locale } from "@/lib/i18n/config";
-import { useState, useEffect } from 'react';
-
-
+import { useState, useEffect } from 'react'; // Keep useState/useEffect for other states if needed, but remove session state/effect
+import { createClient } from '@/lib/supabase/client'; // Keep createClient if needed elsewhere, but session fetching moves to AuthNavLinks
+import Link from 'next/link'; // Keep Link import for Dashboard link
+import AuthNavLinks from '@/components/AuthNavLinks'; // Import the new component
 // Reusable component for features
 const FeatureCard = ({ title, description, icon }: { title: string; description: string; icon: React.ReactNode }) => (
     <motion.div
@@ -136,7 +137,8 @@ const PricingCard = ({ title, price, description, features, isPro }: { title: st
 
 // Main Landing Page Component
 const SaaSProductLandingPage = ({ params }: { params: Promise<{ lang: Locale }> }) => {
-    const { lang } = use(params); // Unwrap params using use()
+    const { lang } = use(params);
+    // Remove session state and effect, session handling is now in AuthNavLinks
     const [dictionary, setDictionary] = useState<any>(null);
 
     useEffect(() => {
@@ -145,7 +147,8 @@ const SaaSProductLandingPage = ({ params }: { params: Promise<{ lang: Locale }> 
             setDictionary(dict);
         };
         fetchDictionary();
-    }, [lang]);
+    }, [lang]); // Dependency array only needs lang
+
 
     if (!dictionary) {
         return <div>Loading...</div>; // Or a loading spinner
@@ -169,21 +172,12 @@ const SaaSProductLandingPage = ({ params }: { params: Promise<{ lang: Locale }> 
                         <a href="#about-us" className="text-card-foreground hover:text-muted-foreground transition-colors">{landingDict.navAboutUs || "About Us"}</a>
                         <a href="#pricing" className="text-card-foreground hover:text-muted-foreground transition-colors">{landingDict.navPricing || "Pricing"}</a>
                         <a href="#feedback" className="text-card-foreground hover:text-muted-foreground transition-colors">{landingDict.navFeedback || "Feedback"}</a>
-                        <a href={`/login`}>
-                            <Button
-                                variant="outline"
-                                className="text-text-primary hover:bg-element-bg/10 hover:text-text-primary border-border"
-                            >
-                                {landingDict.navLogin || "Login"}
-                            </Button>
-                        </a>
-                        <a href={`/signup`}>
-                            <Button
-                                className="bg-muted text-muted-foreground px-6 py-2 rounded-full shadow-neumorphic-sm hover:shadow-neumorphic transition-all duration-300"
-                            >
-                                {landingDict.navSignUp || "Sign Up"}
-                            </Button>
-                        </a>
+                           <AuthNavLinks
+                                lang={lang}
+                                loginText={landingDict.navLogin || "Login"}
+                                signUpText={landingDict.navSignUp || "Sign Up"}
+                                dashboardText="Dashboard" // Assuming Dashboard text is static or fetched elsewhere
+                           />
                         <ThemeSwitcherButton /> {/* Add the theme switcher button here */}
                     </div>
 
@@ -207,21 +201,12 @@ const SaaSProductLandingPage = ({ params }: { params: Promise<{ lang: Locale }> 
                                             <a href="#about-us" className="text-card-foreground  hover:text-text-primary transition-colors text-lg">{landingDict.navAboutUs || "About Us"}</a>
                                             <a href="#pricing" className="text-card-foreground hover:text-text-primary transition-colors text-lg">{landingDict.navPricing || "Pricing"}</a>
                                             <a href="#feedback" className="text-card-foreground  hover:text-text-primary transition-colors text-lg">{landingDict.navFeedback || "Feedback"}</a>
-                                            <a href={`/${lang}/login`}>
-                                                <Button
-                                                    variant="default"
-                                                    className="text-card-foreground hover:bg-element-bg/10 hover:text-text-primary border-border w-full"
-                                                >
-                                                    {landingDict.navLogin || "Login"}
-                                                </Button>
-                                            </a>
-                                            <a href={`/${lang}/signup`}>
-                                                <Button
-                                                    className="bg-element-bg text-muted-foreground px-6 py-2 rounded-full shadow-neumorphic-sm hover:shadow-neumorphic transition-all duration-300 w-full"
-                                                >
-                                                    {landingDict.navSignUp || "Sign Up"}
-                                                </Button>
-                                            </a>
+                                            <AuthNavLinks // Replace conditional rendering with AuthNavLinks
+                                                lang={lang}
+                                                loginText={landingDict.navLogin || "Login"}
+                                                signUpText={landingDict.navSignUp || "Sign Up"}
+                                                dashboardText="Dashboard" // Assuming Dashboard text is static or fetched elsewhere
+                                            />
                                         </div>
                                     </SheetDescription>
                                 </SheetHeader>
@@ -319,9 +304,8 @@ const SaaSProductLandingPage = ({ params }: { params: Promise<{ lang: Locale }> 
                             </p>
                         </div>
                         <div>
-                            {/* Replace with an actual image or illustration */}
                             <img
-                                src="https://img.freepik.com/free-vector/team-work-concept-illustration_114360-3448.jpg?t=st=1747027031~exp=1747030631~hmac=24a3a242c26ee82eaee6df519d0ac21e2ac5634665e9732d68b764fe2bcbaf50&w=826"
+                                src="/assets/aboutus.svg"
                                 alt={landingDict.aboutUsImageAlt || "About Us"}
                                 className="rounded-xl shadow-neumorphic-sm"
                             />

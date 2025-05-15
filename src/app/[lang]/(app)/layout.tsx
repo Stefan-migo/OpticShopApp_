@@ -55,6 +55,7 @@ export default async function AppLayout(props: { children: React.ReactNode; para
     );
   }
 
+  // Explicitly await the authentication check
   const {
     data: { user },
   } = await supabase.auth.getUser();

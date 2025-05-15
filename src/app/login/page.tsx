@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
+import { signInWithPassword } from '@/app/actions/auth'; // Import the Server Action
 import {
   Card,
   CardContent,
@@ -61,65 +62,60 @@ export default function LoginPage() {
     event.preventDefault();
     setIsLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const formData = new FormData(event.currentTarget);
+    const result = await signInWithPassword(formData);
 
     setIsLoading(false);
 
-    if (error) {
-      if (dictionary) { // Add null check for dictionary
+    if (!result.success) {
+      if (dictionary) {
         toast({
           title: dictionary.loginPage.toast.loginErrorTitle,
-          description: error.message,
+          description: result.error,
           variant: "destructive",
         });
       } else {
-         // Fallback toast if dictionary is not loaded
-         toast({
-           title: "Login Error",
-           description: error.message,
-           variant: "destructive",
-         });
+        toast({
+          title: "Login Error",
+          description: result.error,
+          variant: "destructive",
+        });
       }
     } else {
-      if (dictionary) { // Add null check for dictionary
+      if (dictionary) {
         toast({
           title: dictionary.loginPage.toast.loginSuccessTitle,
           description: dictionary.loginPage.toast.loginSuccessDescription,
         });
       } else {
-         // Fallback toast if dictionary is not loaded
-         toast({
-           title: "Login Successful",
-           description: "You have been successfully logged in.",
-         });
+        toast({
+          title: "Login Successful",
+          description: "You have been successfully logged in.",
+        });
       }
+      // Verify session on the client side immediately after successful sign-in
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      console.log('Login Page - Client-side session after sign-in:', clientSession);
+
       // Redirect to the dashboard or home page upon successful login
       // Use router.refresh() to ensure server components re-render with new auth state
       router.refresh();
-      console.log('Login Page - Redirecting with lang:', lang); // Added logging
+      console.log('Login Page - Redirecting with lang:', lang);
 
-      let localeToUse: "es" | "en" = lang; // Explicitly type localeToUse
+      // No need for setTimeout here, as the Server Action should handle session
+      // propagation more reliably before the redirect.
+      let localeToUse: "es" | "en" = lang;
 
-      // If locale from params is undefined (though with middleware it should be set),
-      // or if it's not a valid locale, try to get it from the cookie
       if (!i18n.locales.includes(localeToUse)) {
         const preferredLocale = Cookies.get('NEXT_LOCALE');
-        console.log('Login Page - Preferred locale from cookie:', preferredLocale); // Added logging
-
         if (preferredLocale && i18n.locales.includes(preferredLocale as any)) {
-          localeToUse = preferredLocale as "es" | "en"; // Use preferred locale from cookie if valid and cast
-          console.log('Login Page - Using preferred locale from cookie:', localeToUse); // Added logging
+          localeToUse = preferredLocale as "es" | "en";
         } else {
-          // If cookie not set or invalid, fall back to the default locale
           localeToUse = i18n.defaultLocale;
-          console.log('Login Page - Falling back to default locale:', localeToUse); // Added logging
         }
       }
 
-      router.push(`/${localeToUse}/dashboard`); // Redirect to the new dashboard route with determined locale
+      router.push(`/${localeToUse}/dashboard`);
     }
   };
 
@@ -193,6 +189,7 @@ export default function LoginPage() {
               <Label htmlFor="email">{dictionary.loginPage.emailLabel}</Label>
               <Input
                 id="email"
+                name="email" // Added name attribute
                 type="email"
                 placeholder={dictionary.loginPage.emailPlaceholder}
                 required
@@ -205,6 +202,7 @@ export default function LoginPage() {
               <Label htmlFor="password">{dictionary.loginPage.passwordLabel}</Label>
               <Input
                 id="password"
+                name="password" // Added name attribute
                 type="password"
                 required
                 value={password}
