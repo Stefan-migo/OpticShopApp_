@@ -21,19 +21,25 @@ import { createClient } from "@/lib/supabase/client";
 import { type Customer } from "./columns"; // Import Customer type
 import { Dictionary } from '@/lib/i18n/types'; // Import shared Dictionary interface
 import React from "react"; // Import React for Fragment
+import { useDictionary } from '@/lib/i18n/dictionary-context'; // Import useDictionary hook
 
 // TODO: Add textarea component using shadcn-ui add
 
 // Define the form schema using Zod
 const createFormSchema = (dictionary: Dictionary) => z.object({
-  first_name: z.string().min(1, { message: dictionary.customers.form.firstNameRequired || "First name is required." }).max(50), // Use dictionary
-  last_name: z.string().min(1, { message: dictionary.customers.form.lastNameRequired || "Last name is required." }).max(50), // Use dictionary
-  email: z.string().email({ message: dictionary.customers.form.invalidEmail || "Invalid email address." }).optional().or(z.literal('')), // Use dictionary
+  first_name: z.string().min(1, { message: dictionary?.customers?.form?.firstNameRequired || "First name is required." }).max(50), // Use optional chaining
+  last_name: z.string().min(1, { message: dictionary?.customers?.form?.lastNameRequired || "Last name is required." }).max(50), // Use optional chaining
+  email: z.string().email({ message: dictionary?.customers?.form?.invalidEmail || "Invalid email address." }).optional().or(z.literal('')), // Use optional chaining
   phone: z.string().optional(), // Optional phone number
-  // Add address fields if needed (using nested object or separate fields)
-  // address_street: z.string().optional(),
-  // address_city: z.string().optional(),
-  // ...
+  dob: z.string().optional(), // Date of birth
+  address_line1: z.string().optional(),
+  address_line2: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  postal_code: z.string().optional(),
+  country: z.string().optional(),
+  insurance_provider: z.string().optional(),
+  insurance_policy_number: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -42,24 +48,34 @@ type CustomerFormValues = z.infer<ReturnType<typeof createFormSchema>>;
 interface CustomerFormProps {
   initialData?: Customer | null; // For editing existing customer
   onSuccess?: () => void; // Callback after successful submission
-  dictionary: Dictionary; // Use the imported Dictionary interface
+  // Remove dictionary prop
 }
 
-export function CustomerForm({ initialData, onSuccess, dictionary }: CustomerFormProps) {
+export function CustomerForm({ initialData, onSuccess }: CustomerFormProps) { // Remove dictionary prop
+  const dictionary = useDictionary(); // Get dictionary from context
+
   const { toast } = useToast();
   const supabase = createClient();
   const isEditing = !!initialData;
 
   // Define form
   const form = useForm<CustomerFormValues>({
-    resolver: zodResolver(createFormSchema(dictionary)), // Pass dictionary to schema function
+    resolver: zodResolver(createFormSchema(dictionary)), // Pass the full dictionary
     defaultValues: {
       first_name: initialData?.first_name || "",
       last_name: initialData?.last_name || "",
       email: initialData?.email || "",
       phone: initialData?.phone || "",
       notes: "", // Assuming notes aren't typically pre-filled for edit
-      // Set default address fields if using them
+      dob: initialData?.dob || "",
+      address_line1: initialData?.address_line1 || "",
+      address_line2: initialData?.address_line2 || "",
+      city: initialData?.city || "",
+      state: initialData?.state || "",
+      postal_code: initialData?.postal_code || "",
+      country: initialData?.country || "",
+      insurance_provider: initialData?.insurance_provider || "",
+      insurance_policy_number: initialData?.insurance_policy_number || "",
     },
   });
 
@@ -74,7 +90,7 @@ export function CustomerForm({ initialData, onSuccess, dictionary }: CustomerFor
       const { data: { user }, error: userError } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        throw new Error(dictionary.customers.form.userFetchError || "Could not fetch user information."); // Use dictionary
+        throw new Error(dictionary?.customers?.form?.userFetchError || "Could not fetch user information."); // Use optional chaining
       }
 
       const { data: profile, error: profileError } = await supabase
@@ -84,7 +100,7 @@ export function CustomerForm({ initialData, onSuccess, dictionary }: CustomerFor
         .single();
 
       if (profileError || !profile?.tenant_id) {
-         throw new Error(dictionary.customers.form.tenantFetchError || "Could not fetch user's tenant information."); // Use dictionary
+         throw new Error(dictionary?.customers?.form?.tenantFetchError || "Could not fetch user's tenant information."); // Use optional chaining
       }
 
       const userTenantId = profile.tenant_id;
@@ -99,7 +115,15 @@ export function CustomerForm({ initialData, onSuccess, dictionary }: CustomerFor
             last_name: values.last_name,
             email: values.email || null, // Store null if empty
             phone: values.phone || null, // Store null if empty
-            // Update address fields if using them
+            dob: values.dob || null,
+            address_line1: values.address_line1 || null,
+            address_line2: values.address_line2 || null,
+            city: values.city || null,
+            state: values.state || null,
+            postal_code: values.postal_code || null,
+            country: values.country || null,
+            insurance_provider: values.insurance_provider || null,
+            insurance_policy_number: values.insurance_policy_number || null,
             notes: values.notes || null,
             updated_at: new Date().toISOString(),
           })
@@ -115,9 +139,17 @@ export function CustomerForm({ initialData, onSuccess, dictionary }: CustomerFor
               last_name: values.last_name,
               email: values.email || null,
               phone: values.phone || null,
+              dob: values.dob || null,
+              address_line1: values.address_line1 || null,
+              address_line2: values.address_line2 || null,
+              city: values.city || null,
+              state: values.state || null,
+              postal_code: values.postal_code || null,
+              country: values.country || null,
+              insurance_provider: values.insurance_provider || null,
+              insurance_policy_number: values.insurance_policy_number || null,
               notes: values.notes || null,
               tenant_id: userTenantId, // Include the user's tenant_id
-              // Add address fields if using them
             },
           ]);
         error = insertError;
@@ -128,7 +160,7 @@ export function CustomerForm({ initialData, onSuccess, dictionary }: CustomerFor
       }
 
       toast({
-        title: dictionary.customers.form.saveSuccess, // Use dictionary
+        title: dictionary?.customers?.form?.saveSuccess || dictionary?.common?.unexpectedError, // Use optional chaining and fallback
       });
       onSuccess?.(); // Call the success callback (e.g., close dialog, refresh data)
       form.reset(); // Reset form after successful submission
@@ -136,8 +168,8 @@ export function CustomerForm({ initialData, onSuccess, dictionary }: CustomerFor
     } catch (error: any) {
       console.error("Error saving customer:", error);
       toast({
-        title: isEditing ? dictionary.customers.form.saveErrorTitle : dictionary.customers.form.saveErrorTitle, // Use dictionary for error title
-        description: error.message || dictionary.common.unexpectedError, // Use dictionary for unexpected error
+        title: isEditing ? (dictionary?.customers?.form?.saveErrorTitle || dictionary?.common?.unexpectedError) : (dictionary?.customers?.form?.saveErrorTitle || dictionary?.common?.unexpectedError), // Use optional chaining and fallback
+        description: error.message || dictionary?.common?.unexpectedError, // Use optional chaining and fallback
         variant: "destructive",
       });
     }
@@ -152,9 +184,9 @@ export function CustomerForm({ initialData, onSuccess, dictionary }: CustomerFor
             name="first_name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{dictionary.customers.form.firstNameLabel || "First Name"} *</FormLabel> {/* Use dictionary */}
+                <FormLabel>{dictionary?.customers?.form?.firstNameLabel || "First Name"} *</FormLabel> {/* Use optional chaining */}
                 <div> {/* Removed FormControl */}
-                  <Input placeholder={dictionary.customers.form.firstNamePlaceholder} {...field} disabled={isLoading} /> {/* Use dictionary */}
+                  <Input placeholder={dictionary?.customers?.form?.firstNamePlaceholder} {...field} disabled={isLoading} /> {/* Use optional chaining */}
                 </div>
                 <FormMessage />
               </FormItem>
@@ -165,9 +197,9 @@ export function CustomerForm({ initialData, onSuccess, dictionary }: CustomerFor
             name="last_name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{dictionary.customers.form.lastNameLabel || "Last Name"} *</FormLabel> {/* Use dictionary */}
+                <FormLabel>{dictionary?.customers?.form?.lastNameLabel || "Last Name"} *</FormLabel> {/* Use optional chaining */}
                 <div> {/* Removed FormControl */}
-                  <Input placeholder={dictionary.customers.form.lastNamePlaceholder} {...field} disabled={isLoading} /> {/* Use dictionary */}
+                  <Input placeholder={dictionary?.customers?.form?.lastNamePlaceholder} {...field} disabled={isLoading} /> {/* Use optional chaining */}
                 </div>
                 <FormMessage />
               </FormItem>
@@ -179,9 +211,9 @@ export function CustomerForm({ initialData, onSuccess, dictionary }: CustomerFor
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{dictionary.customers.form.emailLabel || "Email"}</FormLabel> {/* Use dictionary */}
+              <FormLabel>{dictionary?.customers?.form?.emailLabel || "Email"}</FormLabel> {/* Use optional chaining */}
               <div> {/* Removed FormControl */}
-                <Input type="email" placeholder={dictionary.customers.form.emailPlaceholder} {...field} disabled={isLoading} /> {/* Use dictionary */}
+                <Input type="email" placeholder={dictionary?.customers?.form?.emailPlaceholder} {...field} disabled={isLoading} /> {/* Use optional chaining */}
               </div>
               <FormMessage />
             </FormItem>
@@ -192,24 +224,142 @@ export function CustomerForm({ initialData, onSuccess, dictionary }: CustomerFor
           name="phone"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{dictionary.customers.form.phoneLabel || "Phone"}</FormLabel> {/* Use dictionary */}
+              <FormLabel>{dictionary?.customers?.form?.phoneLabel || "Phone"}</FormLabel> {/* Use optional chaining */}
               <div> {/* Removed FormControl */}
-                  <Input placeholder={dictionary.customers.form.phonePlaceholder} {...field} disabled={isLoading} /> {/* Use dictionary */}
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-         {/* Add Address Fields Here if needed */}
+                  <Input placeholder={dictionary?.customers?.form?.phonePlaceholder} {...field} disabled={isLoading} /> {/* Use optional chaining */}
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="dob"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{dictionary?.customers?.form?.dobLabel || "Date of Birth"}</FormLabel>
+                <div>
+                  <Input type="date" placeholder={dictionary?.customers?.form?.dobPlaceholder} {...field} disabled={isLoading} />
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="address_line1"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{dictionary?.customers?.form?.addressLine1Label || "Address Line 1"}</FormLabel>
+                <div>
+                  <Input placeholder={dictionary?.customers?.form?.addressLine1Placeholder} {...field} disabled={isLoading} />
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="address_line2"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{dictionary?.customers?.form?.addressLine2Label || "Address Line 2"}</FormLabel>
+                <div>
+                  <Input placeholder={dictionary?.customers?.form?.addressLine2Placeholder} {...field} disabled={isLoading} />
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <FormField
+              control={form.control}
+              name="city"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{dictionary?.customers?.form?.cityLabel || "City"}</FormLabel>
+                  <div>
+                    <Input placeholder={dictionary?.customers?.form?.cityPlaceholder} {...field} disabled={isLoading} />
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="state"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{dictionary?.customers?.form?.stateLabel || "State"}</FormLabel>
+                  <div>
+                    <Input placeholder={dictionary?.customers?.form?.statePlaceholder} {...field} disabled={isLoading} />
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="postal_code"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{dictionary?.customers?.form?.postalCodeLabel || "Postal Code"}</FormLabel>
+                  <div>
+                    <Input placeholder={dictionary?.customers?.form?.postalCodePlaceholder} {...field} disabled={isLoading} />
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <FormField
+            control={form.control}
+            name="country"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{dictionary?.customers?.form?.countryLabel || "Country"}</FormLabel>
+                <div>
+                  <Input placeholder={dictionary?.customers?.form?.countryPlaceholder} {...field} disabled={isLoading} />
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="insurance_provider"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{dictionary?.customers?.form?.insuranceProviderLabel || "Insurance Provider"}</FormLabel>
+                <div>
+                  <Input placeholder={dictionary?.customers?.form?.insuranceProviderPlaceholder} {...field} disabled={isLoading} />
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="insurance_policy_number"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{dictionary?.customers?.form?.insurancePolicyNumberLabel || "Insurance Policy Number"}</FormLabel>
+                <div>
+                  <Input placeholder={dictionary?.customers?.form?.insurancePolicyNumberPlaceholder} {...field} disabled={isLoading} />
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         <FormField
           control={form.control}
           name="notes"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{dictionary.customers.form.notesLabel || "Notes"}</FormLabel> {/* Use dictionary */}
-              <div> {/* Removed FormControl */}
+              <FormLabel>{dictionary?.customers?.form?.notesLabel || "Notes"}</FormLabel>
+              <div>
                 <Textarea
-                  placeholder={dictionary.customers.form.notesPlaceholder}
+                  placeholder={dictionary?.customers?.form?.notesPlaceholder}
                   className="resize-none"
                   {...field}
                   disabled={isLoading}
@@ -221,8 +371,8 @@ export function CustomerForm({ initialData, onSuccess, dictionary }: CustomerFor
         />
         <Button type="submit" disabled={isLoading}>
           {isLoading
-            ? (isEditing ? (dictionary.common.saving || "Saving...") : (dictionary.common.adding || "Adding...")) // Use dictionary
-            : (isEditing ? (dictionary.common.saveChanges || "Save Changes") : (dictionary.common.addCustomer || "Add Customer")) // Use dictionary
+            ? (isEditing ? (dictionary?.common?.saving || "Saving...") : (dictionary?.common?.adding || "Adding...")) // Use optional chaining
+            : (isEditing ? (dictionary?.common?.saveChanges || "Save Changes") : (dictionary?.common?.addCustomer || "Add Customer")) // Use optional chaining
           }
         </Button>
       </form>

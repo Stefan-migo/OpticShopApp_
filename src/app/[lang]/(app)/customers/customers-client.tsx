@@ -1,7 +1,5 @@
 "use client";
 
-"use client";
-
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
@@ -31,23 +29,26 @@ import { type Dictionary } from "@/lib/i18n/types"; // Import Dictionary type
 import { Locale } from "@/lib/i18n/config"; // Import Locale type
 import { createClient } from "@/lib/supabase/client"; // Import client-side Supabase client
 import { useSearchParams } from 'next/navigation'; // Import useSearchParams
+import { useDictionary } from '@/lib/i18n/dictionary-context'; // Import useDictionary hook
 
 // Client Component to handle UI interactions (dialogs, forms, delete)
 interface CustomersPageClientProps {
-  dictionary: Dictionary;
+  // Remove dictionary prop
   lang: Locale;
   isSuperuser: boolean; // Add isSuperuser prop
 }
 
-function CustomersPageClient({ dictionary, lang, isSuperuser }: CustomersPageClientProps) {
+function CustomersPageClient({ lang, isSuperuser }: CustomersPageClientProps) { // Remove dictionary prop
+  const dictionary = useDictionary(); // Get dictionary from context
   const [data, setData] = React.useState<Customer[]>([]); // Initialize state as empty array
   const [loading, setLoading] = React.useState(true); // Add loading state
-  const [error, setError] = React.useState<string | null>(null); // Add error state
+  const [error, setError] = React.useState<string | null>(null); // Add error state // Fix syntax error here
   const [isAddDialogOpen, setIsAddDialogOpen] = React.useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
   const [editingCustomer, setEditingCustomer] = React.useState<Customer | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   const [deletingCustomerId, setDeletingCustomerId] = React.useState<string | null>(null);
+  // Remove isDictionaryLoaded state and useEffect
   const { toast } = useToast();
   const supabase = createClient(); // Use client-side Supabase client for client-side mutations
   const searchParams = useSearchParams(); // Get search parameters
@@ -151,10 +152,17 @@ function CustomersPageClient({ dictionary, lang, isSuperuser }: CustomersPageCli
   };
 
   // Generate columns with action handlers
+  // Generate columns with action handlers
   const customerColumns = React.useMemo(
-    () => getColumns({ onEdit: openEditDialog, onDelete: openDeleteDialog }),
+    () => getColumns({ onEdit: openEditDialog, onDelete: openDeleteDialog, dictionary }), // Pass dictionary here
     [dictionary] // Dependency on dictionary
   );
+
+  // Add a check for dictionary availability before rendering
+  if (!dictionary || !dictionary.customers?.title) {
+      return <div>Loading language resources...</div>; // Or a more specific loading/error state
+  }
+
 
   if (loading) {
     return <div>Loading customers...</div>; // Loading indicator
@@ -176,19 +184,19 @@ function CustomersPageClient({ dictionary, lang, isSuperuser }: CustomersPageCli
             <Button>
               <PlusCircle className="mr-2 h-4 w-4" /> {dictionary.customers.addCustomerButton}
             </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>{dictionary.customers.addNewCustomerTitle}</DialogTitle>
-              <DialogDescription>
-                {dictionary.customers.addNewCustomerDescription}
-              </DialogDescription>
-            </DialogHeader>
-            {/* Pass dictionary to CustomerForm */}
-            <CustomerForm onSuccess={handleAddSuccess} dictionary={dictionary} />
-          </DialogContent>
-        </Dialog>
-      </div>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[425px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{dictionary.customers.addNewCustomerTitle}</DialogTitle>
+            <DialogDescription>
+              {dictionary.customers.addNewCustomerDescription}
+            </DialogDescription>
+          </DialogHeader>
+          {/* Render CustomerForm directly */}
+          <CustomerForm onSuccess={handleAddSuccess} />
+        </DialogContent>
+      </Dialog>
+    </div>
 
       {/* Data Table Area */}
       <DataTable
@@ -204,15 +212,15 @@ function CustomersPageClient({ dictionary, lang, isSuperuser }: CustomersPageCli
         setIsEditDialogOpen(open);
         if (!open) setEditingCustomer(null);
       }}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{dictionary.customers.editCustomerTitle}</DialogTitle>
             <DialogDescription>
               {dictionary.customers.editCustomerDescription}
             </DialogDescription>
           </DialogHeader>
-          {/* Pass initialData and dictionary to CustomerForm */}
-          <CustomerForm initialData={editingCustomer} onSuccess={handleEditSuccess} dictionary={dictionary} />
+          {/* Render CustomerForm directly */}
+          <CustomerForm initialData={editingCustomer} onSuccess={handleEditSuccess} />
         </DialogContent>
       </Dialog>
 
@@ -228,7 +236,7 @@ function CustomersPageClient({ dictionary, lang, isSuperuser }: CustomersPageCli
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDeletingCustomerId(null)}>{dictionary.common.cancel}</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              {dictionary.common.delete}
+              {dictionary.customers.tableActions.deleteCustomer}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

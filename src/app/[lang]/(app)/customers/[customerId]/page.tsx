@@ -3,6 +3,7 @@ import { createServerComponentClient } from "@/lib/supabase/server-component-cli
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cookies } from 'next/headers'; // Import cookies helper
+import { getDictionary } from '@/lib/i18n'; // Import getDictionary
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -15,14 +16,22 @@ import {
 import { Badge } from "@/components/ui/badge"; // Added Badge for status
 import { CustomerNotes } from "./customer-notes"; // Import the new component
 import BackButton from "./back-button"; // Import the BackButton component
+import { Dictionary } from '@/lib/i18n/types'; // Import Dictionary type
+import { Locale } from '@/lib/i18n/config'; // Import Locale type from config
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/registry/new-york-v4/ui/breadcrumb"; // Import breadcrumb components
+import Link from 'next/link'; // Import Link
+
+export const dynamic = 'force-dynamic'; // Force dynamic rendering
 
 type CustomerDetailPageProps = {
-  params: { customerId: string };
+  params: { customerId: string, lang: Locale }; // Use Locale type for lang
 };
 
 export default async function CustomerDetailPage({ params }: CustomerDetailPageProps) {
+  const { lang, customerId } = await params; // Await and destructure params
+
+  const dictionary = await getDictionary(lang); // Fetch dictionary using awaited lang
   const supabase = createServerComponentClient();
-  const { customerId } = params;
 
   // Read superuser and selected tenant cookies
   const cookieStore = await cookies();
@@ -48,20 +57,25 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
   }
 
   return (
-    <div className="container mx-auto py-10">
-      <BackButton /> {/* Add the BackButton component */}
-      <h1 className="text-3xl font-bold mb-6">Customer Details</h1>
-
+    <div className="container mx-auto py-0">
+      <div className="flex flex-col ">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold mb-6">{dictionary.customers.customerDetails?.title || 'Customer Details'}</h1>
+          <BackButton dictionary={dictionary.customers.customerDetails} /> {/* Pass dictionary to BackButton */}
+        </div>
+      </div>
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>{customer.name}</CardTitle>
+          <CardTitle>
+            {`${customer.first_name || ''} ${customer.last_name || ''}`.trim() || dictionary.customers.customerDetails?.title || 'Customer Details'}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          <p><strong>Email:</strong> {customer.email || 'N/A'}</p>
-          <p><strong>Phone:</strong> {customer.phone || 'N/A'}</p>
-          <p><strong>Date of Birth:</strong> {customer.dob ? new Date(customer.dob).toLocaleDateString() : 'N/A'}</p>
+          <p><strong>{dictionary.customers.customerDetails?.emailLabel || 'Email'}:</strong> {customer.email || 'N/A'}</p>
+          <p><strong>{dictionary.customers.customerDetails?.phoneLabel || 'Phone'}:</strong> {customer.phone || 'N/A'}</p>
+          <p><strong>{dictionary.customers.customerDetails?.dobLabel || 'Date of Birth'}:</strong> {customer.dob ? new Date(customer.dob).toLocaleDateString() : 'N/A'}</p>
           <div>
-            <strong>Address:</strong>
+            <strong>{dictionary.customers.customerDetails?.addressLabel || 'Address'}:</strong>
             <div className="pl-4">
               <p>{customer.address_line1 || 'N/A'}</p>
               {customer.address_line2 && <p>{customer.address_line2}</p>}
@@ -71,16 +85,16 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
               <p>{customer.country || ''}</p>
             </div>
           </div>
-           <div>
-            <strong>Insurance:</strong>
+          <div>
+            <strong>{dictionary.customers.customerDetails?.insuranceTitle || 'Insurance'}:</strong>
             <div className="pl-4">
-                 <p>Provider: {customer.insurance_provider || 'N/A'}</p>
-                 <p>Policy #: {customer.insurance_policy_number || 'N/A'}</p>
+              <p>{dictionary.customers.customerDetails?.insuranceProviderLabel || 'Provider'}: {customer.insurance_provider || 'N/A'}</p>
+              <p>{dictionary.customers.customerDetails?.insurancePolicyNumberLabel || 'Policy #'}: {customer.insurance_policy_number || 'N/A'}</p>
             </div>
           </div>
           {customer.notes && (
             <div>
-              <strong>Notes:</strong>
+              <strong>{dictionary.customers.customerDetails?.notesLabel || 'Notes'}:</strong>
               <div className="pl-4">
                 <p>{customer.notes}</p>
               </div>
@@ -91,49 +105,49 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
 
       <Tabs defaultValue="sales" className="w-full">
         <TabsList>
-          <TabsTrigger value="sales">Past Sales</TabsTrigger>
-          <TabsTrigger value="appointments">Appointments</TabsTrigger>
-          <TabsTrigger value="prescriptions">Prescriptions</TabsTrigger>
-          <TabsTrigger value="notes">Notes</TabsTrigger>
+          <TabsTrigger value="sales">{dictionary.customers.customerDetails?.pastSalesTitle || 'Past Sales'}</TabsTrigger>
+          <TabsTrigger value="appointments">{dictionary.customers.customerDetails?.appointmentsTitle || 'Appointments'}</TabsTrigger>
+          <TabsTrigger value="prescriptions">{dictionary.customers.customerDetails?.prescriptionsTitle || 'Prescriptions'}</TabsTrigger>
+          <TabsTrigger value="notes">{dictionary.customers.customerDetails?.notesTitle || 'Notes'}</TabsTrigger>
         </TabsList>
         <TabsContent value="sales">
           <Card>
             <CardHeader>
-              <CardTitle>Past Sales</CardTitle>
+              <CardTitle>{dictionary.customers.customerDetails?.pastSalesTitle || 'Past Sales'}</CardTitle>
             </CardHeader>
             <CardContent>
-              <PastSales customerId={customerId} isSuperuser={isSuperuser} selectedTenantId={selectedTenantId ?? null} />
+              <PastSales customerId={customerId} isSuperuser={isSuperuser} selectedTenantId={selectedTenantId ?? null} dictionary={dictionary} /> {/* Pass full dictionary */}
             </CardContent>
           </Card>
         </TabsContent>
         <TabsContent value="appointments">
           <Card>
             <CardHeader>
-              <CardTitle>Appointments</CardTitle>
+              <CardTitle>{dictionary.customers.customerDetails?.appointmentsTitle || 'Appointments'}</CardTitle>
             </CardHeader>
             <CardContent>
-              <AppointmentsHistory customerId={customerId} isSuperuser={isSuperuser} selectedTenantId={selectedTenantId ?? null} />
+              <AppointmentsHistory customerId={customerId} isSuperuser={isSuperuser} selectedTenantId={selectedTenantId ?? null} dictionary={dictionary} /> {/* Pass full dictionary */}
             </CardContent>
           </Card>
         </TabsContent>
         <TabsContent value="prescriptions">
           <Card>
             <CardHeader>
-              <CardTitle>Prescriptions</CardTitle>
+              <CardTitle>{dictionary.customers.customerDetails?.prescriptionsTitle || 'Prescriptions'}</CardTitle>
             </CardHeader>
             <CardContent>
-              <PrescriptionsHistory customerId={customerId} isSuperuser={isSuperuser} selectedTenantId={selectedTenantId ?? null} />
+              <PrescriptionsHistory customerId={customerId} isSuperuser={isSuperuser} selectedTenantId={selectedTenantId ?? null} dictionary={dictionary} /> {/* Pass full dictionary */}
             </CardContent>
           </Card>
         </TabsContent>
-         <TabsContent value="notes">
+        <TabsContent value="notes">
           <Card>
             <CardHeader>
-              <CardTitle>Notes</CardTitle>
+              <CardTitle>{dictionary.customers.customerDetails?.notesTitle || 'Notes'}</CardTitle>
             </CardHeader>
             <CardContent>
               {/* Render the CustomerNotes component */}
-              <CustomerNotes customerId={customerId} isSuperuser={isSuperuser} selectedTenantId={selectedTenantId ?? null} />
+              <CustomerNotes customerId={customerId} isSuperuser={isSuperuser} selectedTenantId={selectedTenantId ?? null} dictionary={dictionary.customers} /> {/* Pass dictionary.customers */}
             </CardContent>
           </Card>
         </TabsContent>
@@ -143,7 +157,7 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
 }
 
 // Helper component to fetch and display past sales
-async function PastSales({ customerId, isSuperuser, selectedTenantId }: { customerId: string, isSuperuser: boolean, selectedTenantId: string | null }): Promise<React.JSX.Element> {
+async function PastSales({ customerId, isSuperuser, selectedTenantId, dictionary }: { customerId: string, isSuperuser: boolean, selectedTenantId: string | null, dictionary: Dictionary }): Promise<React.JSX.Element> {
   const supabase = createServerComponentClient();
 
   let query = supabase
@@ -161,21 +175,21 @@ async function PastSales({ customerId, isSuperuser, selectedTenantId }: { custom
 
   if (error) {
     console.error("Error fetching past sales:", error);
-    return <p className="text-red-500">Error loading sales history.</p>;
+    return <p className="text-red-500">{dictionary.customers.customerDetails?.error || 'Error loading sales history.'}</p>;
   }
 
   if (!sales || sales.length === 0) {
-    return <p>No sales history found for this customer.</p>;
+    return <p>{dictionary.customers.customerDetails?.noData || 'No sales history found for this customer.'}</p>;
   }
 
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Order ID</TableHead>
-          <TableHead>Date</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead className="text-right">Total</TableHead>
+          <TableHead>{dictionary.sales.history.orderNumberHeader || 'Order ID'}</TableHead>
+          <TableHead>{dictionary.sales.history.dateHeader || 'Date'}</TableHead>
+          <TableHead>{dictionary.sales.history.statusHeader || 'Status'}</TableHead>
+          <TableHead className="text-right">{dictionary.sales.history.totalAmountHeader || 'Total'}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -193,7 +207,7 @@ async function PastSales({ customerId, isSuperuser, selectedTenantId }: { custom
 }
 
 // Helper component to fetch and display appointments
-async function AppointmentsHistory({ customerId, isSuperuser, selectedTenantId }: { customerId: string, isSuperuser: boolean, selectedTenantId: string | null }): Promise<React.JSX.Element> {
+async function AppointmentsHistory({ customerId, isSuperuser, selectedTenantId, dictionary }: { customerId: string, isSuperuser: boolean, selectedTenantId: string | null, dictionary: Dictionary }): Promise<React.JSX.Element> {
   const supabase = createServerComponentClient();
 
   let query = supabase
@@ -211,21 +225,21 @@ async function AppointmentsHistory({ customerId, isSuperuser, selectedTenantId }
 
   if (error) {
     console.error("Error fetching appointments:", error);
-    return <p className="text-red-500">Error loading appointments.</p>;
+    return <p className="text-red-500">{dictionary.customers.customerDetails?.error || 'Error loading appointments.'}</p>;
   }
 
   if (!appointments || appointments.length === 0) {
-    return <p>No appointments found for this customer.</p>;
+    return <p>{dictionary.customers.customerDetails?.noData || 'No appointments found for this customer.'}</p>;
   }
 
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Date</TableHead>
-          <TableHead>Time</TableHead>
-          <TableHead>Type</TableHead>
-          <TableHead>Status</TableHead>
+          <TableHead>{dictionary.appointments.form.dateTimeLabel || 'Date'}</TableHead>
+          <TableHead>{dictionary.appointments.form.dateTimeLabel || 'Time'}</TableHead>
+          <TableHead>{dictionary.appointments.form.typeLabel || 'Type'}</TableHead>
+          <TableHead>{dictionary.common.statusHeader || 'Status'}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -256,7 +270,7 @@ interface PrescriptionData {
 }
 
 // Helper component to fetch and display prescriptions
-async function PrescriptionsHistory({ customerId, isSuperuser, selectedTenantId }: { customerId: string, isSuperuser: boolean, selectedTenantId: string | null }): Promise<React.JSX.Element> {
+async function PrescriptionsHistory({ customerId, isSuperuser, selectedTenantId, dictionary }: { customerId: string, isSuperuser: boolean, selectedTenantId: string | null, dictionary: Dictionary }): Promise<React.JSX.Element> {
   const supabase = createServerComponentClient();
   // Select key fields for the summary table
   let query = supabase
@@ -276,25 +290,25 @@ async function PrescriptionsHistory({ customerId, isSuperuser, selectedTenantId 
 
   if (error) {
     console.error("Error fetching prescriptions:", error);
-    return <p className="text-red-500">Error loading prescriptions.</p>;
+    return <p className="text-red-500">{dictionary.customers.customerDetails?.error || 'Error loading prescriptions.'}</p>;
   }
 
   if (!prescriptions || prescriptions.length === 0) {
-    return <p>No prescriptions found for this customer.</p>;
+    return <p>{dictionary.customers.customerDetails?.noData || 'No prescriptions found for this customer.'}</p>;
   }
 
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Issued Date</TableHead>
-          <TableHead>Expiry Date</TableHead>
-          <TableHead>OD Sphere</TableHead>
-          <TableHead>OD Cylinder</TableHead>
-          <TableHead>OD Add</TableHead>
-          <TableHead>OS Sphere</TableHead>
-          <TableHead>OS Cylinder</TableHead>
-          <TableHead>OS Add</TableHead>
+          <TableHead>{dictionary.prescriptions.columns.prescriptionDateHeader || 'Issued Date'}</TableHead>
+          <TableHead>{dictionary.prescriptions.columns.expiryDateHeader || 'Expiry Date'}</TableHead>
+          <TableHead>{dictionary.prescriptions.form.paramLabels.sphLabel || 'OD Sphere'}</TableHead>
+          <TableHead>{dictionary.prescriptions.form.paramLabels.cylLabel || 'OD Cylinder'}</TableHead>
+          <TableHead>{dictionary.prescriptions.form.paramLabels.addLabel || 'OD Add'}</TableHead>
+          <TableHead>{dictionary.prescriptions.form.paramLabels.sphLabel || 'OS Sphere'}</TableHead>
+          <TableHead>{dictionary.prescriptions.form.paramLabels.cylLabel || 'OS Cylinder'}</TableHead>
+          <TableHead>{dictionary.prescriptions.form.paramLabels.addLabel || 'OS Add'}</TableHead>
           {/* TODO: Add action button to view full prescription details */}
         </TableRow>
       </TableHeader>

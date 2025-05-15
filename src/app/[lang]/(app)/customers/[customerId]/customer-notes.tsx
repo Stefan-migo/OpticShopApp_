@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDistanceToNow } from 'date-fns';
+import { Dictionary } from '@/lib/i18n/types'; // Import Dictionary type
 
 // Define the structure for a fetched note
 type CustomerNote = {
@@ -19,11 +20,12 @@ type CustomerNote = {
 
 interface CustomerNotesProps {
   customerId: string;
-  isSuperuser: boolean; // Add isSuperuser prop
-  selectedTenantId: string | null; // Add selectedTenantId prop
+  isSuperuser: boolean;
+  selectedTenantId: string | null;
+  dictionary?: Dictionary['customers']; // Add dictionary prop back
 }
 
-export function CustomerNotes({ customerId, isSuperuser, selectedTenantId }: CustomerNotesProps) {
+export function CustomerNotes({ customerId, isSuperuser, selectedTenantId, dictionary }: CustomerNotesProps) {
   const supabase = createClient();
   const { toast } = useToast();
   const [notes, setNotes] = React.useState<CustomerNote[]>([]);
@@ -54,14 +56,14 @@ export function CustomerNotes({ customerId, isSuperuser, selectedTenantId }: Cus
     } catch (error: any) {
       console.error("Error fetching customer notes:", error);
       toast({
-        title: "Error loading notes",
-        description: error.message || "Could not fetch customer notes.",
+        title: dictionary?.customerDetails?.error || "Error loading notes",
+        description: error.message || (dictionary?.customerDetails?.error || "Could not fetch customer notes."),
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
-  }, [customerId, supabase, toast]);
+  }, [customerId, supabase, toast, dictionary]); // Added dictionary to dependencies
 
   React.useEffect(() => {
     fetchNotes();
@@ -70,7 +72,7 @@ export function CustomerNotes({ customerId, isSuperuser, selectedTenantId }: Cus
   // Handle adding a new note
   const handleAddNote = async () => {
     if (!newNote.trim()) {
-      toast({ title: "Note cannot be empty.", variant: "destructive" });
+      toast({ title: dictionary?.customerDetails?.emptyNote || "Note cannot be empty.", variant: "destructive" });
       return;
     }
     setIsSubmitting(true);
@@ -98,14 +100,14 @@ export function CustomerNotes({ customerId, isSuperuser, selectedTenantId }: Cus
 
       if (error) throw error;
 
-      toast({ title: "Note added successfully." });
+      toast({ title: dictionary?.customerDetails?.addNoteSuccess || "Note added successfully." });
       setNewNote(""); // Clear input
       fetchNotes(); // Refresh notes list
     } catch (error: any) {
       console.error("Error adding note:", error);
       toast({
-        title: "Error adding note",
-        description: error.message || "Could not save the note.",
+        title: dictionary?.customerDetails?.addNoteError || "Error adding note",
+        description: error.message || (dictionary?.customerDetails?.addNoteError || "Could not save the note."),
         variant: "destructive",
       });
     } finally {
@@ -117,11 +119,11 @@ export function CustomerNotes({ customerId, isSuperuser, selectedTenantId }: Cus
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>Add New Note</CardTitle>
+          <CardTitle>{dictionary?.customerDetails?.addNoteTitle || 'Add New Note'}</CardTitle>
         </CardHeader>
         <CardContent>
           <Textarea
-            placeholder="Type your note here..."
+            placeholder={dictionary?.customerDetails?.notesPlaceholder || "Type your note here..."}
             value={newNote}
             onChange={(e) => setNewNote(e.target.value)}
             disabled={isSubmitting}
@@ -130,16 +132,16 @@ export function CustomerNotes({ customerId, isSuperuser, selectedTenantId }: Cus
         </CardContent>
         <CardFooter>
           <Button onClick={handleAddNote} disabled={isSubmitting || !newNote.trim()}>
-            {isSubmitting ? "Adding..." : "Add Note"}
+            {isSubmitting ? (dictionary?.customerDetails?.addingNote || "Adding...") : (dictionary?.customerDetails?.addNoteButton || "Add Note")}
           </Button>
         </CardFooter>
       </Card>
 
-      <h3 className="text-lg font-semibold pt-4">Existing Notes</h3>
+      <h3 className="text-lg font-semibold pt-4">{dictionary?.customerDetails?.existingNotesTitle || 'Existing Notes'}</h3>
       {isLoading ? (
-        <p className="text-muted-foreground">Loading notes...</p>
+        <p className="text-muted-foreground">{dictionary?.customerDetails?.loading || 'Loading notes...'}</p>
       ) : notes.length === 0 ? (
-        <p className="text-muted-foreground">No notes found for this customer.</p>
+        <p className="text-muted-foreground">{dictionary?.customerDetails?.noData || 'No notes found for this customer.'}</p>
       ) : (
         <div className="space-y-3">
           {notes.map((note) => (

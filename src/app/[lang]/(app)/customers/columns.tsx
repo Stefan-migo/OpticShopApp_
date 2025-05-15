@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useDictionary } from "@/lib/i18n/dictionary-context"; // Import useDictionary hook
+import { Dictionary } from "@/lib/i18n/types"; // Import Dictionary type
 import { useParams } from 'next/navigation'; // Import useParams
 
 // TODO: Add checkbox component using shadcn-ui add
@@ -43,10 +43,11 @@ export type Customer = {
 interface CustomerColumnsProps {
   onEdit: (customer: Customer) => void;
   onDelete: (customerId: string) => void;
+  dictionary: Dictionary; // Add dictionary to props
 }
 
 // Export a function that generates the columns array
-export const getColumns = ({ onEdit, onDelete }: CustomerColumnsProps): ColumnDef<Customer>[] => [
+export const getColumns = ({ onEdit, onDelete, dictionary }: CustomerColumnsProps): ColumnDef<Customer>[] => [
   // Optional: Select column
   // {
   //   id: "select",
@@ -73,13 +74,12 @@ export const getColumns = ({ onEdit, onDelete }: CustomerColumnsProps): ColumnDe
   {
     accessorKey: "first_name",
     header: ({ column }) => {
-      const dictionary = useDictionary();
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          {dictionary.customers.form?.firstNameLabel || "First Name"} {/* Use dictionary */}
+          {dictionary.customers.form?.firstNameLabel || "First Name"} {/* Use dictionary parameter */}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
@@ -89,13 +89,12 @@ export const getColumns = ({ onEdit, onDelete }: CustomerColumnsProps): ColumnDe
   {
     accessorKey: "last_name",
     header: ({ column }) => {
-      const dictionary = useDictionary();
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          {dictionary.customers.form?.lastNameLabel || "Last Name"} {/* Use dictionary */}
+          {dictionary.customers.form?.lastNameLabel || "Last Name"} {/* Use dictionary parameter */}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
@@ -105,13 +104,12 @@ export const getColumns = ({ onEdit, onDelete }: CustomerColumnsProps): ColumnDe
   {
     accessorKey: "email",
     header: ({ column }) => {
-      const dictionary = useDictionary();
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          {dictionary.customers.form?.emailLabel || "Email"} {/* Use dictionary */}
+          {dictionary.customers.form?.emailLabel || "Email"} {/* Use dictionary parameter */}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
@@ -121,21 +119,19 @@ export const getColumns = ({ onEdit, onDelete }: CustomerColumnsProps): ColumnDe
   {
     accessorKey: "phone",
     header: () => {
-      const dictionary = useDictionary();
-      return dictionary.customers.form?.phoneLabel || "Phone"; // Use dictionary
+      return dictionary.customers.form?.phoneLabel || "Phone"; // Use dictionary parameter
     },
     cell: ({ row }) => <div>{row.getValue("phone") || "-"}</div>,
   },
   {
     accessorKey: "created_at",
     header: ({ column }) => {
-      const dictionary = useDictionary();
        return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          {dictionary.customers.form?.createdAtLabel || "Created At"} {/* Use dictionary */}
+          {dictionary.customers.form?.createdAtLabel || "Created At"} {/* Use dictionary parameter */}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
@@ -151,35 +147,35 @@ export const getColumns = ({ onEdit, onDelete }: CustomerColumnsProps): ColumnDe
     enableHiding: false,
     cell: ({ row }) => {
       const customer = row.original;
-      const dictionary = useDictionary();
+      // Removed useDictionary() call
 
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">{dictionary.common.openMenu || "Open menu"}</span> {/* Use dictionary */}
+              <span className="sr-only">{dictionary.common.openMenu || "Open menu"}</span> {/* Use dictionary parameter */}
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>{dictionary.common.actions || "Actions"}</DropdownMenuLabel> {/* Use dictionary */}
+            <DropdownMenuLabel>{dictionary.common.actions || "Actions"}</DropdownMenuLabel> {/* Use dictionary parameter */}
             <DropdownMenuItem
               onClick={() => navigator.clipboard.writeText(customer.id)}
             >
-              {dictionary.customers.tableActions?.copyId || "Copy customer ID"} {/* Use dictionary */}
+              {dictionary.customers.tableActions?.copyId || "Copy customer ID"} {/* Use dictionary parameter */}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link href={`/${useParams().lang}/customers/${customer.id}`} className="flex items-center">
-                <Eye className="mr-2 h-4 w-4" /> {dictionary.customers.tableActions?.viewDetails || "View Details"} {/* Use dictionary */}
+                <Eye className="mr-2 h-4 w-4" /> {dictionary.customers.tableActions?.viewDetails || "View Details"} {/* Use dictionary parameter */}
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onEdit(customer)}>{dictionary.customers.tableActions?.editCustomer || "Edit customer"}</DropdownMenuItem> {/* Use dictionary */}
+            <DropdownMenuItem onClick={() => onEdit(customer)}>{dictionary.customers.tableActions?.editCustomer || "Edit customer"}</DropdownMenuItem> {/* Use dictionary parameter */}
             <DropdownMenuItem
               className="text-red-600 focus:text-red-700 focus:bg-red-100"
               onClick={() => onDelete(customer.id)}
             >
-              {dictionary.customers.tableActions?.deleteCustomer || "Delete customer"} {/* Use dictionary */}
+              {dictionary.customers.tableActions?.deleteCustomer || "Delete customer"} {/* Use dictionary parameter */}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

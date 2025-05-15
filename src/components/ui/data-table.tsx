@@ -31,6 +31,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
+import { useDictionary } from "@/lib/i18n/dictionary-context";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -53,6 +54,8 @@ export function DataTable<TData, TValue>({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
+
+  const dictionary = useDictionary();
 
   const table = useReactTable({
     data,
@@ -91,7 +94,7 @@ export function DataTable<TData, TValue>({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="ml-auto">
-              Columns <ChevronDown className="ml-2 h-4 w-4" />
+              {dictionary.common.columns} <ChevronDown className="ml-2 h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -99,6 +102,29 @@ export function DataTable<TData, TValue>({
               .getAllColumns()
               .filter((column) => column.getCanHide())
               .map((column) => {
+                // Map column.id to the correct dictionary path and provide fallback
+                let translatedColumnName = column.id;
+                switch (column.id) {
+                  case 'first_name':
+                    translatedColumnName = dictionary.customers.form.firstNameLabel ?? column.id;
+                    break;
+                  case 'last_name':
+                    translatedColumnName = dictionary.customers.form.lastNameLabel ?? column.id;
+                    break;
+                  case 'email':
+                    translatedColumnName = dictionary.customers.form.emailLabel ?? column.id;
+                    break;
+                  case 'phone':
+                    translatedColumnName = dictionary.customers.form.phone ?? column.id;
+                    break;
+                  case 'created_at':
+                    translatedColumnName = dictionary.customers.form.createdAtLabel ?? column.id;
+                    break;
+                  default:
+                    // Fallback to column.id if no translation is found
+                    translatedColumnName = column.id;
+                }
+
                 return (
                   <DropdownMenuCheckboxItem
                     key={column.id}
@@ -108,7 +134,7 @@ export function DataTable<TData, TValue>({
                       column.toggleVisibility(!!value)
                     }
                   >
-                    {column.id}
+                    {translatedColumnName}
                   </DropdownMenuCheckboxItem>
                 );
               })}
@@ -116,7 +142,7 @@ export function DataTable<TData, TValue>({
         </DropdownMenu>
       </div>
       {/* Table */}
-      <div className="rounded-xl"> {/* Adjusted rounded corners, removed border */}
+      <div className="border border-border"> {/* Adjusted rounded corners, removed border */}
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -169,8 +195,8 @@ export function DataTable<TData, TValue>({
       {/* Pagination */}
       <div className="flex items-center justify-end space-x-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground"> {/* Applied text-text-secondary */}
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
+          {table.getFilteredSelectedRowModel().rows.length} {dictionary.common.of}{" "}
+          {table.getFilteredRowModel().rows.length} {dictionary.common.rowsSelected}
         </div>
         <div className="space-x-2">
           <Button
@@ -179,7 +205,7 @@ export function DataTable<TData, TValue>({
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
-            Previous
+            {dictionary.common.previous}
           </Button>
           <Button
             variant="outline"
@@ -187,7 +213,7 @@ export function DataTable<TData, TValue>({
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >
-            Next
+            {dictionary.common.next}
           </Button>
         </div>
       </div>

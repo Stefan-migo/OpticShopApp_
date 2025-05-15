@@ -40,6 +40,25 @@ export interface Dictionary {
       createdAtLabel?: string;
       userFetchError?: string;
       tenantFetchError?: string;
+      dobLabel?: string;
+      dobPlaceholder?: string;
+      addressLine1Label?: string;
+      addressLine1Placeholder?: string;
+      addressLine2Label?: string;
+      addressLine2Placeholder?: string;
+      cityLabel?: string;
+      cityPlaceholder?: string;
+      stateLabel?: string;
+      statePlaceholder?: string;
+      postalCodeLabel?: string;
+      postalCodePlaceholder?: string;
+      countryLabel?: string;
+      countryPlaceholder?: string;
+      insuranceProviderLabel?: string;
+      insuranceProviderPlaceholder?: string;
+      insurancePolicyNumberLabel?: string;
+      insurancePolicyNumberPlaceholder?: string;
+      phone?: string;
     };
     tableActions?: {
       copyId?: string;
@@ -60,6 +79,34 @@ export interface Dictionary {
     editCustomerDescription?: string;
     deleteConfirmTitle?: string;
     deleteConfirmDescription?: string;
+    customerDetails?: {
+      title?: string;
+      returnButton?: string;
+      customerInfoTitle?: string;
+      pastSalesTitle?: string;
+      appointmentsTitle?: string;
+      prescriptionsTitle?: string;
+      notesTitle?: string;
+      loading?: string;
+      error?: string;
+      noData?: string;
+      emailLabel?: string;
+      phoneLabel?: string;
+      dobLabel?: string;
+      addressLabel?: string;
+      insuranceTitle?: string;
+      insuranceProviderLabel?: string;
+      insurancePolicyNumberLabel?: string;
+      notesLabel?: string;
+      emptyNote?: string;
+      addNoteSuccess?: string;
+      addNoteError?: string;
+      addNoteTitle?: string;
+      notesPlaceholder?: string;
+      addingNote?: string;
+      addNoteButton?: string;
+      existingNotesTitle?: string;
+    };
   };
   inventory: {
     fetchProductsError?: string;
@@ -268,6 +315,11 @@ export interface Dictionary {
     deleteButton?: string;
   };
   common: {
+    columns?: string;
+    of?: string;
+    rowsSelected?: string;
+    previous?: string;
+    next?: string;
     loading?: string;
     failedToLoadData?: string;
     viewAll?: string;
@@ -296,16 +348,17 @@ export interface Dictionary {
     toggleNavigationMenu?: string;
     mobileSidebarTitle?: string;
     mobileSidebarDescription?: string;
+    statusHeader?: string; // Added generic status header key
     status: {
       available?: string;
       sold?: string;
       damaged?: string;
       returned?: string;
-      pending?: string;
-      cancelled?: string;
       completed?: string;
       in_stock?: string;
       out_of_stock?: string;
+      pending?: string;
+      cancelled?: string;
     };
   };
   roles: {
@@ -613,6 +666,7 @@ export interface Dictionary {
     pricingBasicFeature2?: string;
     pricingBasicFeature3?: string;
     pricingBasicFeature4?: string;
+    pricingBasicFeature5?: string;
     pricingProTitle?: string;
     pricingProPrice?: string;
     pricingProDescription?: string;
