@@ -118,7 +118,7 @@ export function ProductViewDetailsDialog({ open, onOpenChange, product, dictiona
             {dictionary.inventory.productDetailsDialog.description}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-4 ">
+        <div className="space-y-4 py-4 overflow-y-auto max-h-[400px]">
           <p><strong className="text-muted-foreground">{dictionary.inventory.productDetailsDialog.nameLabel}:</strong> {product.name}</p>
           {product.description && <p><strong className="text-muted-foreground">{dictionary.inventory.productDetailsDialog.descriptionLabel}:</strong> {product.description}</p>}
           <p><strong className="text-muted-foreground">{dictionary.inventory.productDetailsDialog.categoryLabel}:</strong> {product.product_categories?.name || dictionary.common.notAvailable}</p>
