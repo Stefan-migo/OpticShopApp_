@@ -1,7 +1,7 @@
 'use client';
 
 import Link from "next/link";
-import React from 'react';
+import React, { useEffect, useState } from 'react'; // Import useEffect and useState
 import {
   Home, Eye, Package, ShoppingCart, Contact, Calendar, LineChart, Settings, Users, Package2, Menu, AlertCircle, FileText, TrendingUp, Stethoscope, ClipboardPlus
   // Add any other specific icons used directly (like Package2, Menu)
@@ -34,6 +34,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/registry/new-york-v4/ui/breadcrumb";
+import BreadcrumbDetailName from "./BreadcrumbDetailName"; // Import the new component
 
 
 // Mapping of icon names (strings) to icon components
@@ -78,6 +79,69 @@ const SidebarLayoutContent: React.FC<SidebarLayoutContentProps> = ({
   dictionary,
 }) => {
   const { state } = useSidebar(); // Access sidebar state
+  const pathname = usePathname(); // Get current pathname
+  // const supabase = createClientComponentClient(); // Client-side Supabase client - No longer needed here
+
+  // Remove state and effect for fetching names
+  // const [customerName, setCustomerName] = useState<string | null>(null);
+  // const [productName, setProductName] = useState<string | null>(null);
+  // const [loadingBreadcrumbData, setLoadingBreadcrumbData] = useState(false);
+
+  // useEffect(() => {
+  //   const segments = pathname.split('/').filter(segment => segment !== lang && segment !== '(app)' && segment !== '');
+  //   const customerIdSegment = segments.find((segment, index) => segments[index - 1] === 'customers' && segment !== 'new');
+  //   const productIdSegment = segments.find((segment, index) => segments[index - 1] === 'inventory' && segment !== 'new');
+
+  //   const fetchBreadcrumbData = async () => {
+  //     setLoadingBreadcrumbData(true);
+  //     if (customerIdSegment) {
+  //       let query = supabase
+  //         .from('customers')
+  //         .select('first_name, last_name')
+  //         .eq('id', customerIdSegment);
+
+  //       // Apply tenant filter if superuser and a tenant is selected
+  //       if (isSuperuser && userTenantId) {
+  //         query = query.eq('tenant_id', userTenantId);
+  //       }
+
+  //       const { data: customer, error } = await query.maybeSingle(); // Use maybeSingle()
+  //       if (customer) {
+  //         setCustomerName(`${customer.first_name || ''} ${customer.last_name || ''}`.trim());
+  //       } else {
+  //         setCustomerName(null);
+  //         console.error('Error fetching customer for breadcrumb:', error);
+  //       }
+  //     } else {
+  //       setCustomerName(null);
+  //     }
+
+  //     if (productIdSegment) {
+  //       let query = supabase
+  //         .from('products')
+  //         .select('name')
+  //         .eq('id', productIdSegment);
+
+  //       // Apply tenant filter if superuser and a tenant is selected
+  //       if (isSuperuser && userTenantId) {
+  //         query = query.eq('tenant_id', userTenantId);
+  //       }
+
+  //       const { data: product, error } = await query.maybeSingle(); // Use maybeSingle()
+  //       if (product) {
+  //         setProductName(product.name);
+  //       } else {
+  //         setProductName(null);
+  //         console.error('Error fetching product for breadcrumb:', error);
+  //       }
+  //     } else {
+  //       setProductName(null);
+  //     }
+  //     setLoadingBreadcrumbData(false);
+  //   };
+
+  //   fetchBreadcrumbData();
+  // }, [pathname, lang, supabase, isSuperuser, userTenantId]); // Add dependencies
 
   const FallbackIcon = iconMap['AlertCircle'] || AlertCircle; // Ensure AlertCircle is in the map or imported
 
@@ -177,22 +241,36 @@ const SidebarLayoutContent: React.FC<SidebarLayoutContentProps> = ({
                   </BreadcrumbLink>
                 </BreadcrumbItem>
                 {/* Dynamically generated breadcrumb items */}
-                {usePathname().split('/').filter(segment => segment !== lang && segment !== '(app)' && segment !== '').map((segment: string, index: number, segments: string[]) => {
+                {pathname.split('/').filter(segment => segment !== lang && segment !== '(app)' && segment !== '').map((segment: string, index: number, segments: string[]) => {
                   const isLastSegment = index === segments.length - 1;
                   const href = `/${lang}/${segments.slice(0, index + 1).join('/')}`; // Construct href for intermediate links
-                  // Attempt to get translation, fallback to segment text with spaces
-                  const segmentText = dictionary.navigation?.[segment as keyof typeof dictionary.navigation] || segment.replace(/-/g, ' ');
+                  const previousSegment = segments[index - 1];
+
+                  let segmentContent: React.ReactNode;
+
+                  // Check if it's a detail page segment and use BreadcrumbDetailName
+                  if (previousSegment === 'customers' && isLastSegment && segment !== 'new') {
+                      segmentContent = <BreadcrumbDetailName id={segment} type="customer" isSuperuser={isSuperuser} userTenantId={userTenantId} />;
+                  } else if (previousSegment === 'inventory' && isLastSegment && segment !== 'new') {
+                      segmentContent = <BreadcrumbDetailName id={segment} type="product" isSuperuser={isSuperuser} userTenantId={userTenantId} />;
+                  } else {
+                      // Fallback to translated segment text or segment text with spaces
+                      segmentContent = dictionary.navigation?.[segment as keyof typeof dictionary.navigation] || segment.replace(/-/g, ' ');
+                  }
+
 
                   return (
                     <React.Fragment key={segment}>
                       <BreadcrumbSeparator />
                       <BreadcrumbItem>
                         {isLastSegment ? (
-                          <BreadcrumbPage>{segmentText}</BreadcrumbPage>
+                          <BreadcrumbPage>
+                            {segmentContent}
+                          </BreadcrumbPage>
                         ) : (
                           <BreadcrumbLink asChild>
                             <Link href={href}>
-                              {segmentText}
+                              {segmentContent}
                             </Link>
                           </BreadcrumbLink>
                         )}
