@@ -118,7 +118,42 @@ export function DataTable<TData, TValue>({
                     translatedColumnName = dictionary.customers.form.phone ?? column.id;
                     break;
                   case 'created_at':
-                    translatedColumnName = dictionary.customers.form.createdAtLabel ?? column.id;
+                    translatedColumnName = dictionary.inventory.productColumns.createdAtHeader ?? column.id; // Use inventory key for created_at
+                    break;
+                  // Inventory Product Table Columns
+                  case 'name':
+                    translatedColumnName = dictionary.inventory.productColumns.nameHeader ?? column.id;
+                    break;
+                  case 'product_categories_name':
+                    translatedColumnName = dictionary.inventory.productColumns.categoryHeader ?? column.id;
+                    break;
+                  case 'brand':
+                    translatedColumnName = dictionary.inventory.productColumns.brandHeader ?? column.id;
+                    break;
+                  case 'base_price':
+                    translatedColumnName = dictionary.inventory.productColumns.priceHeader ?? column.id;
+                    break;
+                  // Inventory Stock Table Columns
+                  case 'products_name':
+                    translatedColumnName = dictionary.inventory.stockColumns.productNameHeader ?? column.id;
+                    break;
+                  case 'serial_number':
+                    translatedColumnName = dictionary.inventory.stockColumns.serialNumberHeader ?? column.id;
+                    break;
+                  case 'quantity':
+                    translatedColumnName = dictionary.inventory.stockColumns.quantityHeader ?? column.id;
+                    break;
+                  case 'status':
+                    translatedColumnName = dictionary.inventory.stockColumns.statusHeader ?? column.id;
+                    break;
+                  case 'location':
+                    translatedColumnName = dictionary.inventory.stockColumns.locationHeader ?? column.id;
+                    break;
+                  case 'cost_price':
+                    translatedColumnName = dictionary.inventory.stockColumns.costPriceHeader ?? column.id;
+                    break;
+                  case 'purchase_date':
+                    translatedColumnName = dictionary.inventory.stockColumns.purchaseDateHeader ?? column.id;
                     break;
                   default:
                     // Fallback to column.id if no translation is found

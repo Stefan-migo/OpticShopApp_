@@ -9,7 +9,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-muted text-muted-foreground shadow-neumorphic hover:shadow-neumorphic-sm active:shadow-neumorphic-inset", // Neumorphic default button
+        default: "bg-muted border border-border text-muted-foreground shadow-neumorphic hover:shadow-neumorphic-sm active:shadow-neumorphic-inset", // Neumorphic default button
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90", // Keep destructive as is for now
         outline:

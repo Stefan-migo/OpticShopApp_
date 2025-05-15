@@ -25,7 +25,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/components/ui/select"; // Keep Select import for now if needed elsewhere, but will replace in form
+import { Combobox } from "@/components/ui/combobox"; // Import Combobox component
 import {
   Popover, // Removed Popover imports as DatePicker is removed
   PopoverContent, // Removed Popover imports as DatePicker is removed
@@ -55,12 +56,13 @@ interface StockItemFormProps {
   initialData?: InventoryItem | null; // For editing existing item
   onSuccess?: () => void; // Callback after successful submission
   dictionary: Dictionary; // Add dictionary prop
+  userTenantId: string | null; // Add userTenantId prop
 }
 
 // Define simple type for fetched product dropdown data
 type ProductOption = { id: string; name: string };
 
-export function StockItemForm({ initialData, onSuccess, dictionary }: StockItemFormProps) {
+export function StockItemForm({ initialData, onSuccess, dictionary, userTenantId }: StockItemFormProps) {
   const { toast } = useToast();
   const supabase = createClient();
   const isEditing = !!initialData;
@@ -81,9 +83,12 @@ export function StockItemForm({ initialData, onSuccess, dictionary }: StockItemF
           .select("id, name")
           .order("name");
 
-        // Apply tenant filter if superuser and a tenant is selected
+        // Apply tenant filter if user is superuser AND a tenant is selected (via cookie/search param)
+        // OR if user is NOT a superuser and userTenantId prop is available
         if (isSuperuser && selectedTenantId) {
           query = query.eq('tenant_id', selectedTenantId);
+        } else if (!isSuperuser && userTenantId) {
+           query = query.eq('tenant_id', userTenantId);
         }
 
         const { data, error } = await query;
@@ -127,7 +132,7 @@ export function StockItemForm({ initialData, onSuccess, dictionary }: StockItemF
   async function onSubmit(values: StockItemFormValues) {
     try {
       let error = null;
-      const stockData = {
+      const stockData: any = { // Use any for now to easily add tenant_id
         product_id: values.product_id,
         serial_number: values.serial_number || null,
         quantity: values.quantity,
@@ -147,6 +152,10 @@ export function StockItemForm({ initialData, onSuccess, dictionary }: StockItemF
         error = updateError;
       } else {
         // Insert logic
+        // Add tenant_id for new stock items
+        if (userTenantId) {
+           stockData.tenant_id = userTenantId;
+        }
         const { error: insertError } = await supabase
           .from("inventory_items")
           .insert([stockData]);
@@ -180,20 +189,18 @@ export function StockItemForm({ initialData, onSuccess, dictionary }: StockItemF
           control={form.control}
           name="product_id"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="flex flex-col"> {/* Use flex-col for proper Combobox layout */}
               <FormLabel>{dictionary.inventory.stockItemForm.productLabel} *</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined} disabled={isLoading || isEditing}> {/* Disable product change when editing */}
-                <SelectTrigger>
-                  <SelectValue placeholder={dictionary.inventory.stockItemForm.selectProductPlaceholder} />
-                </SelectTrigger>
-                <SelectContent>
-                  {products.map((prod) => (
-                    <SelectItem key={prod.id} value={prod.id}>
-                      {prod.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                options={products.map(prod => ({ value: prod.id, label: prod.name }))}
+                selectedValue={field.value}
+                onSelectValue={field.onChange}
+                placeholder={dictionary.inventory.stockItemForm.selectProductPlaceholder}
+                specificSearchPlaceholder={dictionary.inventory.stockItemForm.searchProductPlaceholder} // Use specific prop
+                specificNoResultsText={dictionary.inventory.stockItemForm.noProductFound} // Use specific prop
+                disabled={isLoading || isEditing} // Disable product change when editing
+                dictionary={dictionary} // Pass dictionary for localization
+              />
               <FormMessage />
             </FormItem>
           )}

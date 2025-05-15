@@ -164,32 +164,15 @@ export interface Dictionary {
       editStockItem?: string;
       deleteStockItem?: string;
     };
-    stockItemForm: {
-      loadErrorTitle?: string;
-      loadErrorDescription?: string;
-      saveSuccess?: string;
-      saveErrorTitle?: string;
-      productLabel?: string;
-      selectProductPlaceholder?: string;
-      serialNumberLabel?: string;
-      serialNumberPlaceholder?: string;
-      serialNumberDescription?: string;
-      quantityLabel?: string;
-      quantityPlaceholder?: string;
-      costPriceLabel?: string;
-      costPricePlaceholder?: string;
-      purchaseDateLabel?: string;
-      locationLabel?: string;
-      locationPlaceholder?: string;
-      statusLabel?: string;
-      selectStatusPlaceholder?: string;
-      statusAvailable?: string;
-      statusSold?: string;
-      damaged?: string;
-      returned?: string;
-      productRequired?: string;
-      quantityMin?: string;
-      costNonNegative?: string;
+    productColumns: {
+      nameHeader?: string;
+      categoryHeader?: string;
+      brandHeader?: string;
+      priceHeader?: string;
+      createdAtHeader?: string;
+      editProduct?: string;
+      viewDetails?: string;
+      deleteProduct?: string;
     };
     productForm: {
       loadErrorTitle?: string;
@@ -218,6 +201,39 @@ export interface Dictionary {
       invalidSupplier?: string;
       priceNonNegative?: string;
       reorderLevelNonNegativeInteger?: string;
+      searchCategoryPlaceholder?: string; // Added for Combobox
+      noCategoryFound?: string; // Added for Combobox
+      searchSupplierPlaceholder?: string; // Added for Combobox
+      noSupplierFound?: string; // Added for Combobox
+    };
+    stockItemForm: {
+      loadErrorTitle?: string;
+      loadErrorDescription?: string;
+      saveSuccess?: string;
+      saveErrorTitle?: string;
+      productLabel?: string;
+      selectProductPlaceholder?: string;
+      serialNumberLabel?: string;
+      serialNumberPlaceholder?: string;
+      serialNumberDescription?: string;
+      quantityLabel?: string;
+      quantityPlaceholder?: string;
+      costPriceLabel?: string;
+      costPricePlaceholder?: string;
+      purchaseDateLabel?: string;
+      locationLabel?: string;
+      locationPlaceholder?: string;
+      statusLabel?: string;
+      selectStatusPlaceholder?: string;
+      statusAvailable?: string;
+      statusSold?: string;
+      damaged?: string;
+      returned?: string;
+      productRequired?: string;
+      quantityMin?: string;
+      costNonNegative?: string;
+      searchProductPlaceholder?: string; // Added for Combobox
+      noProductFound?: string; // Added for Combobox
     };
   };
   prescriptions: {

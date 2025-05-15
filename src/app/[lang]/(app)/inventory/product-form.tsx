@@ -24,38 +24,37 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/components/ui/select"; // Keep Select import for now if needed elsewhere, but will replace in form
+import { Combobox } from "@/components/ui/combobox"; // Import Combobox component
 import { useToast } from "@/components/ui/use-toast";
 import { createClient } from "@/lib/supabase/client";
 import { type Product } from "./columns"; // Import Product type
 import { Dictionary } from '@/lib/i18n/types'; // Import shared Dictionary interface
 
-// Define the form schema using Zod
-const createFormSchema = (dictionary: Dictionary) => z.object({
-  name: z.string().min(1, { message: dictionary.inventory.productForm.nameRequired }).max(100), // Use dictionary
-  description: z.string().optional(),
-  category_id: z.string().uuid({ message: dictionary.inventory.productForm.invalidCategory }).nullable(), // Use dictionary
-  supplier_id: z.string().uuid({ message: dictionary.inventory.productForm.invalidSupplier }).nullable(), // Use dictionary
-  brand: z.string().optional(),
-  model: z.string().optional(),
-  base_price: z.coerce.number().min(0, { message: dictionary.inventory.productForm.priceNonNegative }), // Use dictionary
-  reorder_level: z.coerce.number().int().min(0, { message: dictionary.inventory.productForm.reorderLevelNonNegativeInteger }).nullable().optional(), // Use dictionary
-  // attributes: z.string().optional(), // Consider JSON editor or key-value pairs later
-});
-
-type ProductFormValues = z.infer<ReturnType<typeof createFormSchema>>;
+type ProductFormValues = z.infer<z.ZodObject<{ // Define type based on the inlined schema
+  name: z.ZodString;
+  description: z.ZodOptional<z.ZodString>;
+  category_id: z.ZodNullable<z.ZodString>;
+  supplier_id: z.ZodNullable<z.ZodString>;
+  brand: z.ZodOptional<z.ZodString>;
+  model: z.ZodOptional<z.ZodString>;
+  base_price: z.ZodNumber;
+  reorder_level: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+  // attributes: z.ZodOptional<z.ZodString>;
+}>>;
 
 interface ProductFormProps {
   initialData?: Product | null; // For editing existing customer
   onSuccess?: () => void; // Callback after successful submission
   dictionary: Dictionary; // Add dictionary prop
+  userTenantId: string | null; // Add userTenantId prop
 }
 
 // Define simple types for fetched dropdown data
 type Category = { id: string; name: string };
 type Supplier = { id: string; name: string };
 
-export function ProductForm({ initialData, onSuccess, dictionary }: ProductFormProps) {
+export function ProductForm({ initialData, onSuccess, dictionary, userTenantId }: ProductFormProps) {
   const { toast } = useToast();
   const supabase = createClient();
   const isEditing = !!initialData;
@@ -75,10 +74,14 @@ export function ProductForm({ initialData, onSuccess, dictionary }: ProductFormP
         let categoryQuery = supabase.from("product_categories").select("id, name").order("name");
         let supplierQuery = supabase.from("suppliers").select("id, name").order("name");
 
-        // Apply tenant filter if superuser and a tenant is selected
+        // Apply tenant filter if user is superuser AND a tenant is selected (via cookie/search param)
+        // OR if user is NOT a superuser and userTenantId prop is available
         if (isSuperuser && selectedTenantId) {
           categoryQuery = categoryQuery.eq('tenant_id', selectedTenantId);
           supplierQuery = supplierQuery.eq('tenant_id', selectedTenantId);
+        } else if (!isSuperuser && userTenantId) {
+           categoryQuery = categoryQuery.eq('tenant_id', userTenantId);
+           supplierQuery = supplierQuery.eq('tenant_id', userTenantId);
         }
 
         const [categoryRes, supplierRes] = await Promise.all([
@@ -105,9 +108,22 @@ export function ProductForm({ initialData, onSuccess, dictionary }: ProductFormP
     fetchDropdownData();
   }, [supabase, toast, dictionary]);
 
+  // Define the form schema using Zod (inlined and memoized)
+  const formSchema = React.useMemo(() => z.object({
+    name: z.string().min(1, { message: dictionary.inventory.productForm.nameRequired }).max(100), // Access dictionary directly
+    description: z.string().optional(),
+    category_id: z.string().uuid({ message: dictionary.inventory.productForm.invalidCategory }).nullable(),
+    supplier_id: z.string().uuid({ message: dictionary.inventory.productForm.invalidSupplier }).nullable(),
+    brand: z.string().optional(),
+    model: z.string().optional(),
+    base_price: z.coerce.number().min(0, { message: dictionary.inventory.productForm.priceNonNegative }),
+    reorder_level: z.coerce.number().int().min(0, { message: dictionary.inventory.productForm.reorderLevelNonNegativeInteger }).nullable().optional(),
+    // attributes: z.string().optional(),
+  }), [dictionary]); // Dependency remains dictionary
+
   // Define form
   const form = useForm<ProductFormValues>({
-    resolver: zodResolver(createFormSchema(dictionary)), // Pass dictionary to schema function
+    resolver: zodResolver(formSchema), // Use the memoized schema
     defaultValues: {
       name: initialData?.name || "",
       description: initialData?.description || "",
@@ -126,7 +142,7 @@ export function ProductForm({ initialData, onSuccess, dictionary }: ProductFormP
   async function onSubmit(values: ProductFormValues) {
     try {
       let error = null;
-      const productData = {
+      const productData: any = { // Use any for now to easily add tenant_id
         name: values.name,
         description: values.description || null,
         category_id: values.category_id || null,
@@ -148,6 +164,10 @@ export function ProductForm({ initialData, onSuccess, dictionary }: ProductFormP
         error = updateError;
       } else {
         // Insert logic
+        // Add tenant_id for new products
+        if (userTenantId) {
+           productData.tenant_id = userTenantId;
+        }
         const { error: insertError } = await supabase
           .from("products")
           .insert([productData]); // No need for created_at, handled by default
@@ -214,44 +234,38 @@ export function ProductForm({ initialData, onSuccess, dictionary }: ProductFormP
             control={form.control}
             name="category_id"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>{dictionary.inventory.productForm.categoryLabel}</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined} disabled={isLoading}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={dictionary.inventory.productForm.selectCategoryPlaceholder} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="null">{dictionary.common.none}</SelectItem>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+            <FormItem className="flex flex-col"> {/* Use flex-col for proper Combobox layout */}
+              <FormLabel>{dictionary.inventory.productForm.categoryLabel}</FormLabel>
+              <Combobox
+                options={categories.map(cat => ({ value: cat.id, label: cat.name }))}
+                selectedValue={field.value}
+                onSelectValue={field.onChange}
+                placeholder={dictionary.inventory.productForm.selectCategoryPlaceholder}
+                specificSearchPlaceholder={dictionary.inventory.productForm.searchCategoryPlaceholder} // Use specific prop
+                specificNoResultsText={dictionary.inventory.productForm.noCategoryFound} // Use specific prop
+                disabled={isLoading}
+                dictionary={dictionary} // Pass dictionary for localization
+              />
+              <FormMessage />
+            </FormItem>
+          )}
+        />
           <FormField
             control={form.control}
             name="supplier_id"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="flex flex-col"> {/* Use flex-col for proper Combobox layout */}
                 <FormLabel>{dictionary.inventory.productForm.supplierLabel}</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined} disabled={isLoading}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={dictionary.inventory.productForm.selectSupplierPlaceholder} />
-                  </SelectTrigger>
-                  <SelectContent>
-                     <SelectItem value="null">{dictionary.common.none}</SelectItem>
-                    {suppliers.map((sup) => (
-                      <SelectItem key={sup.id} value={sup.id}>
-                        {sup.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                 <Combobox
+                    options={suppliers.map(sup => ({ value: sup.id, label: sup.name }))}
+                    selectedValue={field.value}
+                    onSelectValue={field.onChange}
+                    placeholder={dictionary.inventory.productForm.selectSupplierPlaceholder}
+                    specificSearchPlaceholder={dictionary.inventory.productForm.searchSupplierPlaceholder} // Use specific prop
+                    specificNoResultsText={dictionary.inventory.productForm.noSupplierFound} // Use specific prop
+                    disabled={isLoading}
+                    dictionary={dictionary} // Pass dictionary for localization
+                  />
                 <FormMessage />
               </FormItem>
             )}

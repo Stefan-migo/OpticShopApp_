@@ -6,7 +6,7 @@ const Table = React.forwardRef<
   HTMLTableElement,
   React.HTMLAttributes<HTMLTableElement>
 >(({ className, ...props }, ref) => (
-  <div className="relative w-full overflow-auto shadow-neumorphic-inset"> {/* Added inset shadow to container */}
+  <div className="relative border border-border w-full overflow-auto shadow-neumorphic-inset"> {/* Added inset shadow to container */}
     <table
       ref={ref}
       className={cn("w-full rounded-xl caption-bottom text-sm", className)}

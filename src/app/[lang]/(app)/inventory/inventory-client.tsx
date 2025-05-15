@@ -287,7 +287,7 @@ function InventoryPageClient({ dictionary, lang, isSuperuser, userTenantId }: In
 
   return (
     <Tabs defaultValue="products" className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between ">
         <TabsList>
           {/* Use dictionary directly */}
           <TabsTrigger value="products">{dictionary.inventory.productCatalogTab}</TabsTrigger>
@@ -310,7 +310,7 @@ function InventoryPageClient({ dictionary, lang, isSuperuser, userTenantId }: In
               </DialogDescription>
             </DialogHeader>
             {/* Pass initialData as null or undefined for adding */}
-            <ProductForm onSuccess={handleAddProductSuccess} initialData={null} dictionary={dictionary} /> {/* Pass dictionary */}
+            <ProductForm onSuccess={handleAddProductSuccess} initialData={null} dictionary={dictionary} userTenantId={userTenantId} /> {/* Pass dictionary and userTenantId */}
           </DialogContent>
         </Dialog>
       </div>
@@ -343,7 +343,7 @@ function InventoryPageClient({ dictionary, lang, isSuperuser, userTenantId }: In
                   </DialogDescription>
                 </DialogHeader>
                  {/* Pass initialData as null or undefined for adding */}
-                <StockItemForm onSuccess={handleAddStockSuccess} initialData={null} dictionary={dictionary} /> {/* Pass dictionary */}
+                <StockItemForm onSuccess={handleAddStockSuccess} initialData={null} dictionary={dictionary} userTenantId={userTenantId} /> {/* Pass dictionary and userTenantId */}
               </DialogContent>
             </Dialog>
          </div>
@@ -369,7 +369,7 @@ function InventoryPageClient({ dictionary, lang, isSuperuser, userTenantId }: In
               {dictionary.inventory.editProductDescription} {/* Use dictionary directly */}
             </DialogDescription>
           </DialogHeader>
-          <ProductForm initialData={editingProduct} onSuccess={handleEditProductSuccess} dictionary={dictionary} /> {/* Pass dictionary */}
+          <ProductForm initialData={editingProduct} onSuccess={handleEditProductSuccess} dictionary={dictionary} userTenantId={userTenantId} /> {/* Pass dictionary and userTenantId */}
         </DialogContent>
       </Dialog>
 
@@ -404,7 +404,7 @@ function InventoryPageClient({ dictionary, lang, isSuperuser, userTenantId }: In
             </DialogDescription>
           </DialogHeader>
           {/* Pass initialData for editing */}
-          <StockItemForm onSuccess={handleEditStockSuccess} initialData={editingStockItem} dictionary={dictionary} /> {/* Pass dictionary */}
+          <StockItemForm onSuccess={handleEditStockSuccess} initialData={editingStockItem} dictionary={dictionary} userTenantId={userTenantId} /> {/* Pass dictionary and userTenantId */}
         </DialogContent>
       </Dialog>
 

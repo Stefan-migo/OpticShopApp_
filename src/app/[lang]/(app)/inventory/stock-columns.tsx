@@ -99,7 +99,7 @@ export const getStockColumns = ({ onEdit, onDelete, dictionary }: InventoryItemC
           </Button>
         );
       },
-      cell: ({ row }) => <div className="font-medium">{row.original.products?.name ? dictionary.inventory.stockColumns?.productNameHeader : dictionary.common.notAvailable}</div>, // Use dictionary for fallback
+      cell: ({ row }) => <div className="font-medium">{row.original.products?.name || dictionary.common.notAvailable}</div>, // Display product name or fallback
       filterFn: (row, id, value) => { // Custom filter for nested object
           // Ensure value is a string and productName exists before filtering
           const productName = row.original.products?.name;

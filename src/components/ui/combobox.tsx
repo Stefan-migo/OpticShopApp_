@@ -30,6 +30,8 @@ interface ComboboxProps {
   triggerClassName?: string;
   disabled?: boolean;
   dictionary?: Dictionary | null | undefined; // Add optional dictionary prop
+  specificSearchPlaceholder?: string; // New prop for specific search placeholder
+  specificNoResultsText?: string; // New prop for specific no results text
 }
 
 export function Combobox({
@@ -42,12 +44,14 @@ export function Combobox({
   triggerClassName,
   disabled = false,
   dictionary, // Accept dictionary prop
+  specificSearchPlaceholder, // Accept new prop
+  specificNoResultsText, // Accept new prop
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
 
-  // Use dictionary for localization with fallback to default strings for search and no results
-  const localizedSearchPlaceholder = dictionary?.sales?.searchCustomersPlaceholder || dictionary?.sales?.searchItemsPlaceholder || searchPlaceholder;
-  const localizedNoResultsText = dictionary?.sales?.noCustomerFound || dictionary?.sales?.noStockFound || noResultsText;
+  // Use specific props first, then dictionary lookups, then default props
+  const localizedSearchPlaceholder = specificSearchPlaceholder || dictionary?.sales?.searchCustomersPlaceholder || dictionary?.sales?.searchItemsPlaceholder || searchPlaceholder;
+  const localizedNoResultsText = specificNoResultsText || dictionary?.sales?.noCustomerFound || dictionary?.sales?.noStockFound || noResultsText;
 
 
   return (
@@ -57,7 +61,7 @@ export function Combobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={cn("w-[200px] justify-between", triggerClassName)}
+          className={cn("w-[200px] justify-between bg-input border border-border text-muted-foreground", triggerClassName)}
           disabled={disabled}
         >
           {selectedValue
