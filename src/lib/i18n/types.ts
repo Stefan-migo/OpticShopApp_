@@ -250,6 +250,9 @@ export interface Dictionary {
       deleteErrorTitle?: string; // Added for category delete error title
       deleteConfirmTitle?: string; // Added for category delete confirmation title
       deleteConfirmDescription?: string; // Added for category delete confirmation description
+      nameRequired?: string; // Added for category name required message
+      editTitle?: string; // Added for Edit Category Dialog title
+      editDescription?: string; // Added for Edit Category Dialog description
     };
     stockItemForm: {
       loadErrorTitle?: string;

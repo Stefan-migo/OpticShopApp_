@@ -271,7 +271,10 @@
       "deleteSuccess": "Categoría eliminada exitosamente.",
       "deleteErrorTitle": "Error al eliminar categoría",
       "deleteConfirmTitle": "Confirmar Eliminación",
-      "deleteConfirmDescription": "¿Está seguro de que desea eliminar esta categoría? Esta acción no se puede deshacer."
+      "deleteConfirmDescription": "¿Está seguro de que desea eliminar esta categoría? Esta acción no se puede deshacer.",
+      "nameRequired": "El nombre de la categoría es obligatorio.",
+      "editTitle": "Editar Categoría",
+      "editDescription": "Editar los detalles de la categoría."
     }
   },
   "common": {

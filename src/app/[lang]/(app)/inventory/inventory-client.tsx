@@ -378,7 +378,7 @@ function InventoryPageClient({ dictionary, lang, isSuperuser, userTenantId }: In
                   {dictionary.common?.copyId}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setEditingCategory(category)}> {/* Open edit dialog */}
+                <DropdownMenuItem onClick={() => { setEditingCategory(category); setIsEditCategoryDialogOpen(true); }}> {/* Open edit dialog */}
                   {dictionary.common?.edit}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleDeleteCategory(category.id)} className="text-red-500 focus:text-red-600"> {/* Open delete dialog */}
@@ -600,9 +600,9 @@ function InventoryPageClient({ dictionary, lang, isSuperuser, userTenantId }: In
       }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{dictionary.inventory.categoryForm?.editButton || "Edit Category"}</DialogTitle> {/* TODO: Add dictionary key */}
+            <DialogTitle>{dictionary.inventory.categoryForm?.editTitle}</DialogTitle>
             <DialogDescription>
-              Edit the details of the category. {/* TODO: Add dictionary key */}
+              {dictionary.inventory.categoryForm?.editDescription}
             </DialogDescription>
           </DialogHeader>
           {/* Pass initialData for editing */}
@@ -614,9 +614,9 @@ function InventoryPageClient({ dictionary, lang, isSuperuser, userTenantId }: In
       <AlertDialog open={isDeleteCategoryDialogOpen} onOpenChange={setIsDeleteCategoryDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{dictionary.inventory.categoryForm?.deleteConfirmTitle || "Confirm Deletion"}</AlertDialogTitle> {/* TODO: Add dictionary key */}
+            <AlertDialogTitle>{dictionary.inventory.categoryForm?.deleteConfirmTitle}</AlertDialogTitle>
             <AlertDialogDescription>
-              {dictionary.inventory.categoryForm?.deleteConfirmDescription || "Are you sure you want to delete this category? This action cannot be undone."} {/* TODO: Add dictionary key */}
+              {dictionary.inventory.categoryForm?.deleteConfirmDescription}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

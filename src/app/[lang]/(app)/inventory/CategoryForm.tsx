@@ -20,12 +20,6 @@ import { addProductCategory, updateProductCategory } from "./actions"; // Import
 // TODO: Define Category type in database.types.ts and import it
 // import { type Category } from "@/lib/supabase/types/database.types";
 
-const categoryFormSchema = z.object({
-  name: z.string().min(1, { message: "Category name is required." }), // TODO: Use dictionary
-});
-
-type CategoryFormValues = z.infer<typeof categoryFormSchema>;
-
 interface CategoryFormProps {
   dictionary: Dictionary;
   initialData?: any | null; // Use any for now, TODO: Use Category type
@@ -37,6 +31,12 @@ interface CategoryFormProps {
 export function CategoryForm({ dictionary, initialData, onCategoryAdded, onCategoryUpdated, onCancelEdit }: CategoryFormProps) {
   const { toast } = useToast();
   const isEditing = !!initialData;
+
+  const categoryFormSchema = z.object({
+    name: z.string().min(1, { message: dictionary.inventory.categoryForm?.nameRequired }),
+  });
+
+  type CategoryFormValues = z.infer<typeof categoryFormSchema>;
 
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categoryFormSchema),
@@ -67,13 +67,13 @@ export function CategoryForm({ dictionary, initialData, onCategoryAdded, onCateg
 
       if (error) {
         toast({
-          title: dictionary.inventory.categoryForm?.saveErrorTitle || "Error updating category", // TODO: Add dictionary key
+          title: dictionary.inventory.categoryForm?.saveErrorTitle,
           description: error.message,
           variant: "destructive",
         });
       } else if (data) {
         toast({
-          title: dictionary.inventory.categoryForm?.saveSuccess || "Category updated successfully.", // TODO: Add dictionary key
+          title: dictionary.inventory.categoryForm?.saveSuccess,
           variant: "default",
         });
         onCategoryUpdated?.(); // Notify parent component
@@ -84,13 +84,13 @@ export function CategoryForm({ dictionary, initialData, onCategoryAdded, onCateg
 
       if (error) {
         toast({
-          title: dictionary.inventory.categoryForm?.saveErrorTitle || "Error adding category", // TODO: Add dictionary key
+          title: dictionary.inventory.categoryForm?.saveErrorTitle,
           description: error.message,
           variant: "destructive",
         });
       } else if (data) {
         toast({
-          title: dictionary.inventory.categoryForm?.saveSuccess || "Category added successfully.", // TODO: Add dictionary key
+          title: dictionary.inventory.categoryForm?.saveSuccess,
           variant: "default",
         });
         onCategoryAdded?.(); // Notify parent component
@@ -117,7 +117,7 @@ export function CategoryForm({ dictionary, initialData, onCategoryAdded, onCateg
           <Button type="submit" disabled={isLoading}>
             {isLoading
               ? (isEditing ? dictionary.common?.saving : dictionary.common?.adding) // Use common saving/adding keys
-              : (isEditing ? dictionary.inventory.categoryForm?.saveChangesButton || "Save Changes" : dictionary.inventory.categoryForm?.addButton || "Add Category") // TODO: Add saveChangesButton key
+              : (isEditing ? dictionary.inventory.categoryForm?.saveChangesButton : dictionary.inventory.categoryForm?.addButton)
             }
           </Button>
           {isEditing && (
