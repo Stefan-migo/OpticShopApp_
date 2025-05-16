@@ -2,7 +2,7 @@
 
 import { use } from 'react'; // Keep use for dictionary
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CheckCircle, Rocket, Zap, LayoutDashboard, Settings, Menu, Sun, Moon } from "lucide-react";
+import { ArrowRight, CheckCircle, Rocket, Zap, LayoutDashboard, Settings, Menu, Sun, Moon, ChartNoAxesCombined } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useTheme } from 'next-themes';
@@ -282,7 +282,7 @@ const SaaSProductLandingPage = ({ params }: { params: Promise<{ lang: Locale }> 
                         <FeatureCard
                             title={landingDict.feature6Title || "24/7 Support"}
                             description={landingDict.feature6Description || "Our dedicated support team is always here to help you with any issues."}
-                            icon={<CheckCircle className="w-8 h-8 text-accent-primary" />}
+                            icon={<ChartNoAxesCombined className="w-8 h-8 text-accent-primary" />}
                         />
                     </div>
                 </div>
@@ -305,7 +305,7 @@ const SaaSProductLandingPage = ({ params }: { params: Promise<{ lang: Locale }> 
                         </div>
                         <div>
                             <img
-                                src="/assets/aboutus.svg"
+                                src="/aboutus3.jpg"
                                 alt={landingDict.aboutUsImageAlt || "About Us"}
                                 className="rounded-xl shadow-neumorphic-sm"
                             />

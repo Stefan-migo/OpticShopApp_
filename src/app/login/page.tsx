@@ -6,22 +6,17 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { signInWithPassword } from '@/app/actions/auth'; // Import the Server Action
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import Link from "next/link";
-import { useParams } from 'next/navigation'; // Import useParams
-import Cookies from 'js-cookie'; // Import js-cookie
-import { i18n } from '@/lib/i18n/config';
-import { getDictionary } from '@/lib/i18n'; // Import getDictionary
-import { Dictionary } from '@/lib/i18n/types'; // Import Dictionary type
+import { GalleryVerticalEnd } from "lucide-react"; // Added GalleryVerticalEnd
+import { LoginForm } from "@/components/login-form"; // Updated import path
+
+import { Input } from "@/components/ui/input"; // Keep Input
+import { Label } from "@/components/ui/label"; // Keep Label
+import Link from "next/link"; // Keep Link
+import { useParams } from 'next/navigation'; // Keep useParams
+import Cookies from 'js-cookie'; // Keep js-cookie
+import { i18n } from '@/lib/i18n/config'; // Keep i18n config
+import { getDictionary } from '@/lib/i18n'; // Keep getDictionary
+import { Dictionary } from '@/lib/i18n/types'; // Keep Dictionary type
 
 
 export default function LoginPage() {
@@ -122,33 +117,16 @@ export default function LoginPage() {
   // --- Guard Clause: Render loading or error state while dictionary is fetching ---
   if (isLoadingDictionary) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-card">
-        <Card className="w-full max-w-sm">
-          <CardHeader>
-            <CardTitle className="text-2xl">Loading...</CardTitle>
-            <CardDescription>Fetching language resources.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4">
-            {/* Optional: Add a spinner or progress indicator here */}
-            <div className="text-center">Loading...</div>
-          </CardContent>
-        </Card>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">Loading language resources...</div>
       </div>
     );
   }
 
   if (errorLoadingDictionary) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-card">
-        <Card className="w-full max-w-sm">
-          <CardHeader>
-            <CardTitle className="text-2xl">Error</CardTitle>
-            <CardDescription>{errorLoadingDictionary}</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4">
-            <div className="text-center text-red-600">Could not load language resources.</div>
-          </CardContent>
-        </Card>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center text-red-600">{errorLoadingDictionary}</div>
       </div>
     );
   }
@@ -157,16 +135,8 @@ export default function LoginPage() {
      // Fallback if somehow loading finished but dictionary is still null (shouldn't happen with proper logic)
      console.warn("Dictionary finished loading but is null in Login Page.");
      return (
-       <div className="flex items-center justify-center min-h-screen bg-card">
-         <Card className="w-full max-w-sm">
-           <CardHeader>
-             <CardTitle className="text-2xl">Error</CardTitle>
-             <CardDescription>Could not load language resources.</CardDescription>
-           </CardHeader>
-           <CardContent className="grid gap-4">
-             <div className="text-center text-orange-500">An unexpected error occurred.</div>
-           </CardContent>
-         </Card>
+       <div className="flex items-center justify-center min-h-screen">
+         <div className="text-center text-orange-500">An unexpected error occurred while loading resources.</div>
        </div>
      );
   }
@@ -174,56 +144,19 @@ export default function LoginPage() {
 
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-card">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle className="text-2xl">{dictionary.loginPage.title}</CardTitle>
-          <CardDescription>
-            {dictionary.loginPage.description}
-          </CardDescription>
-        </CardHeader>
-        {/* Bind form submission to handleSignIn */}
-        <form onSubmit={handleSignIn}>
-          <CardContent className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="email">{dictionary.loginPage.emailLabel}</Label>
-              <Input
-                id="email"
-                name="email" // Added name attribute
-                type="email"
-                placeholder={dictionary.loginPage.emailPlaceholder}
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="password">{dictionary.loginPage.passwordLabel}</Label>
-              <Input
-                id="password"
-                name="password" // Added name attribute
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
-              />
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col">
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? dictionary.loginPage.signingInButton : dictionary.loginPage.signInButton}
-            </Button>
-            <p className="mt-4 text-xs text-center text-muted-foreground">
-              {dictionary.loginPage.noAccountText}{" "}
-            <Link href={`/${lang}/signup`} className="underline">
-              {dictionary.loginPage.signUpLink}
-            </Link>
-          </p>
-          </CardFooter>
-        </form>
-      </Card>
+    <div className="flex min-h-svh flex-col items-center justify-center bg-element-bg p-6 md:p-10">
+      <div className="w-full max-w-sm md:max-w-3xl">
+        <LoginForm
+          email={email}
+          password={password}
+          isLoading={isLoading}
+          handleSignIn={handleSignIn}
+          dictionary={dictionary}
+          lang={lang}
+          setEmail={setEmail}
+          setPassword={setPassword}
+        />
+      </div>
     </div>
   );
 }

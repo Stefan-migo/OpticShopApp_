@@ -779,5 +779,13 @@ export interface Dictionary {
       loginSuccessTitle?: string;
       loginSuccessDescription?: string;
     };
+    forgotPasswordLink?: string; // Added forgotPasswordLink
+    orContinueWith?: string; // Added orContinueWith
+    loginWithGoogle?: string; // Added loginWithGoogle
+    imageAltText?: string; // Added imageAltText
+    termsAndPrivacyText?: string; // Added termsAndPrivacyText
+    termsLinkText?: string; // Added termsLinkText
+    andText?: string; // Added andText
+    privacyLinkText?: string; // Added privacyLinkText
   };
 }

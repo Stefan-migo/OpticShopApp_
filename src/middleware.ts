@@ -26,6 +26,15 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   console.log('Middleware - Pathname:', pathname);
 
+  // Allow access to static image files regardless of authentication state
+  if (pathname.match(/\.(jpg|jpeg|png|gif|svg|webp)$/i)) {
+    console.log(`Middleware - Allowing access to image file: ${pathname}`);
+    return NextResponse.next();
+  }
+
+
+
+
   // Allow access to the landing page without authentication
   const isLandingPage = locales.some((locale) => pathname.startsWith(`/${locale}/landing`));
   console.log('Middleware - Is landing page:', isLandingPage);

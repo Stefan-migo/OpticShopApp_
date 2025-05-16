@@ -754,6 +754,14 @@
         "loginErrorTitle": "Login Error",
         "loginSuccessTitle": "Login Successful",
         "loginSuccessDescription": "Redirecting to dashboard..."
-      }
+      },
+      "forgotPasswordLink": "Forgot your password?",
+      "orContinueWith": "Or continue with",
+      "loginWithGoogle": "Login with Google",
+      "imageAltText": "Login page image",
+      "termsAndPrivacyText": "By clicking continue, you agree to our",
+      "termsLinkText": "Terms of Service",
+      "andText": "and",
+      "privacyLinkText": "Privacy Policy"
     }
   }

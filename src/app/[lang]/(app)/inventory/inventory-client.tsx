@@ -17,7 +17,7 @@ import {
 import {
   AlertDialog,
   AlertDialogAction,
-AlertDialogCancel,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -103,7 +103,7 @@ function InventoryPageClient({ dictionary, lang, isSuperuser, userTenantId }: In
     if (isSuperuser && tenantId) {
       productsQuery = productsQuery.eq('tenant_id', tenantId);
     } else if (!isSuperuser && userTenantId) {
-       productsQuery = productsQuery.eq('tenant_id', userTenantId);
+      productsQuery = productsQuery.eq('tenant_id', userTenantId);
     }
 
     const { data: products, error: productsFetchError } = await productsQuery
@@ -141,7 +141,7 @@ function InventoryPageClient({ dictionary, lang, isSuperuser, userTenantId }: In
     if (isSuperuser && tenantId) {
       stockItemsQuery = stockItemsQuery.eq('tenant_id', tenantId);
     } else if (!isSuperuser && userTenantId) {
-       stockItemsQuery = stockItemsQuery.eq('tenant_id', userTenantId);
+      stockItemsQuery = stockItemsQuery.eq('tenant_id', userTenantId);
     }
 
     const { data: stockItems, error: stockItemsFetchError } = await stockItemsQuery
@@ -151,7 +151,7 @@ function InventoryPageClient({ dictionary, lang, isSuperuser, userTenantId }: In
       console.error("Error fetching stock items:", stockItemsFetchError);
       // If product fetch was successful, only set stock error, otherwise overall error
       if (!productsFetchError) {
-         setError(stockItemsFetchError.message);
+        setError(stockItemsFetchError.message);
       }
       setStockData([]); // Clear data on error
     } else {
@@ -214,7 +214,7 @@ function InventoryPageClient({ dictionary, lang, isSuperuser, userTenantId }: In
     refreshData(); // Trigger data refresh
   };
 
-   const handleAddStockSuccess = () => {
+  const handleAddStockSuccess = () => {
     setIsAddStockDialogOpen(false);
     refreshData(); // Refresh stock list
   };
@@ -461,37 +461,37 @@ function InventoryPageClient({ dictionary, lang, isSuperuser, userTenantId }: In
           </Dialog>
         </div>
         {/* No loading/error state here, handled by Server Component */}
-          <DataTable
-            columns={productColumns}
-            data={productData} // Use state data initialized with initialProductData
-            filterColumnKey="name"
-            filterPlaceholder={dictionary.inventory.filterProductsPlaceholder}
-          />
+        <DataTable
+          columns={productColumns}
+          data={productData} // Use state data initialized with initialProductData
+          filterColumnKey="name"
+          filterPlaceholder={dictionary.inventory.filterProductsPlaceholder}
+        />
       </TabsContent>
 
       {/* Inventory Stock Tab */}
       <TabsContent value="stock" className="mt-0 flex flex-col gap-4">
-         <div className="flex items-center justify-end ">
-            <Dialog open={isAddStockDialogOpen} onOpenChange={setIsAddStockDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <PlusCircle className="mr-2 h-4 w-4" /> {dictionary.inventory.addStockItemButton} {/* Use dictionary directly */}
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>{dictionary.inventory.addNewStockItemTitle}</DialogTitle> {/* Use dictionary directly */}
-                  <DialogDescription>
-                    {dictionary.inventory.addNewStockItemDescription} {/* Use dictionary directly */}
-                  </DialogDescription>
-                </DialogHeader>
-                 {/* Pass initialData as null or undefined for adding */}
-                <StockItemForm onSuccess={handleAddStockSuccess} initialData={null} dictionary={dictionary} userTenantId={userTenantId} /> {/* Pass dictionary and userTenantId */}
-              </DialogContent>
-            </Dialog>
-         </div>
+        <div className="flex items-center justify-end ">
+          <Dialog open={isAddStockDialogOpen} onOpenChange={setIsAddStockDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <PlusCircle className="mr-2 h-4 w-4" /> {dictionary.inventory.addStockItemButton} {/* Use dictionary directly */}
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>{dictionary.inventory.addNewStockItemTitle}</DialogTitle> {/* Use dictionary directly */}
+                <DialogDescription>
+                  {dictionary.inventory.addNewStockItemDescription} {/* Use dictionary directly */}
+                </DialogDescription>
+              </DialogHeader>
+              {/* Pass initialData as null or undefined for adding */}
+              <StockItemForm onSuccess={handleAddStockSuccess} initialData={null} dictionary={dictionary} userTenantId={userTenantId} /> {/* Pass dictionary and userTenantId */}
+            </DialogContent>
+          </Dialog>
+        </div>
 
-         {/* No loading/error state here, handled by Server Component */}
+        {/* No loading/error state here, handled by Server Component */}
         <div className="overflow-x-auto"> {/* Add responsive wrapper */}
           <DataTable
             columns={stockColumns}
@@ -509,12 +509,28 @@ function InventoryPageClient({ dictionary, lang, isSuperuser, userTenantId }: In
 
       {/* Categories Tab */}
       <TabsContent value="categories" className="mt-0 flex flex-col gap-4"> {/* Added flex and gap for spacing */}
-         <div className="flex items-center justify-end"> {/* Container for button, aligned to end */}
-            {/* Add Category Dialog Trigger (for adding) - already exists in Product Catalog tab, can reuse or add a new one here */}
-            {/* For now, let's assume adding is done from the Product Catalog tab */}
-         </div>
-
-         {/* No loading/error state here, handled by Server Component */}
+        <div className="flex items-center justify-end"> {/* Container for button, aligned to end */}
+          {/* Add Category Dialog Trigger */}
+          <div className="flex items-center justify-end"> {/* Container for button, aligned to end */}
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm"> {/* Use outline variant and small size */}
+                  <PlusCircle className="mr-2 h-4 w-4" /> {dictionary.inventory.categoryForm?.addButton || "Add Category"} {/* Use dictionary */}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>{dictionary.inventory.categoryForm?.addButton || "Add Category"}</DialogTitle> {/* Use dictionary */}
+                  <DialogDescription>
+                    Add a new product category.
+                  </DialogDescription>
+                </DialogHeader>
+                <CategoryForm dictionary={dictionary} onCategoryAdded={handleAddCategorySuccess} /> {/* Render CategoryForm and refresh data on success */}
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+        {/* No loading/error state here, handled by Server Component */}
         <DataTable
           columns={categoryColumns}
           data={categoryData} // Use state data for categories
