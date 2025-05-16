@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, MoreHorizontal } from "lucide-react"; // Import MoreHorizontal
 import { getColumns, type Product } from "./columns"; // Import product columns and type
 import { DataTable } from "@/components/ui/data-table";
 import { createClient } from "@/lib/supabase/client"; // Use client-side Supabase client
@@ -24,7 +24,7 @@ AlertDialogCancel,
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ProductForm } from "./product-form";
+import { ProductForm, type ProductFormRef } from "./product-form"; // Import ProductForm and ProductFormRef
 import { StockItemForm } from "./stock-item-form"; // Import StockItemForm component
 import { useToast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -33,6 +33,19 @@ import { ProductViewDetailsDialog } from "./ProductViewDetailsDialog"; // Import
 import { type Dictionary } from "@/lib/i18n/types"; // Import Dictionary type
 import { Locale } from "@/lib/i18n/config"; // Import Locale type
 import { useSearchParams } from 'next/navigation'; // Import useSearchParams
+import { SupplierManager } from "./SupplierManager"; // Import SupplierManager component
+import { CategoryForm } from "./CategoryForm"; // Import CategoryForm component
+import { getCategories, deleteProductCategory } from "./actions"; // Import category actions
+import { type Category } from "@/lib/supabase/types/database.types"; // Import Category type
+import { ColumnDef } from "@tanstack/react-table"; // Import ColumnDef
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"; // Import DropdownMenu components
 
 // Client Component to handle UI interactions (dialogs, forms, delete)
 interface InventoryPageClientProps {
@@ -45,8 +58,11 @@ interface InventoryPageClientProps {
 function InventoryPageClient({ dictionary, lang, isSuperuser, userTenantId }: InventoryPageClientProps) {
   const [productData, setProductData] = React.useState<Product[]>([]); // Initialize state as empty array
   const [stockData, setStockData] = React.useState<InventoryItem[]>([]); // Initialize state as empty array
+  const [categoryData, setCategoryData] = React.useState<Category[]>([]); // State for category data
   const [loading, setLoading] = React.useState(true); // Add loading state
+  const [loadingCategories, setLoadingCategories] = React.useState(true); // Loading state for categories
   const [error, setError] = React.useState<string | null>(null); // Add error state
+  const [categoryError, setCategoryError] = React.useState<string | null>(null); // Error state for categories
   const [isAddProductDialogOpen, setIsAddProductDialogOpen] = React.useState(false);
   const [isEditProductDialogOpen, setIsEditProductDialogOpen] = React.useState(false);
   const [editingProduct, setEditingProduct] = React.useState<Product | null>(null);
@@ -59,12 +75,17 @@ function InventoryPageClient({ dictionary, lang, isSuperuser, userTenantId }: In
   const [deletingStockItemId, setDeletingStockItemId] = React.useState<string | null>(null); // Stock item ID to delete
   const [isViewProductDialogOpen, setIsViewProductDialogOpen] = React.useState(false); // State for View Product dialog
   const [viewingProduct, setViewingProduct] = React.useState<Product | null>(null); // Product being viewed
+  const [isEditCategoryDialogOpen, setIsEditCategoryDialogOpen] = React.useState(false); // State for Edit Category dialog
+  const [editingCategory, setEditingCategory] = React.useState<Category | null>(null); // Category being edited
+  const [isDeleteCategoryDialogOpen, setIsDeleteCategoryDialogOpen] = React.useState(false); // State for Delete Category dialog
+  const [deletingCategoryId, setDeletingCategoryId] = React.useState<string | null>(null); // Category ID to delete
+  const productFormRef = React.useRef<ProductFormRef>(null); // Create a ref for ProductForm
   const supabase = createClient(); // Use client-side Supabase client for client-side mutations
   const { toast } = useToast();
   const searchParams = useSearchParams(); // Get search parameters
   const tenantId = searchParams.get('tenantId'); // Get tenantId from search parameters
 
-  // Function to fetch data client-side
+  // Function to fetch products and stock items client-side
   const fetchData = async () => {
     setLoading(true);
     setError(null);
@@ -151,14 +172,34 @@ function InventoryPageClient({ dictionary, lang, isSuperuser, userTenantId }: In
     setLoading(false);
   };
 
+  // Function to fetch categories client-side
+  const fetchCategories = async () => {
+    setLoadingCategories(true);
+    setCategoryError(null);
+
+    const { data: categories, error: categoriesFetchError } = await getCategories();
+
+    if (categoriesFetchError) {
+      console.error("Error fetching categories:", categoriesFetchError);
+      setCategoryError(categoriesFetchError.message);
+      setCategoryData([]); // Clear data on error
+    } else {
+      setCategoryData(categories || []);
+    }
+    setLoadingCategories(false);
+  };
+
+
   // Effect to fetch data when tenantId, isSuperuser, or userTenantId changes
   React.useEffect(() => {
     fetchData();
+    fetchCategories(); // Fetch categories as well
   }, [tenantId, isSuperuser, userTenantId]); // Dependencies: tenantId, isSuperuser, and userTenantId
 
   // Function to refresh data after mutations (now calls client-side fetch)
   const refreshData = async () => {
     fetchData(); // Re-run client-side fetch
+    fetchCategories(); // Re-run category fetch
   };
 
   // Callbacks for form success
@@ -184,6 +225,43 @@ function InventoryPageClient({ dictionary, lang, isSuperuser, userTenantId }: In
     setEditingStockItem(null);
     refreshData(); // Refresh stock list
   };
+
+  // Callbacks/Handlers for Categories
+  const handleAddCategorySuccess = () => {
+    refreshData(); // Refresh all data including categories
+  };
+
+  const handleEditCategorySuccess = () => {
+    setIsEditCategoryDialogOpen(false);
+    setEditingCategory(null);
+    refreshData(); // Refresh all data including categories
+  };
+
+  const handleDeleteCategory = (categoryId: string) => {
+    setDeletingCategoryId(categoryId);
+    setIsDeleteCategoryDialogOpen(true);
+  };
+
+  const confirmDeleteCategory = async () => {
+    if (!deletingCategoryId) return;
+    try {
+      const { error: deleteError } = await deleteProductCategory(deletingCategoryId);
+      if (deleteError) throw deleteError;
+      toast({ title: dictionary?.inventory?.categoryForm?.deleteSuccess || "Category deleted successfully." }); // TODO: Add dictionary key
+      refreshData(); // Refresh data
+    } catch (error: any) {
+      console.error("Error deleting category:", error);
+      toast({
+        title: dictionary?.inventory?.categoryForm?.deleteErrorTitle || "Error deleting category", // TODO: Add dictionary key
+        description: error.message || dictionary?.common?.unexpectedError || "An unexpected error occurred.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleteCategoryDialogOpen(false);
+      setDeletingCategoryId(null);
+    }
+  };
+
 
   // Functions to open Product dialogs
   const openViewProductDialog = (product: Product) => {
@@ -274,14 +352,56 @@ function InventoryPageClient({ dictionary, lang, isSuperuser, userTenantId }: In
     [openEditStockDialog, openDeleteStockDialog, dictionary] // Add dictionary to dependencies
   );
 
+  // Generate columns for Categories table
+  const categoryColumns: ColumnDef<Category>[] = React.useMemo( // TODO: Use Category type
+    () => [
+      {
+        accessorKey: "name",
+        header: dictionary.inventory?.categoryForm?.nameLabel || "Category Name", // Use dictionary key
+      },
+      {
+        id: "actions",
+        cell: ({ row }) => {
+          const category = row.original;
+
+          return (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Open menu</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>{dictionary.common?.actions}</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => navigator.clipboard.writeText(category.id)}>
+                  {dictionary.common?.copyId}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setEditingCategory(category)}> {/* Open edit dialog */}
+                  {dictionary.common?.edit}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleDeleteCategory(category.id)} className="text-red-500 focus:text-red-600"> {/* Open delete dialog */}
+                  {dictionary.common?.delete}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          );
+        },
+      },
+    ],
+    [dictionary] // Add dictionary to dependencies
+  );
+
+
   // Dictionary is guaranteed non-null from parent Server Component
 
-  if (loading) {
-    return <div>Loading inventory...</div>; // Loading indicator
+  if (loading || loadingCategories) { // Check both loading states
+    return <div>{dictionary.common?.loading || "Loading inventory..."}</div>; // Loading indicator
   }
 
-  if (error) {
-    return <div>Error: {error}</div>; // Error message
+  if (error || categoryError) { // Check both error states
+    return <div>Error: {error || categoryError}</div>; // Error message
   }
 
 
@@ -293,6 +413,10 @@ function InventoryPageClient({ dictionary, lang, isSuperuser, userTenantId }: In
           <TabsTrigger value="products">{dictionary.inventory.productCatalogTab}</TabsTrigger>
           {/* Use dictionary directly */}
           <TabsTrigger value="stock">{dictionary.inventory.inventoryStockTab}</TabsTrigger>
+          {/* Add Suppliers Tab Trigger */}
+          <TabsTrigger value="suppliers">{dictionary.inventory.suppliersTabTitle}</TabsTrigger>
+          {/* Add Categories Tab Trigger */}
+          <TabsTrigger value="categories">{dictionary.inventory.categoriesTabTitle || "Categories"}</TabsTrigger> {/* TODO: Add dictionary key */}
         </TabsList>
 
         {/* Add Product Dialog Trigger */}
@@ -310,13 +434,32 @@ function InventoryPageClient({ dictionary, lang, isSuperuser, userTenantId }: In
               </DialogDescription>
             </DialogHeader>
             {/* Pass initialData as null or undefined for adding */}
-            <ProductForm onSuccess={handleAddProductSuccess} initialData={null} dictionary={dictionary} userTenantId={userTenantId} /> {/* Pass dictionary and userTenantId */}
+            <ProductForm ref={productFormRef} onSuccess={handleAddProductSuccess} initialData={null} dictionary={dictionary} userTenantId={userTenantId} /> {/* Pass dictionary and userTenantId */}
           </DialogContent>
         </Dialog>
       </div>
 
       {/* Product Catalog Tab */}
-      <TabsContent value="products" className="mt-0">
+      <TabsContent value="products" className="mt-0 flex flex-col gap-4"> {/* Added flex and gap for spacing */}
+        {/* Add Category Dialog Trigger */}
+        <div className="flex items-center justify-end"> {/* Container for button, aligned to end */}
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm"> {/* Use outline variant and small size */}
+                <PlusCircle className="mr-2 h-4 w-4" /> {dictionary.inventory.categoryForm?.addButton || "Add Category"} {/* Use dictionary */}
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>{dictionary.inventory.categoryForm?.addButton || "Add Category"}</DialogTitle> {/* Use dictionary */}
+                <DialogDescription>
+                  Add a new product category.
+                </DialogDescription>
+              </DialogHeader>
+              <CategoryForm dictionary={dictionary} onCategoryAdded={handleAddCategorySuccess} /> {/* Render CategoryForm and refresh data on success */}
+            </DialogContent>
+          </Dialog>
+        </div>
         {/* No loading/error state here, handled by Server Component */}
           <DataTable
             columns={productColumns}
@@ -328,7 +471,7 @@ function InventoryPageClient({ dictionary, lang, isSuperuser, userTenantId }: In
 
       {/* Inventory Stock Tab */}
       <TabsContent value="stock" className="mt-0 flex flex-col gap-4">
-         <div className="flex items-center justify-end">
+         <div className="flex items-center justify-end ">
             <Dialog open={isAddStockDialogOpen} onOpenChange={setIsAddStockDialogOpen}>
               <DialogTrigger asChild>
                 <Button>
@@ -349,13 +492,37 @@ function InventoryPageClient({ dictionary, lang, isSuperuser, userTenantId }: In
          </div>
 
          {/* No loading/error state here, handled by Server Component */}
+        <div className="overflow-x-auto"> {/* Add responsive wrapper */}
+          <DataTable
+            columns={stockColumns}
+            data={stockData} // Use state data initialized with initialStockData
+            filterColumnKey="serial_number" // Filter by serial number
+            filterPlaceholder={dictionary.inventory.filterStockPlaceholder}
+          />
+        </div>
+      </TabsContent>
+
+      {/* Suppliers Tab */}
+      <TabsContent value="suppliers" className="mt-0">
+        <SupplierManager dictionary={dictionary} userTenantId={userTenantId} />
+      </TabsContent>
+
+      {/* Categories Tab */}
+      <TabsContent value="categories" className="mt-0 flex flex-col gap-4"> {/* Added flex and gap for spacing */}
+         <div className="flex items-center justify-end"> {/* Container for button, aligned to end */}
+            {/* Add Category Dialog Trigger (for adding) - already exists in Product Catalog tab, can reuse or add a new one here */}
+            {/* For now, let's assume adding is done from the Product Catalog tab */}
+         </div>
+
+         {/* No loading/error state here, handled by Server Component */}
         <DataTable
-          columns={stockColumns}
-          data={stockData} // Use state data initialized with initialStockData
-          filterColumnKey="serial_number" // Filter by serial number
-          filterPlaceholder={dictionary.inventory.filterStockPlaceholder}
+          columns={categoryColumns}
+          data={categoryData} // Use state data for categories
+          filterColumnKey="name" // Filter by category name
+          filterPlaceholder={dictionary.inventory.categoryForm?.namePlaceholder || "Filter categories..."}
         />
       </TabsContent>
+
 
       {/* Edit Product Dialog */}
       <Dialog open={isEditProductDialogOpen} onOpenChange={(open) => {
@@ -425,6 +592,42 @@ function InventoryPageClient({ dictionary, lang, isSuperuser, userTenantId }: In
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit Category Dialog */}
+      <Dialog open={isEditCategoryDialogOpen} onOpenChange={(open) => {
+        setIsEditCategoryDialogOpen(open);
+        if (!open) setEditingCategory(null); // Clear state when closing
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{dictionary.inventory.categoryForm?.editButton || "Edit Category"}</DialogTitle> {/* TODO: Add dictionary key */}
+            <DialogDescription>
+              Edit the details of the category. {/* TODO: Add dictionary key */}
+            </DialogDescription>
+          </DialogHeader>
+          {/* Pass initialData for editing */}
+          <CategoryForm initialData={editingCategory} onCategoryUpdated={handleEditCategorySuccess} dictionary={dictionary} /> {/* Pass dictionary */}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Category Confirmation Dialog */}
+      <AlertDialog open={isDeleteCategoryDialogOpen} onOpenChange={setIsDeleteCategoryDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{dictionary.inventory.categoryForm?.deleteConfirmTitle || "Confirm Deletion"}</AlertDialogTitle> {/* TODO: Add dictionary key */}
+            <AlertDialogDescription>
+              {dictionary.inventory.categoryForm?.deleteConfirmDescription || "Are you sure you want to delete this category? This action cannot be undone."} {/* TODO: Add dictionary key */}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsDeleteCategoryDialogOpen(false)}>{dictionary.common?.cancel || "Cancel"}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteCategory} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {dictionary.common?.delete || "Delete"} {/* Use common delete dictionary key */}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
 
       {/* View Product Details Dialog */}
       <ProductViewDetailsDialog

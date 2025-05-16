@@ -48,13 +48,19 @@ interface ProductFormProps {
   onSuccess?: () => void; // Callback after successful submission
   dictionary: Dictionary; // Add dictionary prop
   userTenantId: string | null; // Add userTenantId prop
+  onCategoryAdded?: () => void; // New prop to trigger category refetch
 }
 
 // Define simple types for fetched dropdown data
 type Category = { id: string; name: string };
 type Supplier = { id: string; name: string };
 
-export function ProductForm({ initialData, onSuccess, dictionary, userTenantId }: ProductFormProps) {
+export type ProductFormRef = {
+  fetchCategories: () => Promise<void>;
+};
+
+export const ProductForm = React.forwardRef<ProductFormRef, ProductFormProps>(
+  ({ initialData, onSuccess, dictionary, userTenantId, onCategoryAdded }, ref) => {
   const { toast } = useToast();
   const supabase = createClient();
   const isEditing = !!initialData;
@@ -62,51 +68,78 @@ export function ProductForm({ initialData, onSuccess, dictionary, userTenantId }
   const [suppliers, setSuppliers] = React.useState<Supplier[]>([]);
   const [isLoadingDropdowns, setIsLoadingDropdowns] = React.useState(true);
 
-  // Fetch categories and suppliers for dropdowns
-  React.useEffect(() => {
-    const fetchDropdownData = async () => {
-      setIsLoadingDropdowns(true);
-      try {
+  // Function to fetch categories
+  const fetchCategories = async () => {
+     try {
         // Read superuser and selected tenant cookies
         const isSuperuser = Cookies.get('is_superuser') === 'true';
         const selectedTenantId = Cookies.get('selected_tenant_id');
 
         let categoryQuery = supabase.from("product_categories").select("id, name").order("name");
-        let supplierQuery = supabase.from("suppliers").select("id, name").order("name");
 
         // Apply tenant filter if user is superuser AND a tenant is selected (via cookie/search param)
         // OR if user is NOT a superuser and userTenantId prop is available
         if (isSuperuser && selectedTenantId) {
           categoryQuery = categoryQuery.eq('tenant_id', selectedTenantId);
-          supplierQuery = supplierQuery.eq('tenant_id', selectedTenantId);
         } else if (!isSuperuser && userTenantId) {
            categoryQuery = categoryQuery.eq('tenant_id', userTenantId);
-           supplierQuery = supplierQuery.eq('tenant_id', userTenantId);
         }
 
-        const [categoryRes, supplierRes] = await Promise.all([
-          categoryQuery,
-          supplierQuery,
-        ]);
+        const { data: categoryData, error: categoryError } = await categoryQuery;
 
-        if (categoryRes.error) throw categoryRes.error;
-        if (supplierRes.error) throw supplierRes.error;
-
-        setCategories(categoryRes.data || []);
-        setSuppliers(supplierRes.data || []);
-      } catch (error: any) {
-        console.error("Error fetching dropdown data:", error);
+        if (categoryError) throw categoryError;
+        setCategories(categoryData || []);
+     } catch (error: any) {
+        console.error("Error fetching categories:", error);
         toast({
           title: dictionary.inventory.productForm.loadErrorTitle,
           description: error.message || dictionary.inventory.productForm.loadErrorDescription,
           variant: "destructive",
         });
-      } finally {
-        setIsLoadingDropdowns(false);
-      }
+     }
+  };
+
+  // Function to fetch suppliers
+  const fetchSuppliers = async () => {
+     try {
+        // Read superuser and selected tenant cookies
+        const isSuperuser = Cookies.get('is_superuser') === 'true';
+        const selectedTenantId = Cookies.get('selected_tenant_id');
+
+        let supplierQuery = supabase.from("suppliers").select("id, name").order("name");
+
+        // Apply tenant filter if user is superuser AND a tenant is selected (via cookie/search param)
+        // OR if user is NOT a superuser and userTenantId prop is available
+        if (isSuperuser && selectedTenantId) {
+          supplierQuery = supplierQuery.eq('tenant_id', selectedTenantId);
+        } else if (!isSuperuser && userTenantId) {
+           supplierQuery = supplierQuery.eq('tenant_id', userTenantId);
+        }
+
+        const { data: supplierData, error: supplierError } = await supplierQuery;
+
+        if (supplierError) throw supplierError;
+        setSuppliers(supplierData || []);
+     } catch (error: any) {
+        console.error("Error fetching suppliers:", error);
+        toast({
+          title: dictionary.inventory.productForm.loadErrorTitle,
+          description: error.message || dictionary.inventory.productForm.loadErrorDescription,
+          variant: "destructive",
+        });
+     }
+  };
+
+
+  // Fetch categories and suppliers for dropdowns on mount
+  React.useEffect(() => {
+    const fetchDropdownData = async () => {
+      setIsLoadingDropdowns(true);
+      await Promise.all([fetchCategories(), fetchSuppliers()]); // Fetch both concurrently
+      setIsLoadingDropdowns(false);
     };
     fetchDropdownData();
-  }, [supabase, toast, dictionary]);
+  }, [supabase, toast, dictionary, userTenantId]); // Add userTenantId to dependencies
 
   // Define the form schema using Zod (inlined and memoized)
   const formSchema = React.useMemo(() => z.object({
@@ -118,7 +151,7 @@ export function ProductForm({ initialData, onSuccess, dictionary, userTenantId }
     model: z.string().optional(),
     base_price: z.coerce.number().min(0, { message: dictionary.inventory.productForm.priceNonNegative }),
     reorder_level: z.coerce.number().int().min(0, { message: dictionary.inventory.productForm.reorderLevelNonNegativeInteger }).nullable().optional(),
-    // attributes: z.string().optional(),
+    // attributes: z.ZodOptional<z.ZodString>;
   }), [dictionary]); // Dependency remains dictionary
 
   // Define form
@@ -345,4 +378,5 @@ export function ProductForm({ initialData, onSuccess, dictionary, userTenantId }
       </form>
     </Form>
   );
-}
+});
+

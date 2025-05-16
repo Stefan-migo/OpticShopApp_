@@ -97,6 +97,7 @@ export interface Dictionary {
       insuranceTitle?: string;
       insuranceProviderLabel?: string;
       insurancePolicyNumberLabel?: string;
+      insurancePolicyNumberPlaceholder?: string;
       notesLabel?: string;
       emptyNote?: string;
       addNoteSuccess?: string;
@@ -206,6 +207,50 @@ export interface Dictionary {
       searchSupplierPlaceholder?: string; // Added for Combobox
       noSupplierFound?: string; // Added for Combobox
     };
+    suppliersTabTitle?: string; // Added for Suppliers tab title
+    supplierForm?: { // Added for Supplier form
+      nameLabel?: string;
+      namePlaceholder?: string;
+      contactPersonLabel?: string;
+      contactPersonPlaceholder?: string;
+      emailLabel?: string;
+      emailPlaceholder?: string;
+      phoneLabel?: string;
+      phonePlaceholder?: string;
+      addressLabel?: string;
+      addressPlaceholder?: string;
+      addButton?: string;
+      editButton?: string; // Added for Supplier form edit button
+      saveChangesButton?: string; // Added for Supplier form save changes button
+      saveErrorTitle?: string; // Added for Supplier form save error title
+      saveSuccess?: string; // Added for Supplier form save success
+    };
+    supplierTable?: { // Added for Supplier table
+      nameHeader?: string;
+      contactPersonHeader?: string;
+      emailHeader?: string;
+      phoneHeader?: string;
+      addressHeader?: string;
+      deleteErrorTitle?: string; // Added for Supplier table delete error title
+      deleteSuccess?: string; // Added for Supplier table delete success
+      deleteConfirmTitle?: string; // Added for delete confirmation title
+      deleteConfirmDescription?: string; // Added for delete confirmation description
+      filterPlaceholder?: string;
+    };
+    categoriesTabTitle?: string; // Added for Categories tab title
+    categoryForm?: { // Added for Category form
+      nameLabel?: string;
+      namePlaceholder?: string;
+      addButton?: string;
+      saveErrorTitle?: string; // Added for category form save error title
+      saveSuccess?: string; // Added for category form save success
+      saveChangesButton?: string; // Added for category form save changes button
+      editButton?: string; // Added for category form edit button
+      deleteSuccess?: string; // Added for category delete success
+      deleteErrorTitle?: string; // Added for category delete error title
+      deleteConfirmTitle?: string; // Added for category delete confirmation title
+      deleteConfirmDescription?: string; // Added for category delete confirmation description
+    };
     stockItemForm: {
       loadErrorTitle?: string;
       loadErrorDescription?: string;
@@ -280,6 +325,9 @@ export interface Dictionary {
       typeLabel?: string;
       typeGlasses?: string;
       typeContactLens?: string;
+      typeFollowUp?: string;
+      typeFrameSelection?: string;
+      typeOther?: string;
       prescriptionDateLabel?: string;
       expiryDateLabel?: string;
       odTitle?: string;
@@ -376,6 +424,8 @@ export interface Dictionary {
       pending?: string;
       cancelled?: string;
     };
+    copyId?: string; // Added for common copy ID action
+    edit?: string; // Added for common edit action
   };
   roles: {
     admin?: string;

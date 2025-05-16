@@ -125,20 +125,20 @@ export default async function AppLayout(props: { children: React.ReactNode; para
 
 
   const navItems = [
-    { href: `/${lang}/dashboard`, label: dictionary.navigation.dashboard || '', icon: 'Home' },
-    { href: `/${lang}/customers`, label: dictionary.navigation.customers || '', icon: 'Contact' },
-    { href: `/${lang}/inventory`, label: dictionary.navigation.inventory || '', icon: 'Package' },
-    { href: `/${lang}/purchase-orders`, label: dictionary.navigation.purchaseOrders || '', icon: 'ShoppingCart' },
-    { href: `/${lang}/prescriptions`, label: dictionary.navigation.prescriptions || '', icon: 'Eye' },
-    { href: `/${lang}/appointments`, label: dictionary.navigation.appointments || '', icon: 'Calendar' },
-    { href: `/${lang}/sales`, label: dictionary.navigation.sales || '', icon: 'ShoppingCart' },
-    { href: `/${lang}/reports`, label: dictionary.navigation.reports || '', icon: 'LineChart' },
-    { href: `/${lang}/medical-actions`, label: dictionary.navigation.medicalActions || '', icon: 'ClipboardPlus' },
-    { href: `/${lang}/settings`, label: dictionary.navigation.settings || '', icon: 'Settings' },
+    { href: `/${lang}/dashboard`, label: dictionary.navigation?.dashboard || '', icon: 'Home' },
+    { href: `/${lang}/customers`, label: dictionary.navigation?.customers || '', icon: 'Contact' },
+    { href: `/${lang}/inventory`, label: dictionary.navigation?.inventory || '', icon: 'Package' },
+    { href: `/${lang}/purchase-orders`, label: dictionary.navigation?.purchaseOrders || '', icon: 'ShoppingCart' },
+    { href: `/${lang}/prescriptions`, label: dictionary.navigation?.prescriptions || '', icon: 'Eye' },
+    { href: `/${lang}/appointments`, label: dictionary.navigation?.appointments || '', icon: 'Calendar' },
+    { href: `/${lang}/sales`, label: dictionary.navigation?.sales || '', icon: 'ShoppingCart' },
+    { href: `/${lang}/reports`, label: dictionary.navigation?.reports || '', icon: 'LineChart' },
+    { href: `/${lang}/medical-actions`, label: dictionary.navigation?.medicalActions || '', icon: 'ClipboardPlus' },
+    { href: `/${lang}/settings`, label: dictionary.navigation?.settings || '', icon: 'Settings' },
   ];
 
   if (userRole === 'admin') {
-    navItems.push({ href: `/${lang}/users`, label: dictionary.navigation.userManagement || '', icon: 'Users' });
+    navItems.push({ href: `/${lang}/users`, label: dictionary.navigation?.userManagement || '', icon: 'Users' });
   }
 
   // Clone children to pass tenantName prop

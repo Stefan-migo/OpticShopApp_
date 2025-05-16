@@ -151,7 +151,7 @@ const SidebarLayoutContent: React.FC<SidebarLayoutContentProps> = ({
 <SidebarHeader className={cn("flex flex-col gap-2 p-2", state === 'collapsed' && 'items-center p-1')}>
   <Link href={`/${lang}/dashboard`} className="flex items-center gap-2 font-semibold">
     <Package2 className="h-6 w-6" /> {/* Direct usage of imported icon */}
-    <span className={cn(state === 'collapsed' && 'hidden')}>{dictionary.app.name}</span> {/* Conditionally hide span */}
+    <span className={cn(state === 'collapsed' && 'hidden')}>{dictionary?.app?.name}</span> {/* Conditionally hide span */}
   </Link>
 </SidebarHeader>
         <SidebarContent>
