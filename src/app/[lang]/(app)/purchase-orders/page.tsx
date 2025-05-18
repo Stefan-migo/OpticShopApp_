@@ -10,9 +10,11 @@ import Link from "next/link";
 import { useRouter, useParams } from "next/navigation"; // Import useRouter and useParams
 import { useToast } from "@/components/ui/use-toast"; // Import useToast
 import Cookies from 'js-cookie'; // Import js-cookie
+import { useDictionary } from '@/lib/i18n/dictionary-context'; // Import useDictionary
 
 export default function PurchaseOrdersPage() {
   const router = useRouter(); // Initialize useRouter
+  const dictionary = useDictionary(); // Get the dictionary
   const { toast } = useToast(); // Initialize useToast
   const params = useParams(); // Get params from URL
   const lang = params.lang as string; // Extract locale
@@ -65,49 +67,49 @@ export default function PurchaseOrdersPage() {
   };
 
   const handleDelete = async (purchaseOrderId: string) => {
-    if (confirm("Are you sure you want to delete this purchase order?")) {
+    if (confirm(dictionary.purchaseOrders.deleteConfirmDescription)) {
       try {
         const response = await fetch(`/api/purchase-orders/${purchaseOrderId}`, {
           method: 'DELETE',
         });
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to delete purchase order');
+          throw new Error(errorData.error || dictionary.purchaseOrders.deleteErrorTitle);
         }
         // Remove deleted item from state
         setPurchaseOrders(purchaseOrders.filter(po => po.id !== purchaseOrderId));
         // Show a success toast
         toast({
-          title: "Purchase order deleted successfully.",
+          title: dictionary.purchaseOrders.deleteSuccess,
         });
       } catch (err: any) {
         console.error("Failed to delete purchase order:", err);
         // Show an error toast
         toast({
-          title: "Error deleting purchase order",
-          description: err.message || "An unexpected error occurred.",
+          title: dictionary.purchaseOrders.deleteErrorTitle,
+          description: err.message || dictionary.common.unexpectedError,
           variant: "destructive",
         });
       }
     }
   };
 
-  const columns = getColumns({ onView: handleView, onEdit: handleEdit, onDelete: handleDelete });
-
-  if (loading) {
-    return <div>Loading purchase orders...</div>;
+  if (loading || !dictionary) { // Add check for dictionary loading
+    return <div>{dictionary?.common?.loading || 'Loading...'}</div>; {/* Translated loading message with fallback */}
   }
 
   if (error) {
-    return <div className="text-red-500">Error: {error}</div>;
+    return <div className="text-red-500">{dictionary?.common?.failedToLoadData || 'Failed to load data'}: {error}</div>; {/* Translated error message with fallback */}
   }
+
+  const columns = getColumns({ onView: handleView, onEdit: handleEdit, onDelete: handleDelete, dictionary: dictionary }); {/* Pass dictionary */}
 
   return (
     <div className="container mx-auto py-10">
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-semibold">Purchase Orders</h1>
+        <h1 className="text-2xl font-semibold">{dictionary.purchaseOrders.title}</h1> {/* Translated page title */}
         <Link href={`/${lang}/purchase-orders/new`}>
-          <Button>Add New Purchase Order</Button>
+          <Button>{dictionary.purchaseOrders.addNewPurchaseOrderButton}</Button> {/* Translated button text */}
         </Link>
       </div>
       <DataTable columns={columns} data={purchaseOrders} />

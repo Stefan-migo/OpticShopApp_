@@ -32,6 +32,7 @@ interface ComboboxProps {
   dictionary?: Dictionary | null | undefined; // Add optional dictionary prop
   specificSearchPlaceholder?: string; // New prop for specific search placeholder
   specificNoResultsText?: string; // New prop for specific no results text
+  onSearchChange?: (value: string) => void; // Add onSearchChange prop
 }
 
 export function Combobox({

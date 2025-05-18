@@ -52,8 +52,19 @@ interface PurchaseOrderColumnsProps {
   onDelete: (purchaseOrderId: string) => void;
 }
 
-// Export a function that generates the columns array
-export const getColumns = ({ onView, onEdit, onDelete }: PurchaseOrderColumnsProps): ColumnDef<PurchaseOrder>[] => [
+import { type Dictionary } from '@/lib/i18n/types'; // Import Dictionary type
+
+// Export a function that generates the columns array and accepts the dictionary
+export const getColumns = ({ onView, onEdit, onDelete, dictionary }: PurchaseOrderColumnsProps & { dictionary: Dictionary | null }): ColumnDef<PurchaseOrder>[] => { // Allow dictionary to be null
+
+  // Add a check at the beginning of the function
+  if (!dictionary) {
+    // Return empty columns or a placeholder if dictionary is not loaded
+    console.warn("Dictionary not loaded in getColumns, returning empty columns.");
+    return []; // Return an empty array of columns
+  }
+
+  return [
   {
     accessorKey: "order_date",
     header: ({ column }) => (
@@ -61,7 +72,7 @@ export const getColumns = ({ onView, onEdit, onDelete }: PurchaseOrderColumnsPro
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
-        Order Date
+        {dictionary.purchaseOrders?.tableColumns?.orderDateHeader} {/* Translated header */}
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
@@ -74,7 +85,7 @@ export const getColumns = ({ onView, onEdit, onDelete }: PurchaseOrderColumnsPro
    {
     // Access nested supplier name if joined, otherwise show ID or placeholder
     accessorKey: "suppliers.name",
-    header: "Supplier",
+    header: dictionary.purchaseOrders?.tableColumns?.supplierHeader,
      cell: ({ row }) => {
       const supplierName = row.original.suppliers?.name;
       return supplierName ? <div>{supplierName}</div> : <span className="text-muted-foreground">N/A</span>;
@@ -82,7 +93,7 @@ export const getColumns = ({ onView, onEdit, onDelete }: PurchaseOrderColumnsPro
   },
   {
     accessorKey: "status",
-    header: "Status",
+    header: dictionary.purchaseOrders?.tableColumns?.statusHeader,
     cell: ({ row }) => {
       const status: string = row.getValue("status");
       // Basic badge styling based on status - can be enhanced
@@ -99,7 +110,9 @@ export const getColumns = ({ onView, onEdit, onDelete }: PurchaseOrderColumnsPro
             return 'outline';
         }
       };
-      return <Badge variant={getStatusVariant(status)}>{status}</Badge>;
+      // Translate status text in badge
+      const translatedStatus = dictionary.purchaseOrders?.form?.statusOptions?.[status.toLowerCase() as keyof typeof dictionary.purchaseOrders.form.statusOptions] || status;
+      return <Badge variant={getStatusVariant(status)}>{translatedStatus}</Badge>;
     },
   },
   {
@@ -110,13 +123,13 @@ export const getColumns = ({ onView, onEdit, onDelete }: PurchaseOrderColumnsPro
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         className="text-right w-full justify-end" // Align right
       >
-        Total Amount
+        {dictionary.purchaseOrders?.tableColumns?.totalAmountHeader}
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
     cell: ({ row }) => {
       const amount = parseFloat(row.getValue("total_amount") || "0");
-      const formatted = new Intl.NumberFormat("en-US", {
+      const formatted = new Intl.NumberFormat("en-US", { // Currency format might need localization later
         style: "currency",
         currency: "USD", // Adjust currency as needed
       }).format(amount);
@@ -130,7 +143,7 @@ export const getColumns = ({ onView, onEdit, onDelete }: PurchaseOrderColumnsPro
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Created At
+          {dictionary.purchaseOrders?.tableColumns?.createdAtHeader}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
     ),
@@ -149,21 +162,21 @@ export const getColumns = ({ onView, onEdit, onDelete }: PurchaseOrderColumnsPro
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
+              <span className="sr-only">{dictionary.common?.openMenu}</span>
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuLabel>{dictionary.common?.actions}</DropdownMenuLabel>
             {/* Add specific purchase order actions here */}
-            <DropdownMenuItem onClick={() => onEdit(purchaseOrder)}>Edit Purchase Order</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onView(purchaseOrder.id)}>View Details</DropdownMenuItem> {/* Implement view details navigation */}
+            <DropdownMenuItem onClick={() => onEdit(purchaseOrder)}>{dictionary.purchaseOrders?.tableActions?.editPurchaseOrder}</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onView(purchaseOrder.id)}>{dictionary.purchaseOrders?.tableActions?.viewDetails}</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-red-600 focus:text-red-700 focus:bg-red-100"
               onClick={() => onDelete(purchaseOrder.id)}
             >
-              Delete Purchase Order
+              {dictionary.purchaseOrders?.tableActions?.deletePurchaseOrder}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -171,3 +184,4 @@ export const getColumns = ({ onView, onEdit, onDelete }: PurchaseOrderColumnsPro
     },
   },
 ];
+};

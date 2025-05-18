@@ -788,4 +788,68 @@ export interface Dictionary {
     andText?: string; // Added andText
     privacyLinkText?: string; // Added privacyLinkText
   };
+  purchaseOrders: {
+    title?: string;
+    newTitle?: string;
+    addNewPurchaseOrderButton?: string;
+    filterPlaceholder?: string;
+    tableColumns?: {
+      supplierHeader?: string;
+      orderDateHeader?: string;
+      expectedDeliveryDateHeader?: string;
+      statusHeader?: string;
+      totalAmountHeader?: string;
+      createdAtHeader?: string;
+      actionsHeader?: string;
+    };
+    tableActions?: {
+      viewDetails?: string;
+      editPurchaseOrder?: string;
+      deletePurchaseOrder?: string;
+    };
+    deleteConfirmTitle?: string;
+    deleteConfirmDescription?: string;
+    deleteSuccess?: string;
+    deleteErrorTitle?: string;
+    addNewPageTitle?: string;
+    returnButton?: string;
+    detailsCardTitle?: string;
+    form?: {
+      searchSupplierPlaceholder?: string;
+      noSupplierFound?: string;
+      searchProductPlaceholder?: string;
+      noProductFound?: string;
+      supplierLabel?: string;
+      selectSupplierPlaceholder?: string;
+      noneOption?: string;
+      statusLabel?: string;
+      selectStatusPlaceholder?: string;
+      statusOptions?: {
+        draft?: string;
+        ordered?: string;
+        received?: string;
+        cancelled?: string;
+      };
+      orderDateLabel?: string;
+      pickDatePlaceholder?: string;
+      expectedDeliveryDateLabel?: string;
+      pickDateOptionalPlaceholder?: string;
+      itemsTitle?: string;
+      productLabel?: string;
+      selectProductPlaceholder?: string;
+      quantityLabel?: string;
+      unitPriceLabel?: string;
+      addItemButton?: string;
+      saveChangesButton?: string;
+      createPurchaseOrderButton?: string;
+      validation?: {
+        atLeastOneItemRequired?: string;
+        supplierRequired?: string;
+        orderDateRequired?: string;
+        productRequired?: string;
+        quantityMin?: string;
+        unitPriceNonNegative?: string;
+      };
+    };
+  };
 }

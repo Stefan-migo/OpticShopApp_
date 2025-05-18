@@ -8,11 +8,14 @@ import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useParams } from 'next/navigation'; // Import useParams
+import { useDictionary } from '@/lib/i18n/dictionary-context'; // Import useDictionary
 
 import { PurchaseOrderForm } from "../purchase-order-form"; // Import the form component
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"; // Import Card components
 
 export default function NewPurchaseOrderPage() {
   const router = useRouter();
+  const dictionary = useDictionary(); // Get the dictionary
   const { toast } = useToast();
   const params = useParams(); // Get params from URL
   const lang = params.lang as string; // Extract locale
@@ -55,16 +58,23 @@ export default function NewPurchaseOrderPage() {
 
   return (
     <div className="container mx-auto py-10">
-      <div className="flex items-center gap-4 mb-6">
-        <Button variant="outline" size="icon" asChild>
-          <Link href={`/${lang}/purchase-orders`}>
-            <ChevronLeft className="h-4 w-4" />
+      <div className="flex items-center justify-between mb-6"> 
+        <h1 className="text-2xl font-semibold">{dictionary.purchaseOrders.newTitle}</h1> 
+        <Button asChild>
+          <Link href={`/${lang}/purchase-orders`} className="inline-flex items-center"> {/* Added inline-flex and items-center for layout */}
+            <ChevronLeft className="mr-2 h-4 w-4" />
+            {dictionary.purchaseOrders.returnButton}
           </Link>
         </Button>
-        <h1 className="text-2xl font-semibold">Add New Purchase Order</h1>
       </div>
-
-      <PurchaseOrderForm onSubmit={handleSubmit} isLoading={isSubmitting} />
+      <Card>
+        <CardHeader>
+          <CardTitle>{dictionary.purchaseOrders.detailsCardTitle}</CardTitle> {/* Translated card title */}
+        </CardHeader>
+        <CardContent>
+          <PurchaseOrderForm onSubmit={handleSubmit} isLoading={isSubmitting} />
+        </CardContent>
+      </Card>
     </div>
   );
 }
